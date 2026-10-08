@@ -1,0 +1,41 @@
+
+> paintplus@1.0.1 package:win
+> npm run build && electron-builder --win nsis portable --x64
+
+
+> paintplus@1.0.1 build
+> vite build
+
+[36mvite v7.1.9 [32mbuilding for production...[36m[39m
+<script src="./startup.js"> in "/index.html" can't be bundled without type="module" attribute
+transforming...
+[32m✓[39m 14 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mindex.html                          [39m[1m[2m  0.74 kB[22m[1m[22m[2m │ gzip:  0.46 kB[22m
+[2mdist/[22m[32massets/resample.worker-zC6kJlVe.js  [39m[1m[2m  1.42 kB[22m[1m[22m
+[2mdist/[22m[32massets/ai.worker-Dzzz4A3f.js        [39m[1m[2m 48.75 kB[22m[1m[22m
+[2mdist/[22m[35massets/index-De8mmk-6.css           [39m[1m[2m 22.92 kB[22m[1m[22m[2m │ gzip:  5.93 kB[22m
+[2mdist/[22m[36massets/index-CSfPmaLR.js            [39m[1m[2m122.18 kB[22m[1m[22m[2m │ gzip: 37.37 kB[22m
+[32m✓ built in 776ms[39m
+  • electron-builder  version=26.0.12 os=10.0.26100
+  • artifacts will be published if draft release exists  reason=CI detected
+  • loaded configuration  file=package.json ("build" field)
+  • skipped dependencies rebuild  reason=npmRebuild is set to false
+  • packaging       platform=win32 arch=x64 electron=38.2.0 appOutDir=release\win-unpacked
+  • downloading     url=https://github.com/electron/electron/releases/download/v38.2.0/electron-v38.2.0-win32-x64.zip size=126 MB parts=8
+  • downloaded      url=https://github.com/electron/electron/releases/download/v38.2.0/electron-v38.2.0-win32-x64.zip duration=373ms
+(node:1052) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+  • updating asar integrity executable resource  executablePath=release\win-unpacked\PaintPlus.exe
+  • building        target=nsis file=release\PaintPlus-Setup-1.0.1-x64.exe archs=x64 oneClick=false perMachine=false
+  • downloading     url=https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-3.0.4.1/nsis-3.0.4.1.7z size=1.3 MB parts=1
+  • downloaded      url=https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-3.0.4.1/nsis-3.0.4.1.7z duration=136ms
+  • downloading     url=https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-resources-3.4.1/nsis-resources-3.4.1.7z size=731 kB parts=1
+  • downloaded      url=https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-resources-3.4.1/nsis-resources-3.4.1.7z duration=286ms
+  • uninstaller is not signed by electron-builder  reason=custom NSIS script is used
+  • signing with signtool.exe  path=release\PaintPlus-Setup-1.0.1-x64.exe
+  • building block map  blockMapFile=release\PaintPlus-Setup-1.0.1-x64.exe.blockmap
+  • building        target=portable file=release\PaintPlus-Portable-1.0.1-x64.exe archs=x64
+  • signing with signtool.exe  path=release\PaintPlus-Portable-1.0.1-x64.exe
+  ⨯ GitHub Personal Access Token is not set, neither programmatically, nor using env "GH_TOKEN"

@@ -1,0 +1,45 @@
+
+> paintplus@1.0.1 test:ui
+> playwright test
+
+
+Running 36 tests using 2 workers
+
+  ok  1 tests\ui\additional.spec.mjs:45:1 › polygon click corners and Enter produces a filled shape (2.0s)
+  ok  2 tests\ui\additional.spec.mjs:24:1 › curve supports two bend drags and one undoable commit (2.2s)
+  ok  4 tests\ui\additional.spec.mjs:82:1 › free-form selection has a real polygon mask and leaves outside pixels (1.7s)
+  ok  5 tests\ui\additional.spec.mjs:111:1 › percentage resize, invalid dimensions, Cancel and nearest neighbour work (2.1s)
+  ok  6 tests\ui\additional.spec.mjs:148:1 › selection options switch Color 2 transparency and preserve true alpha (1.8s)
+  ok  3 tests\ui\additional.spec.mjs:59:1 › 100 actual pointer strokes never create visible layers (8.9s)
+  ok  8 tests\ui\additional.spec.mjs:213:1 › bundled thumbnails decode and palette ends in exact signature blue (1.1s)
+  ok  9 tests\ui\additional.spec.mjs:225:1 › drawing commits an opaque deselected asset onto its existing layer (1.3s)
+  ok  7 tests\ui\additional.spec.mjs:185:1 › AI on a raster layer replaces alpha rather than covering the old background (6.3s)
+  ok 10 tests\ui\additional.spec.mjs:249:1 › pasted transparency key survives resize after Color 2 changes (1.5s)
+  ok 11 tests\ui\additional.spec.mjs:276:1 › mixed selection keeps each transparency key unless the checkbox is explicitly changed (1.7s)
+  ok 12 tests\ui\additional.spec.mjs:318:1 › native layer drag and drop immediately refreshes the sidebar and supports undo (2.0s)
+  ok 13 tests\ui\additional.spec.mjs:335:1 › right-click eraser on a transparent layer preserves partial alpha and leaves empty pixels empty (1.3s)
+  ok 14 tests\ui\additional.spec.mjs:369:1 › a missing application script shows a usable startup error instead of a white screen (632ms)
+  ok 16 tests\ui\editor.spec.mjs:94:1 › brush widths and 100 strokes stay on the active raster layer with undo/redo (1.9s)
+  ok 15 tests\ui\editor.spec.mjs:64:1 › pencil, Color 1 / Color 2, cursor and Ctrl+Numpad widths (2.4s)
+  ok 17 tests\ui\editor.spec.mjs:123:1 › eraser on background uses Color 2, fill and eyedropper work (3.0s)
+  ok 19 tests\ui\editor.spec.mjs:194:1 › canvas boundary handles resize the canvas, not pixels, and undo (2.2s)
+  ok 18 tests\ui\editor.spec.mjs:164:1 › all brush variants produce strokes, shapes honor outline and fill (5.1s)
+  ok 20 tests\ui\editor.spec.mjs:220:1 › asset insertion at exact (0,0), original dimensions at every zoom and alpha (1.3s)
+  ok 21 tests\ui\editor.spec.mjs:245:1 › object corner and edge resizing, aspect lock, no cumulative source degradation (2.2s)
+  ok 22 tests\ui\editor.spec.mjs:290:1 › free rotation handle, numerical rotation, flips and undo (2.0s)
+  ok 24 tests\ui\editor.spec.mjs:361:1 › clipboard copy/paste preserves dimensions and transforms remain editable (1.3s)
+  ok 23 tests\ui\editor.spec.mjs:321:1 › rectangular and free selections can move, Color 2 transparency works (2.5s)
+  ok 26 tests\ui\editor.spec.mjs:400:1 › multi-layer grouping transforms objects together and ungroups (1.7s)
+  ok 25 tests\ui\editor.spec.mjs:378:1 › layers select, hide, lock, duplicate, reorder and merge (1.9s)
+  ok 28 tests\ui\editor.spec.mjs:466:1 › independent panel collapse expands workspace and persists across launch (1.7s)
+  ok 27 tests\ui\editor.spec.mjs:430:1 › asset removal, categories, search, favorite, list and thumbnail controls work (2.3s)
+  ok 29 tests\ui\editor.spec.mjs:485:1 › project save/reopen preserves source, groups, layers, text and exact pixels (1.2s)
+  ok 30 tests\ui\editor.spec.mjs:529:1 › exports PNG/JPEG/WebP/BMP and browser Quick Save produce real images (1.4s)
+  ok 31 tests\ui\editor.spec.mjs:554:1 › shortcut edits preserve reserved controls and work without intercepting text fields (1.5s)
+  ok 32 tests\ui\editor.spec.mjs:574:1 › zoom changes viewport scaling only, rulers and scrolling follow canvas (1.6s)
+  ok 33 tests\ui\editor.spec.mjs:593:1 › tool cursors change across drawing, text, selection, eyedropper and handles (1.7s)
+  ok 34 tests\ui\editor.spec.mjs:608:1 › text creates editable object, rasterizes from original and undoes (1.9s)
+  ok 35 tests\ui\editor.spec.mjs:631:1 › Lanczos worker rasterizes object and preserves undoable original (1.3s)
+  ok 36 tests\ui\editor.spec.mjs:647:1 › offline CPU AI actually removes background and keeps alpha (4.2s)
+
+  36 passed (46.0s)
