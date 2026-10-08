@@ -43,7 +43,9 @@ try {
   await writeFile(`docs/packaged-${windows?"windows":"linux"}-test-results.json`,JSON.stringify(result,null,2));
   console.log(JSON.stringify(result));
 } catch(error) {
-  console.error(await readFile(path.join(profile,"startup.log"),"utf8").catch(()=>"No startup log."));
+  const log=await readFile(path.join(profile,"startup.log"),"utf8").catch(()=>"No startup log.");
+  console.error(log);
+  await writeFile(`docs/packaged-${windows?"windows":"linux"}-test-results.json`,JSON.stringify({error:error.message,stack:error.stack,log},null,2));
   await page.screenshot({path:"test-results/packaged-startup-failure.png"}).catch(()=>{});
   throw error;
 } finally {

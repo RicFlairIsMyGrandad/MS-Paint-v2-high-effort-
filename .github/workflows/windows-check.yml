@@ -23,7 +23,13 @@ concurrency:
   cancel-in-progress: true
 jobs:
   windows:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      PAINTPLUS_CI_TARGET: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -84,7 +90,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: windows-check-evidence
+          name: windows-check-evidence-${{ matrix.os }}
           path: |
             docs/ui-test-results.json
             docs/packaged-windows-test-results.json
