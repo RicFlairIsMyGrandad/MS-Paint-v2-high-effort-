@@ -6,12 +6,12 @@ background removal. This is an independent application, not a Microsoft product.
 
 ## Install on your laptop
 
-**[Download the Windows installer](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Setup-1.0.0-x64.exe)**
-([portable version](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Portable-1.0.0-x64.exe)).
+**[Download the Windows installer](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Setup-1.0.1-x64.exe)**
+([portable version](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Portable-1.0.1-x64.exe)).
 The [downloads folder](downloads/) also contains the complete source archive,
 screenshots, example project, instructions, limitations and SHA-256 checksums.
 
-1. Download **PaintPlus-Setup-1.0.0-x64.exe**.
+1. Download **PaintPlus-Setup-1.0.1-x64.exe**.
 2. Open it and follow the installer. It installs for your Windows user account.
 3. Launch PaintPlus from your desktop or Start menu.
 
@@ -24,10 +24,15 @@ your PC" because there is no purchased signing certificate. If you trust the
 download, **More info → Run anyway** continues. You can scan the file first.
 SHA-256 hashes are supplied in **SHA256SUMS.txt** alongside the downloads.
 
-Alternatively, download **PaintPlus-Portable-1.0.0-x64.exe** and double-click it.
+Alternatively, download **PaintPlus-Portable-1.0.1-x64.exe** and double-click it.
 It extracts its own runtime temporarily and starts the app. It does not install
 Start menu entries or a project-file association. Settings still live in your
 Windows user profile. The installer is the recommended option.
+
+Version 1.0.1 adds software rendering on Windows and a visible startup error screen.
+If startup fails, the screen identifies the local startup.log, usually at
+`%APPDATA%\PaintPlus\startup.log`. Close the old app before running the new installer.
+See [the release notes](docs/RELEASE-1.0.1.md) for the startup, transparency and memory changes.
 
 ## Getting started
 
@@ -91,9 +96,12 @@ in text fields. Ctrl+wheel zooms; View also offers rulers, gridlines and zoom.
 
 The automated test results and complete limitations are in
 [docs/TESTING.md](docs/TESTING.md) and [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
-The app has been run as an actual Electron desktop application on Linux and
-its Windows installer and portable payload have been built and inspected.
-**A native Windows install and laptop run have not been performed here.**
+The exact downloadable Setup and Portable EXEs passed native checks on hosted
+Windows Server 2022 and 2025, including installation, startup, drawing, clipboard
+alpha, file saving, offline AI, shortcuts, project association and uninstall.
+All 35 core/resource tests and 36 UI tests passed on both Windows runners and Linux.
+**The user's Windows 10 Home and Windows 11 Home laptops still need a retry.**
+The original white-screen failure on that hardware has not been reproduced.
 
 The interface closely follows the supplied concept layout. This release is
 not an exact reproduction of every classic Paint behavior: textured brushes

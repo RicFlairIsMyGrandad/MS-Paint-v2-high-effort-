@@ -1,0 +1,49 @@
+{
+  "isPackaged": true,
+  "appPath": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω HrRfKf\\installed app with spaces\\resources\\app.asar",
+  "platform": "win32",
+  "gpuStatus": {
+    "2d_canvas": "unavailable_software",
+    "direct_rendering_display_compositor": "disabled_off_ok",
+    "gpu_compositing": "disabled_software",
+    "multiple_raster_threads": "enabled_on",
+    "opengl": "disabled_off",
+    "rasterization": "disabled_software",
+    "raw_draw": "disabled_off_ok",
+    "skia_graphite": "disabled_off",
+    "trees_in_viz": "disabled_off",
+    "video_decode": "disabled_software",
+    "video_encode": "disabled_software",
+    "vulkan": "disabled_off",
+    "webgl": "unavailable_software",
+    "webgl2": "unavailable_software",
+    "webgpu": "unavailable_software",
+    "webnn": "unavailable_software"
+  },
+  "installationPathHasSpacesAndUnicode": true,
+  "firstLaunchReady": true,
+  "pointerDrawing": true,
+  "clipboardAlpha": true,
+  "savedPNGBytes": true,
+  "savedEditableProject": true,
+  "clipboardOK": true,
+  "aiInferenceOK": true,
+  "first": {
+    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω HrRfKf\\images\\PaintPlus-smoke.png",
+    "name": "PaintPlus-smoke.png"
+  },
+  "second": {
+    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω HrRfKf\\images\\PaintPlus-smoke (2).png",
+    "name": "PaintPlus-smoke (2).png"
+  },
+  "collisionOK": true,
+  "project": {
+    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω HrRfKf\\images\\PaintPlus-project-smoke.paintplus",
+    "name": "PaintPlus-project-smoke.paintplus"
+  },
+  "projectBytes": 171329,
+  "protocol": "paintplus:",
+  "aiModel": true,
+  "rendererErrors": [],
+  "externalRequests": []
+}

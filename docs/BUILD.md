@@ -60,7 +60,7 @@ npm run test:ui
 
 The UI configuration uses `/usr/bin/chromium` on this Linux machine. Set
 `PLAYWRIGHT_CHROMIUM_EXECUTABLE` for another system, or install Chromium through
-Playwright. Start the Vite dev server first. Node tests use @napi-rs/canvas to
+Playwright. Playwright starts the Vite server automatically when needed. Node tests use @napi-rs/canvas to
 exercise real raster operations. UI tests use real pointer/keyboard events, with
 fixture setup and state inspection through the document model.
 
@@ -78,3 +78,17 @@ atomic save/overwrite, and both cancellation and success of save-before-close.
 
 Project details: PROJECT_FORMAT.md. Architecture: ARCHITECTURE.md. Current test
 evidence and outstanding Windows checks: TESTING.md and LIMITATIONS.md.
+
+`node tools/packaged-qa.mjs` runs from a copied ASAR installation in a directory
+containing spaces and Unicode, tests startup/drawing/clipboard/Quick Save/offline
+AI, captures a screenshot and records startup diagnostics. The Windows CI workflow
+executes the normal installer, checks that installed payload, launches the portable
+EXE, then uninstalls while checking that a user project remains. CI evidence is
+published to a unique windows-evidence branch; main is not changed by CI.
+
+When a `paintplus-candidate-<version>` branch supplies `downloads/Candidate.json`,
+CI verifies the current application's Git input digest and both EXE hashes, then
+tests those exact files. If there is no candidate, CI tests its native build.
+A mismatched candidate fails validation instead of testing stale app code.
+Build commands disable automatic release publishing; downloads are published
+explicitly after validation.
