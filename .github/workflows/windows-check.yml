@@ -9,13 +9,14 @@ on:
       - 'public/**'
       - 'tests/**'
       - 'tools/packaged-qa.mjs'
+      - 'tools/publish-windows-evidence.cjs'
       - 'package*.json'
       - 'vite.config.mjs'
       - 'playwright.config.mjs'
       - 'index.html'
       - '.github/workflows/windows-check.yml'
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: paintplus-windows-check
   cancel-in-progress: true
@@ -38,7 +39,13 @@ jobs:
           if ($testExit -ne 0) { Get-Content windows-core-tests.log | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append }
           exit $testExit
       - run: npx playwright install chromium
-      - run: npm run test:ui
+      - name: UI regressions
+        shell: pwsh
+        run: |
+          npm run test:ui 2>&1 | Tee-Object -FilePath windows-ui-tests.log
+          $testExit = $LASTEXITCODE
+          if ($testExit -ne 0) { Get-Content windows-ui-tests.log | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append }
+          exit $testExit
       - run: npm run package:win
       - name: Packaged Windows startup, drawing, clipboard and AI
         shell: pwsh
@@ -58,3 +65,6 @@ jobs:
             test-results/
             windows-*-tests.log
           retention-days: 14
+      - name: Publish isolated Windows test evidence
+        if: always()
+        run: node tools/publish-windows-evidence.cjs
