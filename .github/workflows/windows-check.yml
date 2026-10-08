@@ -11,6 +11,7 @@ on:
       - 'tools/packaged-qa.mjs'
       - 'tools/portable-windows-qa.cjs'
       - 'tools/publish-windows-evidence.cjs'
+      - 'tools/use-release-candidate.cjs'
       - 'package*.json'
       - 'vite.config.mjs'
       - 'playwright.config.mjs'
@@ -60,6 +61,8 @@ jobs:
           $testExit = $LASTEXITCODE
           if ($testExit -ne 0) { Get-Content windows-build-tests.log | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append }
           exit $testExit
+      - name: Use matching published release candidate when available
+        run: node tools/use-release-candidate.cjs
       - name: Install the actual setup silently
         shell: pwsh
         run: |
@@ -69,6 +72,16 @@ jobs:
           if ($setupProcess.ExitCode -ne 0) { throw "Setup failed: $($setupProcess.ExitCode)" }
           $installedExe = "$env:LOCALAPPDATA\Programs\PaintPlus\PaintPlus.exe"
           if (!(Test-Path $installedExe)) { throw 'Installed executable is missing' }
+          $desktopShortcut = Join-Path ([Environment]::GetFolderPath('Desktop')) 'PaintPlus.lnk'
+          $startShortcut = Join-Path ([Environment]::GetFolderPath('StartMenu')) 'Programs\PaintPlus\PaintPlus.lnk'
+          $shell = New-Object -ComObject WScript.Shell
+          foreach ($shortcut in @($desktopShortcut, $startShortcut)) {
+            if (!(Test-Path $shortcut)) { throw "Missing shortcut: $shortcut" }
+            if ($shell.CreateShortcut($shortcut).TargetPath -ne $installedExe) { throw "Incorrect shortcut: $shortcut" }
+          }
+          $association = (Get-Item 'Registry::HKEY_CURRENT_USER\Software\Classes\PaintPlus.Project\shell\open\command').GetValue('')
+          if ($association -ne "`"$installedExe`" `"%1`"") { throw 'Incorrect project association command' }
+          @{ setupExitCode = $setupProcess.ExitCode; payloadPresent = $true; desktopShortcut = $true; startMenuShortcut = $true; projectAssociationCommand = $true } | ConvertTo-Json | Out-File docs/windows-install-test-results.json
           "PAINTPLUS_TEST_EXECUTABLE=$installedExe" | Out-File -FilePath $env:GITHUB_ENV -Append
       - name: Packaged Windows startup, drawing, clipboard and AI
         shell: pwsh
@@ -91,6 +104,9 @@ jobs:
             Start-Sleep -Seconds 2
             if (Test-Path "$appDirectory\PaintPlus.exe") { throw 'Application remains after uninstall' }
             if (!(Test-Path "$appDirectory\Preserve-test.paintplus")) { throw 'Uninstall removed user project' }
+            if (Test-Path "$appDirectory\resources\elevate.exe") { throw 'Uninstall retained shipped helper' }
+            if (Test-Path 'Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Uninstall\PaintPlus') { throw 'Uninstall retained registry entry' }
+            @{ applicationRemoved = $true; userProjectPreserved = $true; shippedHelperRemoved = $true; uninstallEntryRemoved = $true } | ConvertTo-Json | Out-File docs/windows-uninstall-test-results.json
             'Installer execution, installed payload, uninstall and user-file retention passed.' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           }
       - uses: actions/upload-artifact@v4
@@ -101,6 +117,9 @@ jobs:
             docs/ui-test-results.json
             docs/packaged-windows-test-results.json
             docs/portable-windows-test-results.json
+            docs/windows-install-test-results.json
+            docs/windows-uninstall-test-results.json
+            docs/windows-release-candidate.json
             docs/screenshots/packaged-windows.png
             test-results/
             windows-*-tests.log
