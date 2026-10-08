@@ -34,7 +34,7 @@ try {
   await page.evaluate(()=>desktop.chooseFolder("output"));
   const smoke=await page.evaluate(()=>paintplus.desktopSmoke());
   assert(smoke.clipboardOK);assert(smoke.collisionOK);assert(smoke.aiInferenceOK);assert(smoke.aiModel);
-  await page.evaluate(()=>paintplus.demo());
+  await page.evaluate(()=>{paintplus.doc.dirty=false;return paintplus.demo();});
   await mkdir("docs/screenshots",{recursive:true});
   await page.screenshot({path:`docs/screenshots/packaged-${windows?"windows":"linux"}.png`});
   const log=await readFile(path.join(profile,"startup.log"),"utf8");

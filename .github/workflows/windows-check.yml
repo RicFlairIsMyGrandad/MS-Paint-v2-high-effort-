@@ -16,6 +16,9 @@ on:
       - '.github/workflows/windows-check.yml'
 permissions:
   contents: read
+concurrency:
+  group: paintplus-windows-check
+  cancel-in-progress: true
 jobs:
   windows:
     runs-on: windows-latest
@@ -27,11 +30,23 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
-      - run: npm test
+      - name: Core and resource tests
+        shell: pwsh
+        run: |
+          npm test 2>&1 | Tee-Object -FilePath windows-core-tests.log
+          $testExit = $LASTEXITCODE
+          if ($testExit -ne 0) { Get-Content windows-core-tests.log | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append }
+          exit $testExit
       - run: npx playwright install chromium
       - run: npm run test:ui
       - run: npm run package:win
-      - run: node tools/packaged-qa.mjs
+      - name: Packaged Windows startup, drawing, clipboard and AI
+        shell: pwsh
+        run: |
+          node tools/packaged-qa.mjs 2>&1 | Tee-Object -FilePath windows-packaged-tests.log
+          $testExit = $LASTEXITCODE
+          Get-Content windows-packaged-tests.log | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          exit $testExit
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -41,4 +56,5 @@ jobs:
             docs/packaged-windows-test-results.json
             docs/screenshots/packaged-windows.png
             test-results/
+            windows-*-tests.log
           retention-days: 14
