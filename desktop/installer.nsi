@@ -38,7 +38,11 @@ FunctionEnd
 Section "PaintPlus" SEC_MAIN
   SetShellVarContext current
   SetOutPath "$INSTDIR"
-  File /r "${PROJECT_DIR}/release/win-unpacked/*"
+  !ifdef NSIS_WIN32_MAKENSIS
+    File /r "${PROJECT_DIR}\release\win-unpacked\*"
+  !else
+    File /r "${PROJECT_DIR}/release/win-unpacked/*"
+  !endif
   WriteUninstaller "$INSTDIR\Uninstall PaintPlus.exe"
   CreateDirectory "$SMPROGRAMS\PaintPlus"
   CreateShortcut "$SMPROGRAMS\PaintPlus\PaintPlus.lnk" "$INSTDIR\PaintPlus.exe" "" "$INSTDIR\resources\icon.ico"
