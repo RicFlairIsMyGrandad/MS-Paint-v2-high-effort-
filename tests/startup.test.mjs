@@ -12,7 +12,7 @@ test("resource resolver supports Windows drive letters, ASAR, spaces and Unicode
 });
 test("ASAR asset responses set explicit JavaScript, WASM and HTML MIME types with CSP", async () => {
   const requests=[];
-  const handler=assetHandler("/tmp/app.asar/dist",()=>{},async file=>{requests.push(file);return Buffer.from("asset");});
+  const handler=assetHandler(path.resolve("test-app.asar/dist"),()=>{},async file=>{requests.push(file);return Buffer.from("asset");});
   for(const [name,type] of [["index.html","text/html; charset=utf-8"],["assets/editor.js","text/javascript; charset=utf-8"],["ort/runtime.mjs","text/javascript; charset=utf-8"],["ort/runtime.wasm","application/wasm"]]){
     const response=await handler({url:"paintplus://app/"+name});
     assert.equal(response.status,200); assert.equal(response.headers.get("Content-Type"),type);
@@ -23,7 +23,7 @@ test("ASAR asset responses set explicit JavaScript, WASM and HTML MIME types wit
 });
 test("missing packaged files return a diagnostic 404 rather than rejecting the protocol request", async () => {
   const messages=[];
-  const handler=assetHandler("/tmp/app.asar/dist",(...args)=>messages.push(args),async()=>{const e=new Error("missing script");e.code="ENOENT";throw e;});
+  const handler=assetHandler(path.resolve("test-app.asar/dist"),(...args)=>messages.push(args),async()=>{const e=new Error("missing script");e.code="ENOENT";throw e;});
   const response=await handler({url:"paintplus://app/assets/missing.js"});
   assert.equal(response.status,404);assert.equal(messages[0][0],"resource-error");
   assert.equal((await handler({url:"paintplus://other/index.html"})).status,403);
