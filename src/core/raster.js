@@ -16,6 +16,30 @@ export function cloneCanvas(c) {
 export function hexRGB(hex) {
   return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 }
+export function replaceColorSegment(ctx, a, b, from, to, width = 1) {
+  const size = Math.max(1, Math.round(width)), radius = Math.floor(size / 2);
+  const x0 = Math.max(0, Math.floor(Math.min(a.x, b.x)) - radius),
+    y0 = Math.max(0, Math.floor(Math.min(a.y, b.y)) - radius),
+    x1 = Math.min(ctx.canvas.width, Math.floor(Math.max(a.x, b.x)) - radius + size),
+    y1 = Math.min(ctx.canvas.height, Math.floor(Math.max(a.y, b.y)) - radius + size);
+  if (x1 <= x0 || y1 <= y0) return;
+  const image = ctx.getImageData(x0, y0, x1 - x0, y1 - y0), rgb = hexRGB(from), replacement = hexRGB(to);
+  let x = Math.floor(a.x), y = Math.floor(a.y);
+  const bx = Math.floor(b.x), by = Math.floor(b.y), dx = Math.abs(bx - x), dy = -Math.abs(by - y), sx = x < bx ? 1 : -1, sy = y < by ? 1 : -1;
+  let err = dx + dy;
+  for (;;) {
+    for (let py = Math.max(y0, y - radius); py < Math.min(y1, y - radius + size); py++)
+      for (let px = Math.max(x0, x - radius); px < Math.min(x1, x - radius + size); px++) {
+        const i = ((py - y0) * image.width + px - x0) * 4;
+        if (image.data[i + 3] > 0 && rgb.every((v, k) => image.data[i + k] === v)) image.data.set(replacement, i);
+      }
+    if (x === bx && y === by) break;
+    const e = 2 * err;
+    if (e >= dy) { err += dy; x += sx; }
+    if (e <= dx) { err += dx; y += sy; }
+  }
+  ctx.putImageData(image, x0, y0);
+}
 export function colorAt(c, x, y) {
   const d = c
     .getContext("2d")

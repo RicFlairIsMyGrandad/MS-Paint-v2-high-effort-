@@ -5,6 +5,7 @@ import {
   canvas,
   setCanvasFactory,
   paintSegment,
+  replaceColorSegment,
   floodFill,
   colorKey,
   bmpBytes,
@@ -330,4 +331,32 @@ test("history bounds memory and count while keeping operation labels", () => {
   assert.equal(h.undoStack.length, 2);
   assert.ok(h.bytes <= 10);
   assert.equal(h.undoStack[1].label, "Stroke 9");
+});
+test("right-click color eraser preserves alpha, skips invisible pixels, and covers the whole segment", () => {
+  const c=canvas(40,10),ctx=c.getContext("2d");
+  ctx.fillStyle="rgba(0,0,0,0.5)";ctx.fillRect(5,2,20,4);
+  const alpha=pixel(c,10,3)[3];
+  replaceColorSegment(ctx,{x:1,y:3},{x:30,y:3},"#000000","#ff0000",2);
+  assert.deepEqual(pixel(c,1,3),[0,0,0,0]);
+  assert.deepEqual(pixel(c,10,3),[255,0,0,alpha]);
+  assert.deepEqual(pixel(c,23,3),[255,0,0,alpha]);
+  assert.deepEqual(pixel(c,10,5),[0,0,0,alpha]);
+});
+test("history caps undo and redo together and refuses an oversized single command", () => {
+  const h=new History(()=>{},10);
+  h.push({label:"Large image",bytes:11,undo(){},redo(){}});
+  assert.equal(h.bytes,0);assert.equal(h.undoStack.length,0);assert.equal(h.droppedOperation,"Large image");
+  for(let i=0;i<3;i++)h.push({label:"Small",bytes:3,undo(){},redo(){}});
+  h.undo();h.undo();assert.equal(h.bytes,9);
+  h.push({label:"New",bytes:5,undo(){},redo(){}});
+  assert.equal(h.redoStack.length,0);assert.equal(h.bytes,8);
+});
+test("whole-canvas history counts distinct retained canvases and large transforms fail before mutation", () => {
+  const d=new PaintDocument(20,20);d.history.maxBytes=20*20*4+1;
+  d.resizeCanvas(21,21);assert.equal(d.history.bytes,20*20*4);
+  d.history.undo();assert(d.history.bytes<=d.history.maxBytes);
+  d.maxWorkingBytes=1;
+  const before=d.activeLayer.canvas, count=d.layers.length;
+  assert.throws(()=>d.resizeCanvas(50,50),/memory/);assert.equal(d.activeLayer.canvas,before);assert.equal(d.width,20);
+  assert.throws(()=>d.addLayer(),/memory/);assert.equal(d.layers.length,count);
 });

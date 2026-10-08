@@ -275,3 +275,77 @@ test("drawing commits an opaque deselected asset onto its existing layer", async
   await page.keyboard.press("Control+z");
   expect(await page.evaluate(() => paintplus.doc.objects.length)).toBe(1);
 });
+
+test("pasted transparency key survives resize after Color 2 changes", async ({page}) => {
+  await open(page);
+  await page.evaluate(async () => {
+    const c=document.createElement("canvas");c.width=20;c.height=20;
+    c.getContext("2d").fillStyle="white";c.getContext("2d").fillRect(0,0,20,20);
+    paintplus.clipboard=c;paintplus.prefs.transparentSelection=true;paintplus.color2="#ffffff";
+    await paintplus.paste();paintplus.color2="#1847f1";
+  });
+  await page.locator("[data-action=resize]").click();
+  await expect(page.locator("#resize-key")).toBeChecked();
+  await page.locator("#resize-width").fill("30");
+  await page.getByRole("button",{name:"Apply",exact:true}).click();
+  expect(await page.evaluate(()=>paintplus.doc.selectedObjects[0].transparentColor)).toBe("#ffffff");
+  await page.keyboard.press("Control+z");
+  expect(await page.evaluate(()=>paintplus.doc.selectedObjects[0].width)).toBe(20);
+});
+test("mixed selection keeps each transparency key unless the checkbox is explicitly changed", async ({page}) => {
+  await open(page);
+  await page.evaluate(()=>{
+    const c=document.createElement("canvas");c.width=20;c.height=20;
+    const a=paintplus.doc.insert(c,"Keyed",false,{transparentColor:"#ffffff"});
+    const b=paintplus.doc.insert(c,"Alpha",false,{x:30,transparentColor:null});
+    paintplus.doc.selected=[a.id,b.id];paintplus.tool="move";paintplus.changedUI();
+  });
+  await page.locator("[data-action=resize]").click();
+  expect(await page.locator("#resize-key").evaluate(input=>input.indeterminate)).toBe(true);
+  await page.locator("#resize-width").fill("80");
+  await page.getByRole("button",{name:"Apply",exact:true}).click();
+  expect(await page.evaluate(()=>paintplus.doc.selectedObjects.map(o=>o.transparentColor))).toEqual(["#ffffff",null]);
+  await page.locator("[data-action=resize]").click();
+  await page.locator("#resize-key").check();
+  await page.getByRole("button",{name:"Cancel",exact:true}).click();
+  expect(await page.evaluate(()=>paintplus.doc.selectedObjects.map(o=>o.transparentColor))).toEqual(["#ffffff",null]);
+  await page.locator("[data-action=resize]").click();
+  await page.locator("#resize-key").check();
+  await page.getByRole("button",{name:"Apply",exact:true}).click();
+  expect(await page.evaluate(()=>paintplus.doc.selectedObjects.map(o=>o.transparentColor))).toEqual(["#ffffff","#ffffff"]);
+});
+test("native layer drag and drop immediately refreshes the sidebar and supports undo", async ({page}) => {
+  await open(page);
+  await page.evaluate(()=>{paintplus.doc.addLayer("Middle");paintplus.doc.addLayer("Top");});
+  await expect(page.locator(".layer-row")).toHaveCount(3);
+  const before=await page.locator(".layer-row").evaluateAll(rows=>rows.map(row=>row.dataset.id));
+  await page.locator(".layer-row").first().dragTo(page.locator(".layer-row").last());
+  const expected=await page.evaluate(()=>paintplus.doc.layers.map(l=>l.id).reverse());
+  expect(expected).not.toEqual(before);
+  await expect.poll(()=>page.locator(".layer-row").evaluateAll(rows=>rows.map(row=>row.dataset.id))).toEqual(expected);
+  await page.keyboard.press("Control+z");
+  await expect.poll(()=>page.locator(".layer-row").evaluateAll(rows=>rows.map(row=>row.dataset.id))).toEqual(before);
+});
+test("right-click eraser on a transparent layer preserves partial alpha and leaves empty pixels empty", async ({page}) => {
+  await open(page);
+  const alpha=await page.evaluate(async()=>{
+    const l=paintplus.doc.addLayer("Transparent"),ctx=l.canvas.getContext("2d");
+    ctx.fillStyle="rgba(0,0,0,.5)";ctx.fillRect(40,40,40,20);
+    paintplus.color1="#000000";paintplus.color2="#ff0000";paintplus.width=4;await paintplus.setTool("eraser");
+    return ctx.getImageData(50,50,1,1).data[3];
+  });
+  const r=await page.locator("#overlay").boundingBox();
+  await page.mouse.move(r.x+20,r.y+50);await page.mouse.down({button:"right"});
+  await page.mouse.move(r.x+100,r.y+50,{steps:4});await page.mouse.up({button:"right"});
+  const values=await page.evaluate(()=>{const c=paintplus.doc.activeLayer.canvas.getContext("2d");return [20,50,70].map(x=>[...c.getImageData(x,50,1,1).data]);});
+  expect(values).toEqual([[0,0,0,0],[255,0,0,alpha],[255,0,0,alpha]]);
+  await page.keyboard.press("Control+z");
+  expect(await page.evaluate(()=>[...paintplus.doc.activeLayer.canvas.getContext("2d").getImageData(50,50,1,1).data])).toEqual([0,0,0,alpha]);
+});
+test("a missing application script shows a usable startup error instead of a white screen", async ({page}) => {
+  await page.route("**/src/app.js",route=>route.abort());
+  await page.goto("/");
+  await expect(page.getByRole("heading",{name:"PaintPlus could not start"})).toBeVisible();
+  await expect(page.getByRole("button",{name:"Restart editor"})).toBeVisible();
+  expect(await page.evaluate(()=>!!window.paintplus)).toBe(false);
+});

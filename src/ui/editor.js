@@ -4,7 +4,7 @@ import {
   localPoint,
   hitObject,
 } from "../core/document.js";
-import { paintSegment, floodFill, colorAt, canvas } from "../core/raster.js";
+import { paintSegment, replaceColorSegment, floodFill, colorAt, canvas } from "../core/raster.js";
 import { drawShape } from "../core/shapes.js";
 const cursorSVG = (path, x = 1, y = 22) =>
   `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='26' height='26'><path d='${path}' fill='white' stroke='#162e48' stroke-width='1.6'/></svg>`)}") ${x} ${y}, crosshair`;
@@ -471,26 +471,7 @@ export class Editor {
     );
     const ctx = layer.canvas.getContext("2d");
     if (app.tool === "eraser" && drag.right) {
-      const x = Math.max(0, Math.floor(b.x - r)),
-        y = Math.max(0, Math.floor(b.y - r)),
-        w = Math.min(layer.canvas.width - x, Math.ceil(r * 2)),
-        h = Math.min(layer.canvas.height - y, Math.ceil(r * 2));
-      if (w > 0 && h > 0) {
-        const data = ctx.getImageData(x, y, w, h),
-          rgb = app.color1
-            .slice(1)
-            .match(/../g)
-            .map((v) => parseInt(v, 16)),
-          secondary = app.color2
-            .slice(1)
-            .match(/../g)
-            .map((v) => parseInt(v, 16));
-        for (let i = 0; i < data.data.length; i += 4)
-          if (rgb.every((v, k) => data.data[i + k] === v)) {
-            data.data.set([...secondary, 255], i);
-          }
-        ctx.putImageData(data, x, y);
-      }
+      replaceColorSegment(ctx, a, b, app.color1, app.color2, app.width);
     } else if (app.tool === "eraser" && this.doc.layers.indexOf(layer) === 0)
       paintSegment(ctx, a, b, {
         type: "brush",

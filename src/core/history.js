@@ -1,29 +1,42 @@
 export class History {
-  constructor(onChange = () => {}, maxBytes = 128 * 1024 * 1024) {
+  constructor(onChange = () => {}, maxBytes = 128 * 1024 * 1024, liveResources = () => []) {
     this.undoStack = [];
     this.redoStack = [];
-    this.bytes = 0;
     this.maxBytes = maxBytes;
     this.onChange = onChange;
+    this.liveResources = liveResources;
+    this.droppedOperation = null;
+  }
+  get bytes() {
+    const live = new Set(this.liveResources()), retained = new Set();
+    let bytes = 0;
+    for (const command of [...this.undoStack, ...this.redoStack]) {
+      bytes += command.bytes || 0;
+      for (const resource of command.resources || []) if (!live.has(resource)) retained.add(resource);
+    }
+    for (const resource of retained) bytes += resource.width * resource.height * 4;
+    return bytes;
+  }
+  trim() {
+    while (this.undoStack.length + this.redoStack.length > 80 || this.bytes > this.maxBytes) {
+      if (this.undoStack.length) this.undoStack.shift();
+      else if (this.redoStack.length) this.redoStack.shift();
+      else break;
+    }
   }
   push(command) {
     this.redoStack = [];
     this.undoStack.push(command);
-    this.bytes += command.bytes || 0;
-    while (
-      this.undoStack.length > 80 ||
-      (this.bytes > this.maxBytes && this.undoStack.length > 1)
-    ) {
-      this.bytes -= this.undoStack.shift().bytes || 0;
-    }
+    this.trim();
+    this.droppedOperation = this.undoStack.includes(command) ? null : command.label;
     this.onChange();
   }
   undo() {
     const c = this.undoStack.pop();
     if (!c) return false;
     c.undo();
-    this.bytes -= c.bytes || 0;
     this.redoStack.push(c);
+    this.trim();
     this.onChange();
     return true;
   }
@@ -32,14 +45,14 @@ export class History {
     if (!c) return false;
     c.redo();
     this.undoStack.push(c);
-    this.bytes += c.bytes || 0;
+    this.trim();
     this.onChange();
     return true;
   }
   clear() {
     this.undoStack = [];
     this.redoStack = [];
-    this.bytes = 0;
+    this.droppedOperation = null;
     this.onChange();
   }
 }

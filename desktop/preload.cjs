@@ -1,5 +1,8 @@
 const { contextBridge, ipcRenderer, webUtils } = require("electron");
 contextBridge.exposeInMainWorld("desktop", {
+  rendererReady: () => ipcRenderer.send("startup:ready"),
+  reportError: (detail) => ipcRenderer.send("startup:error", detail),
+  startupLogPath: () => ipcRenderer.invoke("startup:log-path"),
   getSettings: () => ipcRenderer.invoke("settings:get"),
   saveSettings: (patch) => ipcRenderer.invoke("settings:set", patch),
   windowAction: (action) => ipcRenderer.invoke("window:action", action),

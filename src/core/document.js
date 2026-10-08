@@ -69,6 +69,8 @@ function colorKeyCached(o) {
 }
 export class PaintDocument {
   constructor(width = 1200, height = 800, onChange = () => {}) {
+    if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1 || width > 16384 || height > 16384 || width * height > 64000000 || width * height * 12 > 512 * 1024 * 1024)
+      throw new Error("Canvas dimensions exceed the supported image memory budget.");
     this.width = width;
     this.height = height;
     this.layers = [createLayer(width, height, "Background", "#ffffff")];
@@ -76,10 +78,22 @@ export class PaintDocument {
     this.selected = [];
     this.onChange = onChange;
     this.dirty = false;
+    this.maxWorkingBytes = 512 * 1024 * 1024;
     this.history = new History(() => {
       this.dirty = true;
       this.onChange();
-    });
+    }, 128 * 1024 * 1024, () => this.resources());
+  }
+  resources(state = this) {
+    return [...new Set(state.layers.flatMap(l => [l.canvas, ...l.objects.map(o => o.source)]))];
+  }
+  assertAllocation(extraBytes) {
+    const live = this.resources().reduce((sum, c) => sum + c.width * c.height * 4, 0);
+    // Include the renderer's composite/display buffers as well as undo and the
+    // requested operation. Reject before allocating, preserving the document.
+    const estimate = live + this.history.bytes + this.width * this.height * 8 + extraBytes;
+    if (!Number.isFinite(estimate) || estimate > this.maxWorkingBytes)
+      throw new Error("This operation needs too much image memory. Use smaller dimensions, fewer layers, or clear undo history first.");
   }
   get activeLayer() {
     return (
@@ -125,7 +139,7 @@ export class PaintDocument {
     const after = this.metadata();
     this.history.push({
       label,
-      bytes,
+      resources: [...new Set([...this.resources(before), ...this.resources(after)])],
       undo: () => this.restore(before),
       redo: () => this.restore(after),
     });
@@ -144,6 +158,7 @@ export class PaintDocument {
     );
   }
   addLayer(name = "Layer " + (this.layers.length + 1)) {
+    this.assertAllocation(this.width * this.height * 4);
     let layer;
     this.action("New layer", () => {
       layer = createLayer(this.width, this.height, name);
@@ -153,6 +168,7 @@ export class PaintDocument {
     return layer;
   }
   insert(source, name = "Image", ownLayer = true, properties = {}) {
+    this.assertAllocation((ownLayer ? this.width * this.height * 4 : 0) + (this.resources().includes(source) ? 0 : source.width * source.height * 4));
     if(!ownLayer&&!this.activeLayer.visible)throw new Error('Show the active layer before inserting an object.');
     if (this.activeLayer.locked && !ownLayer)
       throw new Error("This layer is locked.");
@@ -223,6 +239,7 @@ export class PaintDocument {
     h = Math.max(1, Math.min(16384, Math.round(h)));
     if (w * h > 64000000)
       throw new Error("Canvas is limited to 64 million pixels.");
+    this.assertAllocation(w * h * (this.layers.length + 2) * 4);
     this.action(
       "Resize canvas",
       () => {
@@ -248,6 +265,7 @@ export class PaintDocument {
       w = Math.min(this.width - x, Math.round(rect.width)),
       h = Math.min(this.height - y, Math.round(rect.height));
     if (w < 1 || h < 1) return;
+    this.assertAllocation(w * h * (this.layers.length + 2) * 4);
     this.action(
       "Crop",
       () => {
@@ -280,6 +298,7 @@ export class PaintDocument {
     if (w < 1 || h < 1) return null;
     const l = this.activeLayer;
     if (l.locked) throw new Error("This layer is locked.");
+    this.assertAllocation(w * h * 16);
     const src = canvas(w, h),
       ctx = src.getContext("2d");
     if (path) {
@@ -309,8 +328,6 @@ export class PaintDocument {
       }
       c.restore();
     };
-    const edit = new RasterEdit(l, this.history, () => this.changed());
-    edit.capture(x, y, w, h);
     erase();
     obj = {
       id: id(),
@@ -389,6 +406,8 @@ export class PaintDocument {
   async rasterize(resample) {
     const targets = this.selectedObjects;
     if (!targets.length) return;
+    const temporary = targets.reduce((sum, o) => sum + o.width * o.height * 8 + o.source.width * o.source.height * 4 + Math.round(o.width) * o.source.height * 16, 0);
+    this.assertAllocation(temporary + this.width * this.height * this.layers.length * 4);
     for (const l of this.layers)
       if (l.locked && l.objects.some((o) => this.selected.includes(o.id)))
         throw new Error("Unlock selected layers first.");
@@ -434,6 +453,7 @@ export class PaintDocument {
       throw new Error("Unlock both layers before merging.");
     if (!top.visible || !bottom.visible)
       throw new Error("Show both layers before merging.");
+    this.assertAllocation(this.width * this.height * 4);
     this.action(
       "Merge down",
       () => {

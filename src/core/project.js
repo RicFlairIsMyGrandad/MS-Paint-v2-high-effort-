@@ -74,6 +74,14 @@ export async function deserialize(text, onChange = () => {}) {
     )
   )
     throw new Error("Project images must be embedded PNGs.");
+  let imageBytes = p.width * p.height * 8;
+  for (const source of p.sources) {
+    const header = Uint8Array.from(atob(source.slice(22, 22 + 44)), c => c.charCodeAt(0));
+    if (header.length < 24 || ![137,80,78,71,13,10,26,10].every((v,i) => header[i] === v)) throw new Error("Invalid embedded PNG.");
+    const view = new DataView(header.buffer), width = view.getUint32(16), height = view.getUint32(20);
+    imageBytes += width * height * 4;
+    if (!width || !height || imageBytes > 512 * 1024 * 1024) throw new Error("Project exceeds the image memory budget. Use fewer layers or smaller source images.");
+  }
   const sources = await Promise.all(p.sources.map(imageCanvas));
   const validId = (value) =>
       typeof value === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(value),

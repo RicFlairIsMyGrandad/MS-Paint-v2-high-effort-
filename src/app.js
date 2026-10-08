@@ -71,10 +71,15 @@ export class PaintPlus {
         ? await window.desktop.getSettings()
         : JSON.parse(localStorage.getItem("paintplus-settings") || "{}");
     } catch {}
+    if (!settings || typeof settings !== "object" || Array.isArray(settings)) settings = {};
     this.settings = settings;
-    this.prefs = { ...defaultPrefs, ...settings.preferences };
+    this.prefs = { ...defaultPrefs };
+    for (const [key, value] of Object.entries(settings.preferences || {})) {
+      if (typeof value === typeof defaultPrefs[key] && !Array.isArray(value) && (typeof value !== "number" || Number.isFinite(value))) this.prefs[key] = value;
+    }
+    this.prefs.shortcuts = settings.preferences?.shortcuts;
     this.prefs.shortcuts =
-      this.prefs.shortcuts?.length === 10
+      Array.isArray(this.prefs.shortcuts) && this.prefs.shortcuts.length === 10 && this.prefs.shortcuts.every(tool => tools.includes(tool))
         ? this.prefs.shortcuts
         : [...defaultPrefs.shortcuts];
     this.zoom = Math.min(8, Math.max(0.1, this.prefs.zoom || 1));
@@ -138,6 +143,10 @@ export class PaintPlus {
   }
   changedUI() {
     if (!this.editor) return;
+    if (this.doc.history.droppedOperation) {
+      this.doc.history.droppedOperation = null;
+      this.toast("This operation was too large to keep in undo history.", 7000);
+    }
     this.editor.requestRender();
     this.updateTools();
     this.updateTitle();
@@ -469,9 +478,10 @@ export class PaintPlus {
       const from = e.dataTransfer.getData("application/paintplus-layer"),
         row = e.target.closest(".layer-row");
       if (!from || !row || from === row.dataset.id) return;
+      const i = this.doc.layers.findIndex((l) => l.id === from),
+        j = this.doc.layers.findIndex((l) => l.id === row.dataset.id);
+      if (i < 0 || j < 0) return;
       this.doc.action("Reorder layers", () => {
-        const i = this.doc.layers.findIndex((l) => l.id === from),
-          j = this.doc.layers.findIndex((l) => l.id === row.dataset.id);
         this.doc.layers.splice(j, 0, ...this.doc.layers.splice(i, 1));
       });
     });
@@ -933,6 +943,7 @@ export class PaintPlus {
         }
         break;
       case "duplicate-layer":
+        doc.assertAllocation(doc.width * doc.height * 4);
         doc.action(
           "Duplicate layer",
           () => {
@@ -1689,7 +1700,8 @@ export class PaintPlus {
     const b = { ...selectionBounds(selected) },
       originals = selected.map((o) => ({ ...o })),
       before = this.doc.metadata();
-    let applied = false;
+    let applied = false, transparencyEdited = false;
+    const keyColor = this.color2;
     const restore = () => {
       if (!applied) {
         for (const original of originals) {
@@ -1774,6 +1786,8 @@ export class PaintPlus {
       ratio = b.width / b.height;
     document.querySelector("#resize-quality").value =
       selected[0].resampling || "lanczos";
+    const keyControl = document.querySelector("#resize-key");
+    keyControl.indeterminate = selected.some(o => !!o.transparentColor) && !selected.every(o => !!o.transparentColor);
     const preview = () => {
       let nw = Number(w.value),
         nh = Number(h.value);
@@ -1822,9 +1836,9 @@ export class PaintPlus {
           o.angle = original.angle + newAngle;
         }
         o.resampling = document.querySelector("#resize-quality").value;
-        o.transparentColor = document.querySelector("#resize-key").checked
-          ? this.color2
-          : null;
+        o.transparentColor = transparencyEdited
+          ? (keyControl.checked ? keyColor : null)
+          : original.transparentColor;
         o.smoothPreview = document.querySelector("#resize-smooth").checked;
       }
       this.editor.requestRender();
@@ -1868,7 +1882,12 @@ export class PaintPlus {
       for (const o of this.doc.selectedObjects) o.flipV = !o.flipV;
       this.editor.requestRender();
     };
-    for (const control of ["resize-quality", "resize-smooth", "resize-key"])
+    keyControl.onchange = () => {
+      transparencyEdited = true;
+      keyControl.indeterminate = false;
+      preview();
+    };
+    for (const control of ["resize-quality", "resize-smooth"])
       document.querySelector("#" + control).onchange = preview;
   }
   canvasDialog() {
@@ -1915,6 +1934,7 @@ export class PaintPlus {
               throw new Error("Invalid image size.");
             this.closeDialog();
             await this.runBusy("Resizing image…", async () => {
+              this.doc.assertAllocation(w * h * (this.doc.layers.length + 2) * 4 + sw * sh * 4 + w * sh * (quality === "nearest" ? 0 : 16) + w * h * 4);
               const layers = [];
               for (const l of this.doc.layers)
                 layers.push({
@@ -1975,6 +1995,7 @@ export class PaintPlus {
         swap = Math.abs(degrees) % 180 === 90,
         w = swap ? oldH : oldW,
         h = swap ? oldW : oldH;
+      this.doc.assertAllocation(w * h * (this.doc.layers.length + 2) * 4);
       this.doc.action(
         "Rotate image",
         () => {
@@ -2024,6 +2045,7 @@ export class PaintPlus {
         }
       });
     } else {
+      this.doc.assertAllocation(this.doc.width * this.doc.height * this.doc.layers.length * 4);
       this.doc.action(
         "Flip image",
         () => {
@@ -2166,6 +2188,7 @@ export class PaintPlus {
       return;
     }
     try {
+      this.doc.assertAllocation(object.source.width * object.source.height * 32 + 96 * 1024 * 1024);
       const source = await this.runBusy(
         "Preparing offline background removal…",
         () =>
@@ -2439,3 +2462,4 @@ export class PaintPlus {
 }
 const app = await new PaintPlus().init();
 window.paintplus = app;
+window.dispatchEvent(new Event("paintplus:ready"));

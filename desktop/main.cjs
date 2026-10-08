@@ -6,12 +6,15 @@ const {
   clipboard,
   nativeImage,
   protocol,
-  net,
 } = require("electron");
 const fs = require("node:fs/promises");
+const syncFS = require("node:fs");
 const path = require("node:path");
 const { randomUUID } = require("node:crypto");
-const { pathToFileURL } = require("node:url");
+const { assetHandler } = require("./resources.cjs");
+// The editor and AI are CPU-compatible. Prefer the stable software renderer on
+// Windows laptops where GPU/driver failures can leave an otherwise loaded window white.
+if (process.platform === "win32" && !process.argv.includes("--enable-hardware-acceleration")) app.disableHardwareAcceleration();
 protocol.registerSchemesAsPrivileged([
   {
     scheme: "paintplus",
@@ -31,6 +34,25 @@ let win,
 const profileArg = process.argv.find((a) => a.startsWith("--user-data-dir="));
 if (profileArg)
   app.setPath("userData", profileArg.slice("--user-data-dir=".length));
+const logPath = () => path.join(app.getPath("userData"), "startup.log");
+function log(event, detail = {}) {
+  try {
+    syncFS.mkdirSync(app.getPath("userData"), { recursive: true });
+    const file = logPath();
+    if (syncFS.existsSync(file) && syncFS.statSync(file).size > 1024 * 1024) syncFS.renameSync(file, file + ".previous");
+    syncFS.appendFileSync(file, JSON.stringify({ time: new Date().toISOString(), event, ...detail }) + "\n");
+  } catch {}
+}
+log("process-start", { version: app.getVersion(), platform: process.platform, electron: process.versions.electron });
+const testResultsArg = process.argv.find(a => a.startsWith("--test-results="));
+const testResultsPath = testResultsArg ? testResultsArg.slice("--test-results=".length) : "/tmp/paintplus-desktop-results.json";
+let rendererReady = false, startupWatchdog;
+function startupFailure(error) {
+  log("startup-failed", { message: error.message, stack: error.stack });
+  dialog.showErrorBox("PaintPlus could not start", error.message + "\n\nStartup log: " + logPath());
+  app.exit(1);
+}
+process.on("uncaughtException", startupFailure);
 const allowedWrites = new Set();
 const extensions = new Set([".png", ".jpg", ".jpeg", ".bmp", ".webp", ".gif"]);
 const configPath = () => path.join(app.getPath("userData"), "settings.json");
@@ -65,6 +87,15 @@ async function readImage(file) {
   };
 }
 function setupIPC() {
+  ipcMain.on("startup:ready", () => {
+    rendererReady = true;
+    clearTimeout(startupWatchdog);
+    log("renderer-ready");
+  });
+  ipcMain.on("startup:error", (_, detail) => {
+    log("renderer-error", { message: String(detail?.message || detail).slice(0, 8192), stack: String(detail?.stack || "").slice(0, 16384) });
+  });
+  ipcMain.handle("startup:log-path", () => logPath());
   ipcMain.on("document:close-after-save", (_, saved) => {
     if (saved) {
       closing = true;
@@ -269,18 +300,8 @@ app.whenReady().then(async () => {
     await fs.mkdir(settings.outputFolder, { recursive: true });
   }
   const dist = path.resolve(__dirname, "../dist");
-  protocol.handle("paintplus", async (request) => {
-    let route = decodeURIComponent(new URL(request.url).pathname);
-    const file = path.resolve(dist, "." + route);
-    if (file !== dist && !file.startsWith(dist + path.sep))
-      return new Response("Forbidden", { status: 403 });
-    const response = await net.fetch(pathToFileURL(file).toString());
-    response.headers.set(
-      "Content-Security-Policy",
-      "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; worker-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'self'",
-    );
-    return response;
-  });
+  log("resources", { dist, packaged: app.isPackaged });
+  protocol.handle("paintplus", assetHandler(dist, log));
   setupIPC();
   win = new BrowserWindow({
     width: 1680,
@@ -302,6 +323,12 @@ app.whenReady().then(async () => {
     },
   });
   win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  win.webContents.on("preload-error", (_, preload, error) => log("preload-error", { message: error.message }));
+  win.webContents.on("did-fail-load", (_, code, description, url, mainFrame) => {
+    log("load-failed", { code, description, url, mainFrame });
+    if (mainFrame && code !== -3) startupFailure(new Error(description));
+  });
+  win.webContents.on("render-process-gone", (_, detail) => startupFailure(new Error("The editor process stopped: " + detail.reason)));
   win.webContents.on("will-navigate", (event, url) => {
     if (
       !url.startsWith("paintplus://app/") &&
@@ -336,6 +363,7 @@ app.whenReady().then(async () => {
   await win.loadURL(
     dev ? "http://localhost:5173/" : "paintplus://app/index.html",
   );
+  if (!rendererReady) startupWatchdog = setTimeout(() => log("startup-timeout", { message: "Renderer did not become ready within 25 seconds." }), 25000);
   if (process.argv.includes("--desktop-test")) {
     setTimeout(async () => {
       try {
@@ -343,14 +371,14 @@ app.whenReady().then(async () => {
           "window.paintplus.desktopSmoke()",
         );
         await fs.writeFile(
-          "/tmp/paintplus-desktop-results.json",
+          testResultsPath,
           JSON.stringify(results, null, 2),
         );
         closing = true;
         app.quit();
       } catch (e) {
         await fs.writeFile(
-          "/tmp/paintplus-desktop-results.json",
+          testResultsPath,
           JSON.stringify({ error: e.message }),
         );
         app.exit(1);
@@ -368,5 +396,5 @@ app.whenReady().then(async () => {
       dialog.showErrorBox("Cannot open project", e.message);
     }
   }
-});
+}).catch(startupFailure);
 app.on("window-all-closed", () => app.quit());

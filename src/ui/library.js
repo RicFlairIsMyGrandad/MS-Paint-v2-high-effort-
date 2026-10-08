@@ -45,10 +45,10 @@ export class Library {
   constructor(app, settings) {
     this.app = app;
     this.assets = Array.isArray(settings.library)
-      ? settings.library
+      ? settings.library.filter(a => a && typeof a.id === "string" && typeof a.name === "string")
       : builtinAssets.map((a) => ({ ...a }));
     this.categories = Array.isArray(settings.categories)
-      ? settings.categories
+      ? settings.categories.filter(c => c && typeof c.id === "string" && typeof c.name === "string")
       : defaultCategories.map((c) => ({ ...c }));
     this.current = app.prefs.category || "all";
     this.selected = [];
