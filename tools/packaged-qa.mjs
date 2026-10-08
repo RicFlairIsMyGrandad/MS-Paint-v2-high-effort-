@@ -23,9 +23,9 @@ page.on("request", request=>{if(/^https?:/.test(request.url()))external.push(req
 try {
   await page.waitForFunction(()=>window.paintplus,{},{timeout:45000});
   await page.locator(".asset-card img").evaluateAll(imgs=>Promise.all(imgs.map(img=>img.decode())));
-  const runtime = await application.evaluate(({app})=>({isPackaged:app.isPackaged,appPath:app.getAppPath(),platform:process.platform,hardwareAcceleration:app.isHardwareAccelerationEnabled()}));
+  const runtime = await application.evaluate(({app})=>({isPackaged:app.isPackaged,appPath:app.getAppPath(),platform:process.platform,gpuStatus:app.getGPUFeatureStatus()}));
   assert(runtime.isPackaged);assert(runtime.appPath.endsWith("app.asar"));
-  if(windows)assert.equal(runtime.hardwareAcceleration,false);
+  if(windows)assert.notEqual(runtime.gpuStatus.gpu_compositing,"enabled");
   await page.evaluate(async()=>{await paintplus.setTool("pencil");paintplus.width=1;});
   const box=await page.locator("#overlay").boundingBox();
   await page.mouse.move(box.x+30,box.y+30);await page.mouse.down();await page.mouse.move(box.x+80,box.y+30);await page.mouse.up();
