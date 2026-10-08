@@ -1,0 +1,20 @@
+{
+  "clipboardOK": true,
+  "aiInferenceOK": true,
+  "first": {
+    "path": "/tmp/paintplus-native-smoke/PaintPlus-smoke (5).png",
+    "name": "PaintPlus-smoke (5).png"
+  },
+  "second": {
+    "path": "/tmp/paintplus-native-smoke/PaintPlus-smoke (6).png",
+    "name": "PaintPlus-smoke (6).png"
+  },
+  "collisionOK": true,
+  "project": {
+    "path": "/tmp/paintplus-native-smoke/PaintPlus-project-smoke (3).paintplus",
+    "name": "PaintPlus-project-smoke (3).paintplus"
+  },
+  "projectBytes": 171289,
+  "protocol": "paintplus:",
+  "aiModel": true
+}

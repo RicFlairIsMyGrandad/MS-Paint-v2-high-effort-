@@ -1,0 +1,41 @@
+
+> paintplus@1.0.0 test
+> node --test tests/core.test.mjs
+
+✔ one-pixel pencil is continuous and does not blur adjacent pixels (3.391092ms)
+✔ round brush has continuous 2px stroke with appropriate width (0.685551ms)
+✔ round brush has continuous 4px stroke with appropriate width (0.47845ms)
+✔ round brush has continuous 8px stroke with appropriate width (0.448876ms)
+✔ round brush has continuous 16px stroke with appropriate width (0.553723ms)
+✔ 100 consecutive strokes remain on one raster layer (5.62324ms)
+✔ painting edits the selected layer and leaves background alone (0.581144ms)
+✔ locked layer prevents painting (0.480253ms)
+✔ eraser removes alpha on a transparent raster layer (0.329276ms)
+✔ fill is bounded by opaque walls and respects exact colors (4.438759ms)
+✔ tolerant fill terminates when replacement is within tolerance (0.672011ms)
+✔ asset insertion keeps original dimensions, (0,0), alpha and source (1.597173ms)
+✔ assets can be inserted on active layer without a new layer (0.229075ms)
+✔ repeated transforms preserve immutable source dimensions and pixels (0.799583ms)
+✔ Color 2 transparency removes exact keyed color without altering source alpha (0.338209ms)
+✔ canvas resize extends boundary without stretching content and undoes (0.675036ms)
+✔ raster undo works after layer metadata undo restores layer references (0.260672ms)
+✔ selection lifting and undo restore pixels and floating object (0.634384ms)
+✔ free-form selection preserves transparency outside polygon (0.288944ms)
+✔ object movement undo preserves source and restores transform (0.343747ms)
+✔ grouping survives undo and duplicates retain shared immutable images (0.519382ms)
+✔ rotation geometry maps local points accurately (0.215054ms)
+✔ crop shifts objects and raster, and undo restores size (0.403477ms)
+✔ merge down combines visible layers and undoes (0.370087ms)
+✔ nearest-neighbour resize keeps exact source values (0.231248ms)
+✔ Lanczos handles transparent edges without dark halos (1.303842ms)
+✔ BMP export has correct header, padded rows, white transparency matte (0.273461ms)
+✔ shape fill and outline use Color 2 and Color 1 (0.401144ms)
+✔ history bounds memory and count while keeping operation labels (0.120081ms)
+ℹ tests 29
+ℹ suites 0
+ℹ pass 29
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 378.953703
