@@ -4,7 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import assert from "node:assert/strict";
 const windows = process.platform === "win32";
-const original = path.resolve(windows ? "release/win-unpacked/PaintPlus.exe" : "release/linux-unpacked/paintplus");
+const original = path.resolve(process.env.PAINTPLUS_TEST_EXECUTABLE || (windows ? "release/win-unpacked/PaintPlus.exe" : "release/linux-unpacked/paintplus"));
 const directory = await mkdtemp(path.join(os.tmpdir(), "PaintPlus packaged Ω "));
 const installation = path.join(directory, "installed app with spaces");
 await cp(path.dirname(original), installation, { recursive: true });

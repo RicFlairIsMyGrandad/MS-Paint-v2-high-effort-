@@ -9,6 +9,7 @@ on:
       - 'public/**'
       - 'tests/**'
       - 'tools/packaged-qa.mjs'
+      - 'tools/portable-windows-qa.cjs'
       - 'tools/publish-windows-evidence.cjs'
       - 'package*.json'
       - 'vite.config.mjs'
@@ -47,6 +48,16 @@ jobs:
           if ($testExit -ne 0) { Get-Content windows-ui-tests.log | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append }
           exit $testExit
       - run: npm run package:win
+      - name: Install the actual setup silently
+        shell: pwsh
+        run: |
+          $paintVersion = (Get-Content package.json | ConvertFrom-Json).version
+          $setupFile = (Resolve-Path "release/PaintPlus-Setup-$paintVersion-x64.exe").Path
+          $setupProcess = Start-Process -FilePath $setupFile -ArgumentList '/S' -Wait -PassThru
+          if ($setupProcess.ExitCode -ne 0) { throw "Setup failed: $($setupProcess.ExitCode)" }
+          $installedExe = "$env:LOCALAPPDATA\Programs\PaintPlus\PaintPlus.exe"
+          if (!(Test-Path $installedExe)) { throw 'Installed executable is missing' }
+          "PAINTPLUS_TEST_EXECUTABLE=$installedExe" | Out-File -FilePath $env:GITHUB_ENV -Append
       - name: Packaged Windows startup, drawing, clipboard and AI
         shell: pwsh
         run: |
@@ -54,6 +65,22 @@ jobs:
           $testExit = $LASTEXITCODE
           Get-Content windows-packaged-tests.log | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           exit $testExit
+      - name: Launch the actual portable executable
+        run: node tools/portable-windows-qa.cjs
+      - name: Uninstall and preserve a user project
+        if: always()
+        shell: pwsh
+        run: |
+          $appDirectory = "$env:LOCALAPPDATA\Programs\PaintPlus"
+          $uninstaller = "$appDirectory\Uninstall PaintPlus.exe"
+          if (Test-Path $uninstaller) {
+            'preserve this user file' | Out-File "$appDirectory\Preserve-test.paintplus"
+            $uninstallProcess = Start-Process -FilePath $uninstaller -ArgumentList '/S' -Wait -PassThru
+            Start-Sleep -Seconds 2
+            if (Test-Path "$appDirectory\PaintPlus.exe") { throw 'Application remains after uninstall' }
+            if (!(Test-Path "$appDirectory\Preserve-test.paintplus")) { throw 'Uninstall removed user project' }
+            'Installer execution, installed payload, uninstall and user-file retention passed.' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -61,6 +88,7 @@ jobs:
           path: |
             docs/ui-test-results.json
             docs/packaged-windows-test-results.json
+            docs/portable-windows-test-results.json
             docs/screenshots/packaged-windows.png
             test-results/
             windows-*-tests.log

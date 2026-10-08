@@ -1,0 +1,12 @@
+const fs=require("node:fs"),path=require("node:path"),os=require("node:os"),cp=require("node:child_process"),assert=require("node:assert/strict");
+if(process.platform!=="win32")throw new Error("Run this check on Windows.");
+const version=require("../package.json").version;
+const folder=fs.mkdtempSync(path.join(os.tmpdir(),"PaintPlus portable Ω "));
+const output=path.join(folder,"result.json"),profile=path.join(folder,"profile");
+const processResult=cp.spawnSync(path.resolve(`release/PaintPlus-Portable-${version}-x64.exe`),["--desktop-test","--test-results="+output,"--user-data-dir="+profile],{timeout:120000,stdio:"inherit"});
+if(processResult.error)throw processResult.error;
+assert.equal(processResult.status,0);
+const result=JSON.parse(fs.readFileSync(output,"utf8"));
+assert(result.clipboardOK);assert(result.aiInferenceOK);assert(result.collisionOK);assert(result.aiModel);
+fs.writeFileSync("docs/portable-windows-test-results.json",JSON.stringify({version,portableLauncher:true,...result},null,2));
+console.log(JSON.stringify(result));

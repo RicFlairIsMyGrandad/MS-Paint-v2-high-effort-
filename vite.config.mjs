@@ -6,7 +6,9 @@ export default defineConfig({
   plugins: [
     {
       name: "bundle-local-ai",
-      buildStart() {
+      // Prepare public assets before Vite scans publicDir on a fresh checkout.
+      // buildStart is too late for the dev server's initial file index on Windows.
+      configResolved() {
         mkdirSync("public/ort", { recursive: true });
         const dir = "node_modules/onnxruntime-web/dist";
         if (existsSync(dir))
