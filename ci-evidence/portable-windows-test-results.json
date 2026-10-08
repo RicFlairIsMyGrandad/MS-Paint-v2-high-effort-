@@ -1,0 +1,22 @@
+{
+  "version": "1.0.1",
+  "portableLauncher": true,
+  "clipboardOK": true,
+  "aiInferenceOK": true,
+  "first": {
+    "path": "\\tmp\\paintplus-native-smoke\\PaintPlus-smoke.png",
+    "name": "PaintPlus-smoke.png"
+  },
+  "second": {
+    "path": "\\tmp\\paintplus-native-smoke\\PaintPlus-smoke (2).png",
+    "name": "PaintPlus-smoke (2).png"
+  },
+  "collisionOK": true,
+  "project": {
+    "path": "\\tmp\\paintplus-native-smoke\\PaintPlus-project-smoke.paintplus",
+    "name": "PaintPlus-project-smoke.paintplus"
+  },
+  "projectBytes": 171289,
+  "protocol": "paintplus:",
+  "aiModel": true
+}
