@@ -94,12 +94,15 @@ export class RasterEdit {
         after: ctx.getImageData(t.x, t.y, t.before.width, t.before.height),
       }));
     if (!tiles.length) return;
+    // Do not retain this RasterEdit and its original full-size layer canvas.
+    // Commands need the tiled buffers and current-layer resolver only.
+    const resolveLayer = this.resolveLayer, onChange = this.onChange;
     const apply = (key) => {
-      const layer = this.resolveLayer();
+      const layer = resolveLayer();
       if (!layer) return;
       for (const t of tiles)
         layer.canvas.getContext("2d").putImageData(t[key], t.x, t.y);
-      this.onChange();
+      onChange();
     };
     this.history.push({
       label,
