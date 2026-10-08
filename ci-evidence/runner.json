@@ -1,0 +1,9 @@
+{
+  "run": "37832792414",
+  "source": "4714084c8674d70d3f36948b49cffeca4a9bcfa6",
+  "platform": "win32",
+  "architecture": "x64",
+  "os": "Windows Server 2025 Datacenter",
+  "release": "10.0.26100",
+  "node": "v24.21.0"
+}
