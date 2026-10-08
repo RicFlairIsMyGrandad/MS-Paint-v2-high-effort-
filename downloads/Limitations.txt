@@ -1,13 +1,17 @@
-# Remaining limitations — 1.0.0
+# Remaining limitations — 1.0.1
 
 These are known differences or unverified areas, not completed acceptance claims.
 
-1. **Native Windows verification is outstanding.** The Windows x64 installer,
-   portable launcher and application payload are built and structurally inspected.
-   Desktop startup, clipboard IPC, collision-safe filesystem Quick Save and offline
-   inference were run on Linux Electron. Those checks do not prove Windows installer
-   execution, Windows clipboard alpha behavior, file associations, uninstallation,
-   high-DPI layout, touch / stylus behavior or SmartScreen reputation on a laptop.
+1. **Home-edition laptop verification is outstanding.** The exact downloadable
+   Setup and Portable EXEs passed on hosted Windows Server 2022 (10.0.20348)
+   and Windows Server 2025 (10.0.26100). Checks include installation, packaged
+   startup/drawing, clipboard alpha, native saving, offline AI, shortcut targets,
+   the project association command, portable launch and uninstall preserving a
+   user project. These checks do not prove that the user's Windows 10 Home or
+   Windows 11 Home laptop now starts successfully. The original laptop failure
+   has not been reproduced on that hardware. High-DPI/multiple-display behavior,
+   touch/stylus input, launching projects through Explorer's default-app choice,
+   long sessions and SmartScreen reputation remain unverified on a laptop.
 2. **The app and installer are unsigned.** A signing certificate and reputation
    are not included. This is disclosed in the installation instructions.
 3. **Paint fidelity is close in layout, not exact in all behavior.** Only the
@@ -37,10 +41,16 @@ These are known differences or unverified areas, not completed acceptance claims
 8. **AI is CPU-only U2NetP.** It is genuinely local and tested, but imperfect on
    hair, fine edges, overlapping subjects and complex scenes. Threshold and softness
    refinement are provided; manual mask painting and GPU acceleration are absent.
-9. **Limits:** one canvas is limited to 16,384 px per side and 64 million pixels.
-   Undo retains up to 80 commands and approximately 128 MB; a single larger
-   whole-canvas command may exceed that budget. Very large files and extended
-   long-session memory use have not been stress-tested on a Windows laptop.
+9. **Limits:** nominal dimensions are capped at 16,384 px per side and 64 million
+   pixels, subject to a conservative 512 MB image working-memory estimate.
+   Operations that exceed this estimate are rejected before allocation. The
+   estimate includes primary layer/source canvases, display buffers, undo and
+   transform buffers. Browser caches, color-key copies and runtime allocations
+   can add memory; it is not a hard bound on total operating-system RAM.
+   Undo and redo together retain up to 80 commands and 128 MB, including distinct
+   historical canvas references. A single larger operation is not retained in
+   history and displays a notice. Very large files and extended long-session
+   memory use have not been stress-tested on a Windows laptop.
 10. **Formats:** PNG, JPEG, BMP and WebP export are supported. GIF opens as a static
     image. Animated GIF, TIFF, color profiles / CMYK and EXIF-orientation workflows
     are not independently verified. Flattened export does not preserve editable
