@@ -5,6 +5,7 @@ test-results/
 playwright-report/
 .cache/
 *.log
+__pycache__/
 public/demo/
 public/models/
 public/ort/

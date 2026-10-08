@@ -53,7 +53,13 @@ jobs:
           $testExit = $LASTEXITCODE
           if ($testExit -ne 0) { Get-Content windows-ui-tests.log | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append }
           exit $testExit
-      - run: npm run package:win
+      - name: Build the Windows installer and portable application
+        shell: pwsh
+        run: |
+          npm run package:win 2>&1 | Tee-Object -FilePath windows-build-tests.log
+          $testExit = $LASTEXITCODE
+          if ($testExit -ne 0) { Get-Content windows-build-tests.log | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append }
+          exit $testExit
       - name: Install the actual setup silently
         shell: pwsh
         run: |
