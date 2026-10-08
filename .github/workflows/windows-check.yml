@@ -121,6 +121,7 @@ jobs:
             docs/windows-uninstall-test-results.json
             docs/windows-release-candidate.json
             docs/screenshots/packaged-windows.png
+            docs/screenshots/packaged-windows-dialog.png
             test-results/
             windows-*-tests.log
           retention-days: 14
