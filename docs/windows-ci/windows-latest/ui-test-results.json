@@ -12,24 +12,24 @@
     "maxFailures": 0,
     "metadata": {
       "ci": {
-        "commitHref": "https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/commit/927db8f44beb6dfffe1081b6b14c5e6c7021cbca",
-        "commitHash": "927db8f44beb6dfffe1081b6b14c5e6c7021cbca",
-        "buildHref": "https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/actions/runs/37837045680"
+        "commitHref": "https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/commit/8a9bb8c59adb93307e1444addd48510ecadf5a3e",
+        "commitHash": "8a9bb8c59adb93307e1444addd48510ecadf5a3e",
+        "buildHref": "https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/actions/runs/37971775432"
       },
       "gitCommit": {
-        "shortHash": "927db8f",
-        "hash": "927db8f44beb6dfffe1081b6b14c5e6c7021cbca",
-        "subject": "Avoid retaining obsolete full canvases through raster undo closures",
-        "body": "Avoid retaining obsolete full canvases through raster undo closures\n",
+        "shortHash": "8a9bb8c",
+        "hash": "8a9bb8c59adb93307e1444addd48510ecadf5a3e",
+        "subject": "Implement PaintPlus 1.0.2 editing fixes and inline speech text",
+        "body": "Implement PaintPlus 1.0.2 editing fixes and inline speech text\n",
         "author": {
           "name": "Ram K",
           "email": "ram.kara@live.co.uk",
-          "time": 1791489711000
+          "time": 1791569514000
         },
         "committer": {
           "name": "Ram K",
           "email": "ram.kara@live.co.uk",
-          "time": 1791489711000
+          "time": 1791569514000
         },
         "branch": "main"
       },
@@ -60,24 +60,24 @@
         "retries": 0,
         "metadata": {
           "ci": {
-            "commitHref": "https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/commit/927db8f44beb6dfffe1081b6b14c5e6c7021cbca",
-            "commitHash": "927db8f44beb6dfffe1081b6b14c5e6c7021cbca",
-            "buildHref": "https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/actions/runs/37837045680"
+            "commitHref": "https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/commit/8a9bb8c59adb93307e1444addd48510ecadf5a3e",
+            "commitHash": "8a9bb8c59adb93307e1444addd48510ecadf5a3e",
+            "buildHref": "https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/actions/runs/37971775432"
           },
           "gitCommit": {
-            "shortHash": "927db8f",
-            "hash": "927db8f44beb6dfffe1081b6b14c5e6c7021cbca",
-            "subject": "Avoid retaining obsolete full canvases through raster undo closures",
-            "body": "Avoid retaining obsolete full canvases through raster undo closures\n",
+            "shortHash": "8a9bb8c",
+            "hash": "8a9bb8c59adb93307e1444addd48510ecadf5a3e",
+            "subject": "Implement PaintPlus 1.0.2 editing fixes and inline speech text",
+            "body": "Implement PaintPlus 1.0.2 editing fixes and inline speech text\n",
             "author": {
               "name": "Ram K",
               "email": "ram.kara@live.co.uk",
-              "time": 1791489711000
+              "time": 1791569514000
             },
             "committer": {
               "name": "Ram K",
               "email": "ram.kara@live.co.uk",
-              "time": 1791489711000
+              "time": 1791569514000
             },
             "branch": "main"
           },
@@ -128,12 +128,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2299,
+                  "duration": 2048,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:15.176Z",
+                  "startTime": "2026-10-09T18:15:18.708Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -162,12 +162,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1901,
+                  "duration": 1854,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:15.180Z",
+                  "startTime": "2026-10-09T18:15:18.715Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -196,12 +196,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 8616,
+                  "duration": 7721,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:17.267Z",
+                  "startTime": "2026-10-09T18:15:20.687Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -230,12 +230,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1853,
+                  "duration": 1345,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:17.660Z",
+                  "startTime": "2026-10-09T18:15:20.875Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -264,12 +264,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2119,
+                  "duration": 1387,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:19.539Z",
+                  "startTime": "2026-10-09T18:15:22.232Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -298,12 +298,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1794,
+                  "duration": 1090,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:21.679Z",
+                  "startTime": "2026-10-09T18:15:23.641Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -332,12 +332,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 7125,
+                  "duration": 4275,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:23.493Z",
+                  "startTime": "2026-10-09T18:15:24.743Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -347,7 +347,7 @@
           ],
           "id": "97ccb6d7cac63628d786-d0bb623c6153c8915e96",
           "file": "additional.spec.mjs",
-          "line": 185,
+          "line": 181,
           "column": 1
         },
         {
@@ -366,12 +366,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1084,
+                  "duration": 892,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:25.901Z",
+                  "startTime": "2026-10-09T18:15:28.418Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -381,7 +381,7 @@
           ],
           "id": "97ccb6d7cac63628d786-e4847a3987f9246a7a2e",
           "file": "additional.spec.mjs",
-          "line": 213,
+          "line": 209,
           "column": 1
         },
         {
@@ -397,15 +397,15 @@
               "projectName": "",
               "results": [
                 {
-                  "workerIndex": 1,
-                  "parallelIndex": 1,
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1304,
+                  "duration": 1298,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:27.000Z",
+                  "startTime": "2026-10-09T18:15:29.031Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -415,7 +415,7 @@
           ],
           "id": "97ccb6d7cac63628d786-79ea290df47011dfcdd5",
           "file": "additional.spec.mjs",
-          "line": 225,
+          "line": 221,
           "column": 1
         },
         {
@@ -434,12 +434,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1265,
+                  "duration": 1159,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:28.320Z",
+                  "startTime": "2026-10-09T18:15:29.319Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -449,7 +449,7 @@
           ],
           "id": "97ccb6d7cac63628d786-e4f44f32e1af2064ca43",
           "file": "additional.spec.mjs",
-          "line": 249,
+          "line": 245,
           "column": 1
         },
         {
@@ -465,15 +465,15 @@
               "projectName": "",
               "results": [
                 {
-                  "workerIndex": 1,
-                  "parallelIndex": 1,
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1544,
+                  "duration": 1455,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:29.599Z",
+                  "startTime": "2026-10-09T18:15:30.340Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -483,7 +483,7 @@
           ],
           "id": "97ccb6d7cac63628d786-2a187b44f0ca51e846cd",
           "file": "additional.spec.mjs",
-          "line": 276,
+          "line": 272,
           "column": 1
         },
         {
@@ -499,15 +499,15 @@
               "projectName": "",
               "results": [
                 {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1723,
+                  "duration": 1403,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:30.646Z",
+                  "startTime": "2026-10-09T18:15:30.487Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -517,7 +517,7 @@
           ],
           "id": "97ccb6d7cac63628d786-83cff3dc4c97ca27e450",
           "file": "additional.spec.mjs",
-          "line": 318,
+          "line": 314,
           "column": 1
         },
         {
@@ -533,15 +533,15 @@
               "projectName": "",
               "results": [
                 {
-                  "workerIndex": 1,
-                  "parallelIndex": 1,
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1352,
+                  "duration": 1057,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:31.159Z",
+                  "startTime": "2026-10-09T18:15:31.805Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -551,7 +551,7 @@
           ],
           "id": "97ccb6d7cac63628d786-ebc0aa02150a41ca0898",
           "file": "additional.spec.mjs",
-          "line": 335,
+          "line": 331,
           "column": 1
         },
         {
@@ -567,15 +567,15 @@
               "projectName": "",
               "results": [
                 {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 603,
+                  "duration": 539,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:32.385Z",
+                  "startTime": "2026-10-09T18:15:31.899Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -585,7 +585,7 @@
           ],
           "id": "97ccb6d7cac63628d786-cad431f80c0751c4673f",
           "file": "additional.spec.mjs",
-          "line": 369,
+          "line": 365,
           "column": 1
         }
       ]
@@ -612,12 +612,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 2128,
+                  "duration": 1902,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:32.545Z",
+                  "startTime": "2026-10-09T18:15:32.471Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -646,12 +646,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1900,
+                  "duration": 1537,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:33.045Z",
+                  "startTime": "2026-10-09T18:15:32.892Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -680,12 +680,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 2866,
+                  "duration": 2514,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:34.690Z",
+                  "startTime": "2026-10-09T18:15:34.382Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -714,12 +714,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 5204,
+                  "duration": 4708,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:34.965Z",
+                  "startTime": "2026-10-09T18:15:34.445Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -748,12 +748,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 2202,
+                  "duration": 1879,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:37.574Z",
+                  "startTime": "2026-10-09T18:15:36.905Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -763,7 +763,7 @@
           ],
           "id": "3c4243f16f26f48720e0-ac9a14fa833df36546fe",
           "file": "editor.spec.mjs",
-          "line": 194,
+          "line": 196,
           "column": 1
         },
         {
@@ -782,12 +782,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1310,
+                  "duration": 1116,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:39.792Z",
+                  "startTime": "2026-10-09T18:15:38.796Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -797,7 +797,7 @@
           ],
           "id": "3c4243f16f26f48720e0-ae50d18fe5ba8d21a3b5",
           "file": "editor.spec.mjs",
-          "line": 220,
+          "line": 222,
           "column": 1
         },
         {
@@ -816,12 +816,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2078,
+                  "duration": 1867,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:40.183Z",
+                  "startTime": "2026-10-09T18:15:39.163Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -831,7 +831,7 @@
           ],
           "id": "3c4243f16f26f48720e0-eaf42c2947f301df2e40",
           "file": "editor.spec.mjs",
-          "line": 245,
+          "line": 247,
           "column": 1
         },
         {
@@ -850,12 +850,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1690,
+                  "duration": 1436,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:41.119Z",
+                  "startTime": "2026-10-09T18:15:39.923Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -865,7 +865,7 @@
           ],
           "id": "3c4243f16f26f48720e0-08f88ca499e6537b9957",
           "file": "editor.spec.mjs",
-          "line": 290,
+          "line": 292,
           "column": 1
         },
         {
@@ -884,12 +884,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2455,
+                  "duration": 2166,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:42.275Z",
+                  "startTime": "2026-10-09T18:15:41.038Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -899,7 +899,7 @@
           ],
           "id": "3c4243f16f26f48720e0-2e158786df137e55d3f1",
           "file": "editor.spec.mjs",
-          "line": 321,
+          "line": 323,
           "column": 1
         },
         {
@@ -918,12 +918,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1304,
+                  "duration": 1013,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:42.825Z",
+                  "startTime": "2026-10-09T18:15:41.369Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -933,7 +933,7 @@
           ],
           "id": "3c4243f16f26f48720e0-258297ad878f9610b27c",
           "file": "editor.spec.mjs",
-          "line": 361,
+          "line": 363,
           "column": 1
         },
         {
@@ -952,12 +952,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1741,
+                  "duration": 1609,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:44.143Z",
+                  "startTime": "2026-10-09T18:15:42.391Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -967,7 +967,7 @@
           ],
           "id": "3c4243f16f26f48720e0-1f3a84ba310179c048d8",
           "file": "editor.spec.mjs",
-          "line": 378,
+          "line": 380,
           "column": 1
         },
         {
@@ -986,12 +986,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1830,
+                  "duration": 1403,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:44.745Z",
+                  "startTime": "2026-10-09T18:15:43.214Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -1001,7 +1001,7 @@
           ],
           "id": "3c4243f16f26f48720e0-338052bed7c1b23e6cf4",
           "file": "editor.spec.mjs",
-          "line": 400,
+          "line": 402,
           "column": 1
         },
         {
@@ -1020,12 +1020,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 2105,
+                  "duration": 1772,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:45.901Z",
+                  "startTime": "2026-10-09T18:15:44.011Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -1035,7 +1035,7 @@
           ],
           "id": "3c4243f16f26f48720e0-ded807f2b1dcb6d159f8",
           "file": "editor.spec.mjs",
-          "line": 430,
+          "line": 432,
           "column": 1
         },
         {
@@ -1054,12 +1054,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1709,
+                  "duration": 1465,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:46.594Z",
+                  "startTime": "2026-10-09T18:15:44.628Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -1069,7 +1069,7 @@
           ],
           "id": "3c4243f16f26f48720e0-6952cd3b312f60299d57",
           "file": "editor.spec.mjs",
-          "line": 466,
+          "line": 468,
           "column": 1
         },
         {
@@ -1088,12 +1088,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1122,
+                  "duration": 1029,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:48.025Z",
+                  "startTime": "2026-10-09T18:15:45.795Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -1103,7 +1103,7 @@
           ],
           "id": "3c4243f16f26f48720e0-64acdf5c0daa5cdbd1ad",
           "file": "editor.spec.mjs",
-          "line": 485,
+          "line": 487,
           "column": 1
         },
         {
@@ -1122,12 +1122,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1471,
+                  "duration": 1166,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:48.318Z",
+                  "startTime": "2026-10-09T18:15:46.104Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -1137,7 +1137,7 @@
           ],
           "id": "3c4243f16f26f48720e0-3473d9bbb7f84b6933f3",
           "file": "editor.spec.mjs",
-          "line": 529,
+          "line": 531,
           "column": 1
         },
         {
@@ -1156,12 +1156,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1562,
+                  "duration": 1206,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:49.167Z",
+                  "startTime": "2026-10-09T18:15:46.835Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -1171,7 +1171,7 @@
           ],
           "id": "3c4243f16f26f48720e0-c810367539c7695eddd5",
           "file": "editor.spec.mjs",
-          "line": 554,
+          "line": 556,
           "column": 1
         },
         {
@@ -1190,12 +1190,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1494,
+                  "duration": 1224,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:49.807Z",
+                  "startTime": "2026-10-09T18:15:47.278Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -1205,7 +1205,7 @@
           ],
           "id": "3c4243f16f26f48720e0-d94e5f8cfdfc79ef7b67",
           "file": "editor.spec.mjs",
-          "line": 574,
+          "line": 576,
           "column": 1
         },
         {
@@ -1224,12 +1224,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1638,
+                  "duration": 1353,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:50.744Z",
+                  "startTime": "2026-10-09T18:15:48.052Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -1239,7 +1239,7 @@
           ],
           "id": "3c4243f16f26f48720e0-7bfbdbed2c213a07af68",
           "file": "editor.spec.mjs",
-          "line": 593,
+          "line": 596,
           "column": 1
         },
         {
@@ -1258,12 +1258,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1962,
+                  "duration": 1504,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:51.323Z",
+                  "startTime": "2026-10-09T18:15:48.512Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -1273,7 +1273,7 @@
           ],
           "id": "3c4243f16f26f48720e0-44c0cbf08bd046f7673e",
           "file": "editor.spec.mjs",
-          "line": 608,
+          "line": 611,
           "column": 1
         },
         {
@@ -1292,12 +1292,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1371,
+                  "duration": 1142,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:52.397Z",
+                  "startTime": "2026-10-09T18:15:49.415Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -1326,12 +1326,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 4219,
+                  "duration": 4140,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-08T20:08:53.301Z",
+                  "startTime": "2026-10-09T18:15:50.025Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -1345,13 +1345,599 @@
           "column": 1
         }
       ]
+    },
+    {
+      "title": "revision.spec.mjs",
+      "file": "revision.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "zoom buttons, wheel and slider use only fixed Paint levels and pixelated image display",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1742,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T18:15:50.577Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e17a7d1aa4c8d5c7c18e-1ecdc35051e83fad35e9",
+          "file": "revision.spec.mjs",
+          "line": 47,
+          "column": 1
+        },
+        {
+          "title": "screen overlay keeps seven-pixel handles at 100% and 400%, without huge allocations",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1116,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T18:15:52.328Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e17a7d1aa4c8d5c7c18e-a5c1cd0e91a20632cff3",
+          "file": "revision.spec.mjs",
+          "line": 68,
+          "column": 1
+        },
+        {
+          "title": "brush main button selects default or last brush and only its arrow opens the menu",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1040,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T18:15:53.454Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e17a7d1aa4c8d5c7c18e-8bec03963b8bb6e200d9",
+          "file": "revision.spec.mjs",
+          "line": 103,
+          "column": 1
+        },
+        {
+          "title": "selection buttons are equal, transparency has a number shortcut and Crop is absent from mappings",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 957,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T18:15:54.189Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e17a7d1aa4c8d5c7c18e-821c7b810d3a14d39c18",
+          "file": "revision.spec.mjs",
+          "line": 121,
+          "column": 1
+        },
+        {
+          "title": "editable shapes transform, change stroke width/fill and retain exact undo state",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1554,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T18:15:54.502Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e17a7d1aa4c8d5c7c18e-f14b70034e264f4434ca",
+          "file": "revision.spec.mjs",
+          "line": 135,
+          "column": 1
+        },
+        {
+          "title": "Paint selections move immediately, click outside commits, and Enter returns the originating tool",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1730,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T18:15:55.155Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e17a7d1aa4c8d5c7c18e-a7b9f174df08978aef37",
+          "file": "revision.spec.mjs",
+          "line": 163,
+          "column": 1
+        },
+        {
+          "title": "persistent selection mode keeps floating content after clicking outside",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1217,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T18:15:56.064Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e17a7d1aa4c8d5c7c18e-20c8757677359d435b98",
+          "file": "revision.spec.mjs",
+          "line": 181,
+          "column": 1
+        },
+        {
+          "title": "Shift arrow moves one pixel and stamps a trail with undo; Shift drag leaves a continuous trail",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1470,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T18:15:56.895Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e17a7d1aa4c8d5c7c18e-db7f45ff0fdcae37a904",
+          "file": "revision.spec.mjs",
+          "line": 199,
+          "column": 1
+        },
+        {
+          "title": "row bin and Delete remove layers instantly, including clearing the last layer, with undo",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1461,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T18:15:57.290Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e17a7d1aa4c8d5c7c18e-280aed6918b2478c7bd7",
+          "file": "revision.spec.mjs",
+          "line": 218,
+          "column": 1
+        },
+        {
+          "title": "canvas ribbon dimensions extend boundaries without scaling and undo does not edit the filename",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1319,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T18:15:58.375Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e17a7d1aa4c8d5c7c18e-05fc315f75105cb0f790",
+          "file": "revision.spec.mjs",
+          "line": 240,
+          "column": 1
+        },
+        {
+          "title": "large paste expands by default as one undo action and the setting preserves canvas bounds",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1129,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T18:15:58.762Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e17a7d1aa4c8d5c7c18e-6f1c40fc85075a1f48b4",
+          "file": "revision.spec.mjs",
+          "line": 258,
+          "column": 1
+        },
+        {
+          "title": "inline textbox uses contextual formatting, rounded bubble padding/spacing and grows while typing",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1631,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T18:15:59.703Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e17a7d1aa4c8d5c7c18e-574907ce448b63707c99",
+          "file": "revision.spec.mjs",
+          "line": 281,
+          "column": 1
+        },
+        {
+          "title": "text remains editable after outside click and resizing; project reopen retains all formatting",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1563,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T18:15:59.901Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e17a7d1aa4c8d5c7c18e-7e53a4d2f1e1f10c4b48",
+          "file": "revision.spec.mjs",
+          "line": 312,
+          "column": 1
+        },
+        {
+          "title": "asset width and folder splitters resize and persist, categories can be removed",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1932,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T18:16:01.343Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e17a7d1aa4c8d5c7c18e-734ca1e5687ffa50f266",
+          "file": "revision.spec.mjs",
+          "line": 345,
+          "column": 1
+        },
+        {
+          "title": "external copy preserves secondary-color pixels as opaque colors instead of black",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 920,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T18:16:01.473Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e17a7d1aa4c8d5c7c18e-b7a3abb652666e164001",
+          "file": "revision.spec.mjs",
+          "line": 381,
+          "column": 1
+        },
+        {
+          "title": "refinement is nonmodal, threshold can restore details and softness changes pixels",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1121,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T18:16:02.406Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e17a7d1aa4c8d5c7c18e-93b338257b03295dea4d",
+          "file": "revision.spec.mjs",
+          "line": 412,
+          "column": 1
+        },
+        {
+          "title": "malformed saved shortcut preferences recover to defaults without a blank startup",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 764,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-09T18:16:03.285Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e17a7d1aa4c8d5c7c18e-4cb4683a94644d325beb",
+          "file": "revision.spec.mjs",
+          "line": 446,
+          "column": 1
+        }
+      ]
     }
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-08T20:08:12.387Z",
-    "duration": 45356.891,
-    "expected": 36,
+    "startTime": "2026-10-09T18:15:16.797Z",
+    "duration": 47443.197,
+    "expected": 53,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

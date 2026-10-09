@@ -26,8 +26,9 @@ preserves projects, source assets and user preferences.
 
 Version 1.0.2 includes the earlier blank-window startup fixes: software rendering
 on Windows, ASAR-aware resource loading, correct script/WASM types, a visible
-startup error screen and diagnostics at `%APPDATA%\\PaintPlus\\startup.log`.
-Hosted native checks are documented in [TESTING.md](docs/TESTING.md); the user's
+startup error screen and diagnostics at `%APPDATA%\PaintPlus\startup.log`.
+Both hosted Windows checks passed for the exact downloads. Results are in
+[TESTING.md](docs/TESTING.md); the user's
 Home-edition laptop remains a separate hardware check.
 
 ## Editing

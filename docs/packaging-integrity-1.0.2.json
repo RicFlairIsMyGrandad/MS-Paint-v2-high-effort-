@@ -1,0 +1,22 @@
+{
+  "version": "1.0.2",
+  "sourceRevision": "8a9bb8c59adb93307e1444addd48510ecadf5a3e",
+  "files": {
+    "PaintPlus-Setup-1.0.2-x64.exe": {
+      "bytes": 103141442,
+      "sha256": "03d22ff3376ce2e8b34756631cf378ef49d10228350a0fd055e1bbcf9a7a605d"
+    },
+    "PaintPlus-Portable-1.0.2-x64.exe": {
+      "bytes": 101032844,
+      "sha256": "68516fd31e1d3b3d39edd9893ef89af9cd8fcfc908404e6dc6f4d6ac9e77007d"
+    }
+  },
+  "setupArchiveIntegrity": true,
+  "portableArchiveIntegrity": true,
+  "portableInnerPayloadIntegrity": true,
+  "setupAndPortableAsarMatch": true,
+  "appAsarSha256": "dc93cc2d06cdb6ee8c9cd448f51998a2c766969de0cb5f9854010a8c45034481",
+  "asarVersion": "1.0.2",
+  "rendererEntry": "dist/assets/index-BUyDRzQH.js",
+  "bundledModelSha256": "309c8469258dda742793dce0ebea8e6dd393174f89934733ecc8b14c76f4ddd8"
+}

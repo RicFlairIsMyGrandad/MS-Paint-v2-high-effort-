@@ -9,8 +9,8 @@ These are differences or unverified areas, rather than completed acceptance clai
   pixel-for-pixel clones of Microsoft's UI. The supplied reference screenshot
   was used for visual comparison. Text controls, layers, assets and AI necessarily
   add controls to that layout; narrow windows scroll the ribbon horizontally.
-- **Laptop-specific verification is outstanding.** Hosted Windows checks cover
-  the installer and actual packaged app on Windows Server kernels used by CI.
+- **Laptop-specific verification is outstanding.** The exact Setup and Portable EXEs passed on Windows Server 2022
+  (10.0.20348) and Server 2025 (10.0.26100), including the installed packaged app.
   They do not prove operation on the user's Windows 10 Home or Windows 11 Home
   laptop. High-DPI/multiple-display behavior, touch/stylus input and long sessions
   still need testing on that hardware. Software rendering and startup diagnostics

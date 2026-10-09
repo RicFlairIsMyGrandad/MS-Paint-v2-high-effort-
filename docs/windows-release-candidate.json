@@ -1,12 +1,12 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "source": "exact published candidate",
-  "ref": "paintplus-candidate-1.0.1",
-  "sourceRevision": "927db8f44beb6dfffe1081b6b14c5e6c7021cbca",
-  "appSourceSha256": "7e7c11a659e16dc3b5d89d41265e41f9bce55f6fa2c64995a8ec3514d5daae3f",
-  "appAsarSha256": "b568d1031e4256f1358a4cc626744e664f07e916281585b0522356b857c121b2",
+  "ref": "paintplus-candidate-1.0.2",
+  "sourceRevision": "8a9bb8c59adb93307e1444addd48510ecadf5a3e",
+  "appSourceSha256": "12be967ede63b974f813a5fdbc8f274a9e5d672a1cc891264afd912f4c841815",
+  "appAsarSha256": "dc93cc2d06cdb6ee8c9cd448f51998a2c766969de0cb5f9854010a8c45034481",
   "files": {
-    "PaintPlus-Setup-1.0.1-x64.exe": "5e04b1151a58a8e4d9564ac67be2a7557819054afd87221a92a6866e0b515c98",
-    "PaintPlus-Portable-1.0.1-x64.exe": "cf96f94752306b319d0dc00a4e87aa9dc2964ee5b5366532ac9fd811a2a5ffa6"
+    "PaintPlus-Setup-1.0.2-x64.exe": "03d22ff3376ce2e8b34756631cf378ef49d10228350a0fd055e1bbcf9a7a605d",
+    "PaintPlus-Portable-1.0.2-x64.exe": "68516fd31e1d3b3d39edd9893ef89af9cd8fcfc908404e6dc6f4d6ac9e77007d"
   }
 }

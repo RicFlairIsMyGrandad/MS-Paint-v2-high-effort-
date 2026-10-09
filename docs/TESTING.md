@@ -63,5 +63,38 @@ metadata, 160px thumbnails, atomic save/overwrite, cancelled save-before-close
 retaining the window, and successful project save before close. Captured packaged
 screenshots include the editor, Resize & Rotate panel and contextual speech text.
 
-Windows 1.0.2 candidate validation is pending at this source checkpoint. The final
-release evidence and downloads will be published after the hosted checks finish.
+## Exact Windows installer results
+
+[Windows CI run 37971775432](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/actions/runs/37971775432)
+completed successfully for application source revision
+`8a9bb8c59adb93307e1444addd48510ecadf5a3e`.
+
+| Native runner | Kernel | Core/resource | UI | Installed Setup and Portable |
+| --- | --- | --- | --- | --- |
+| Windows Server 2022 Datacenter | 10.0.20348 | 46 passed | 53 passed | Passed |
+| Windows Server 2025 Datacenter | 10.0.26100 | 46 passed | 53 passed | Passed |
+
+Both runners used the exact published release-candidate EXEs, verified against the
+application input digest and file checksums. They passed silent Setup installation,
+shortcut targets, project association command, startup and drawing from the
+installed ASAR, editable shape widths, inline speech text and undo, original
+Color-2 clipboard colors, clipboard alpha, PNG/project save bytes, save collisions,
+local AI inference and portable launch. Uninstall removed the shipped application
+and helper while preserving a user project. Packaged runs recorded zero renderer
+errors and zero external requests, with Windows GPU compositing disabled.
+
+Reports, logs, source and OS identifiers are in `windows-ci/` and
+`windows-test-evidence.json`. The root packaged Windows JSON and screenshots come
+from the Windows Server 2022 run. The evidence branches are linked in the summary.
+
+Exact download checksums:
+
+```text
+03d22ff3376ce2e8b34756631cf378ef49d10228350a0fd055e1bbcf9a7a605d  PaintPlus-Setup-1.0.2-x64.exe
+68516fd31e1d3b3d39edd9893ef89af9cd8fcfc908404e6dc6f4d6ac9e77007d  PaintPlus-Portable-1.0.2-x64.exe
+```
+
+Local archive tests also passed for Setup, Portable and the Portable inner payload.
+Their extracted ASAR hashes match the packaged candidate. See
+`packaging-integrity-1.0.2.json`. Complete source ZIP/TXT export verifies each
+original text file and ZIP CRC; all deliveries include a SHA-256 manifest.

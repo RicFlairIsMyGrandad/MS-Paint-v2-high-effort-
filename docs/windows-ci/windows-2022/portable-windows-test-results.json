@@ -1,5 +1,5 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "portableLauncher": true,
   "clipboardOK": true,
   "aiInferenceOK": true,
@@ -16,7 +16,7 @@
     "path": "\\tmp\\paintplus-native-smoke\\PaintPlus-project-smoke.paintplus",
     "name": "PaintPlus-project-smoke.paintplus"
   },
-  "projectBytes": 171289,
+  "projectBytes": 164953,
   "protocol": "paintplus:",
   "aiModel": true
 }

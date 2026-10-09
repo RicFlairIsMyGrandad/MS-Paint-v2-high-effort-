@@ -1,6 +1,6 @@
 {
   "isPackaged": true,
-  "appPath": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω HrRfKf\\installed app with spaces\\resources\\app.asar",
+  "appPath": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω Kfc5vW\\installed app with spaces\\resources\\app.asar",
   "platform": "win32",
   "gpuStatus": {
     "2d_canvas": "unavailable_software",
@@ -23,25 +23,28 @@
   "installationPathHasSpacesAndUnicode": true,
   "firstLaunchReady": true,
   "pointerDrawing": true,
+  "editableShapes": true,
+  "inlineSpeechText": true,
+  "externalCopyPreservesColor2": true,
   "clipboardAlpha": true,
   "savedPNGBytes": true,
   "savedEditableProject": true,
   "clipboardOK": true,
   "aiInferenceOK": true,
   "first": {
-    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω HrRfKf\\images\\PaintPlus-smoke.png",
+    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω Kfc5vW\\images\\PaintPlus-smoke.png",
     "name": "PaintPlus-smoke.png"
   },
   "second": {
-    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω HrRfKf\\images\\PaintPlus-smoke (2).png",
+    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω Kfc5vW\\images\\PaintPlus-smoke (2).png",
     "name": "PaintPlus-smoke (2).png"
   },
   "collisionOK": true,
   "project": {
-    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω HrRfKf\\images\\PaintPlus-project-smoke.paintplus",
+    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω Kfc5vW\\images\\PaintPlus-project-smoke.paintplus",
     "name": "PaintPlus-project-smoke.paintplus"
   },
-  "projectBytes": 171329,
+  "projectBytes": 181483,
   "protocol": "paintplus:",
   "aiModel": true,
   "rendererErrors": [],

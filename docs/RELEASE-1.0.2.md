@@ -28,3 +28,8 @@ There was no item 9 in the attachment. The earlier packaged startup fix, Windows
 software rendering, visible startup diagnostics, eraser alpha fix and allocation
 guards remain included. See TESTING.md for evidence and LIMITATIONS.md for the
 remaining differences and hardware verification boundaries.
+
+Validation: 46 core/resource tests and 53 UI tests passed locally and on both
+hosted Windows runners. The exact checksummed Setup and Portable downloads passed
+native installation/launch, the revised editor and clipboard checks, offline AI,
+shortcuts, project association and uninstall preserving a user project.
