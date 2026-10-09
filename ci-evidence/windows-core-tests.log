@@ -1,0 +1,58 @@
+
+> paintplus@1.0.2 test
+> node --test tests/*.test.mjs
+
+✔ one-pixel pencil is continuous and does not blur adjacent pixels (3.06ms)
+✔ round brush has continuous 2px stroke with appropriate width (1.0476ms)
+✔ round brush has continuous 4px stroke with appropriate width (0.7508ms)
+✔ round brush has continuous 8px stroke with appropriate width (0.7524ms)
+✔ round brush has continuous 16px stroke with appropriate width (0.8703ms)
+✔ 100 consecutive strokes remain on one raster layer (9.802ms)
+✔ painting edits the selected layer and leaves background alone (0.8754ms)
+✔ locked layer prevents painting (0.7843ms)
+✔ eraser removes alpha on a transparent raster layer (0.4297ms)
+✔ fill is bounded by opaque walls and respects exact colors (1.5918ms)
+✔ tolerant fill terminates when replacement is within tolerance (0.9512ms)
+✔ asset insertion keeps original dimensions, (0,0), alpha and source (1.1779ms)
+✔ assets can be inserted on active layer without a new layer (0.7637ms)
+✔ repeated transforms preserve immutable source dimensions and pixels (1.1377ms)
+✔ Color 2 transparency removes exact keyed color without altering source alpha (0.2965ms)
+✔ canvas resize extends boundary without stretching content and undoes (0.752ms)
+✔ raster undo works after layer metadata undo restores layer references (0.2752ms)
+✔ selection lifting and undo restore pixels and floating object (0.6945ms)
+✔ free-form selection preserves transparency outside polygon (0.3548ms)
+✔ object movement undo preserves source and restores transform (0.2315ms)
+✔ grouping survives undo and duplicates retain shared immutable images (0.6116ms)
+✔ rotation geometry maps local points accurately (0.2632ms)
+✔ crop shifts objects and raster, and undo restores size (0.6064ms)
+✔ merge down combines visible layers and undoes (0.6099ms)
+✔ nearest-neighbour resize keeps exact source values (0.3359ms)
+✔ Lanczos handles transparent edges without dark halos (0.4961ms)
+✔ BMP export has correct header, padded rows, white transparency matte (0.2912ms)
+✔ shape fill and outline use Color 2 and Color 1 (0.4281ms)
+✔ history bounds memory and count while keeping operation labels (0.2105ms)
+✔ right-click color eraser preserves alpha, skips invisible pixels, and covers the whole segment (0.4987ms)
+✔ history caps undo and redo together and refuses an oversized single command (0.1629ms)
+✔ whole-canvas history counts distinct retained canvases and large transforms fail before mutation (0.3967ms)
+✔ all zoom inputs and boundaries resolve to the eleven Paint levels (2.5007ms)
+✔ round brush 3px horizontal has exactly 3 opaque pixels with no side bleed (1.539ms)
+✔ round brush 3px vertical has exactly 3 opaque pixels with no side bleed (0.8628ms)
+✔ round brush 5px horizontal has exactly 5 opaque pixels with no side bleed (0.8452ms)
+✔ round brush 5px vertical has exactly 5 opaque pixels with no side bleed (0.8394ms)
+✔ hard AI silhouette retains original RGB and intrinsic alpha; lowering threshold restores details (0.3443ms)
+✔ softness changes mask edges independently of the original alpha (0.2813ms)
+✔ paste transaction groups canvas growth and object insertion in one undo and redo (5.0233ms)
+✔ a failed compound paste leaves document, history and redo intact (0.8041ms)
+✔ editable ellipse has crisp pixels and can regenerate a thicker outline without changing original style (3.6008ms)
+✔ speech textbox wraps, adds line spacing, pads text and grows with content (10.8549ms)
+✔ resource resolver supports Windows drive letters, ASAR, spaces and Unicode (0.9403ms)
+✔ ASAR asset responses set explicit JavaScript, WASM and HTML MIME types with CSP (22.505ms)
+✔ missing packaged files return a diagnostic 404 rather than rejecting the protocol request (0.4748ms)
+ℹ tests 46
+ℹ suites 0
+ℹ pass 46
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3132.6832
