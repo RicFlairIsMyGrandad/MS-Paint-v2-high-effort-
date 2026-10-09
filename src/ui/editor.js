@@ -6,6 +6,8 @@ import {
 } from "../core/document.js";
 import { paintSegment, replaceColorSegment, floodFill, colorAt, canvas } from "../core/raster.js";
 import { drawShape } from "../core/shapes.js";
+import { zoomLevels, nearestZoom, stepZoom, fitZoom } from "../core/zoom.js";
+import { shapeProperties, shapeSource, refreshEditable } from "../core/editable.js";
 const cursorSVG = (path, x = 1, y = 22) =>
   `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='26' height='26'><path d='${path}' fill='white' stroke='#162e48' stroke-width='1.6'/></svg>`)}") ${x} ${y}, crosshair`;
 export const cursors = {
@@ -79,6 +81,7 @@ export class Editor {
     this.stage = document.querySelector("#canvas-stage");
     this.display = document.querySelector("#display");
     this.overlay = document.querySelector("#overlay");
+    this.overlay.tabIndex = 0;
     this.viewport = document.querySelector("#viewport");
     this.drag = null;
     this.hover = null;
@@ -105,13 +108,13 @@ export class Editor {
         hit = this.app.doc.hit(p.x, p.y);
       if (hit?.object.type === "text") this.app.editText(hit.object);
     });
-    this.viewport.addEventListener("scroll", () => this.drawRulers());
+    this.viewport.addEventListener("scroll", () => this.requestRender());
     this.viewport.addEventListener(
       "wheel",
       (e) => {
         if (e.ctrlKey) {
           e.preventDefault();
-          this.setZoom(this.app.zoom * (e.deltaY < 0 ? 1.1 : 1 / 1.1), {
+          this.setZoom(stepZoom(this.app.zoom, e.deltaY < 0 ? 1 : -1), {
             x: e.clientX,
             y: e.clientY,
           });
@@ -122,14 +125,14 @@ export class Editor {
     for (const h of this.stage.querySelectorAll("[data-canvas-handle]"))
       h.addEventListener("pointerdown", (e) => this.canvasResizeStart(e));
     new ResizeObserver(() => {
-      this.drawRulers();
+      this.requestRender();
     }).observe(document.querySelector("#workspace"));
   }
   get doc() {
     return this.app.doc;
   }
   point(e) {
-    const r = this.overlay.getBoundingClientRect();
+    const r = this.display.getBoundingClientRect();
     return {
       x: (e.clientX - r.left) / this.app.zoom,
       y: (e.clientY - r.top) / this.app.zoom,
@@ -146,12 +149,19 @@ export class Editor {
   render() {
     const d = this.doc,
       z = this.app.zoom;
-    for (const c of [this.display, this.overlay]) {
-      if (c.width !== d.width) c.width = d.width;
-      if (c.height !== d.height) c.height = d.height;
-      c.style.width = d.width * z + "px";
-      c.style.height = d.height * z + "px";
-    }
+    const c = this.display;
+    if (c.width !== d.width) c.width = d.width;
+    if (c.height !== d.height) c.height = d.height;
+    c.style.width = d.width * z + "px";
+    c.style.height = d.height * z + "px";
+    // The overlay is a screen-resolution, visible-area canvas. It is never
+    // magnified with the image, nor allocated at an enormous 800% image size.
+    const ratio = window.devicePixelRatio || 1;
+    const ox = Math.max(0, this.viewport.scrollLeft - 7), oy = Math.max(0, this.viewport.scrollTop - 7);
+    const ow = Math.max(1, Math.min(d.width * z - ox, this.viewport.clientWidth - Math.max(0, 7 - this.viewport.scrollLeft)));
+    const oh = Math.max(1, Math.min(d.height * z - oy, this.viewport.clientHeight - Math.max(0, 7 - this.viewport.scrollTop)));
+    this.overlay.width = Math.ceil(ow * ratio); this.overlay.height = Math.ceil(oh * ratio);
+    Object.assign(this.overlay.style, { width: ow + 'px', height: oh + 'px', left: ox + 'px', top: oy + 'px' });
     this.stage.style.width = d.width * z + "px";
     this.stage.style.height = d.height * z + "px";
     const ctx = this.display.getContext("2d");
@@ -159,10 +169,12 @@ export class Editor {
     for (const l of d.layers)
       if (l.visible) {
         ctx.drawImage(l.canvas, 0, 0);
-        for (const o of l.objects) drawObject(ctx, o);
+        for (const o of l.objects) drawObject(ctx, this.app.textEditor?.objectId === o.id ? { ...o, source: this.app.textEditor.backgroundSource || o.source } : o);
       }
     const over = this.overlay.getContext("2d");
-    over.clearRect(0, 0, d.width, d.height);
+    over.setTransform(1, 0, 0, 1, 0, 0);
+    over.clearRect(0, 0, this.overlay.width, this.overlay.height);
+    over.setTransform(ratio * z, 0, 0, ratio * z, -ox * ratio, -oy * ratio);
     if (this.app.prefs.grid && z >= 2) {
       over.save();
       over.strokeStyle = "#64789235";
@@ -197,7 +209,7 @@ export class Editor {
         points: s.points,
       });
     }
-    if (this.drag?.type === "selection") {
+    if (this.drag?.type === "selection" || this.drag?.type === 'text-box') {
       over.save();
       over.strokeStyle = "#006ce3";
       over.fillStyle = "#0078ff12";
@@ -237,13 +249,14 @@ export class Editor {
     document.querySelector("#dimensions-status span").textContent =
       d.width + " × " + d.height + " px";
     document.querySelector("#zoom-percent").textContent =
-      Math.round(z * 100) + "%";
-    document.querySelector("#zoom-slider").value = z * 100;
+      z * 100 + "%";
+    document.querySelector("#zoom-slider").value = zoomLevels.indexOf(nearestZoom(z));
+    this.app.textEditor?.position();
   }
   drawOutline(ctx, o, color = "#006ce8") {
     ctx.save();
     ctx.strokeStyle = color;
-    ctx.lineWidth = 1.5 / this.app.zoom;
+    ctx.lineWidth = 1 / this.app.zoom;
     ctx.setLineDash([6 / this.app.zoom, 3 / this.app.zoom]);
     ctx.beginPath();
     [
@@ -252,7 +265,8 @@ export class Editor {
       [o.width, o.height],
       [0, o.height],
     ].forEach(([x, y], i) => {
-      const p = worldPoint(o, x, y);
+      const raw = worldPoint(o, x, y), factor = this.app.zoom * (window.devicePixelRatio || 1);
+      const p = { x: (Math.round(raw.x * factor) + 0.5) / factor, y: (Math.round(raw.y * factor) + 0.5) / factor };
       i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y);
     });
     ctx.closePath();
@@ -268,8 +282,9 @@ export class Editor {
     ctx.strokeStyle = "#243b58";
     ctx.fillStyle = "white";
     for (const p of handlePoints(o)) {
-      ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s);
-      ctx.strokeRect(p.x - s / 2, p.y - s / 2, s, s);
+      const x = (Math.round(p.x * z) + 0.5) / z, y = (Math.round(p.y * z) + 0.5) / z;
+      ctx.fillRect(x - s / 2, y - s / 2, s, s);
+      ctx.strokeRect(x - s / 2, y - s / 2, s, s);
     }
     const top = worldPoint(o, o.width / 2, 0),
       rotate = worldPoint(o, o.width / 2, -25 / z);
@@ -304,7 +319,7 @@ export class Editor {
   }
   updateCursor(p) {
     let cursor = cursors[this.app.tool] || "crosshair";
-    if (p && ["select", "free", "move", "crop"].includes(this.app.tool)) {
+    if (p && ["select", "free", "move", "shape", "text"].includes(this.app.tool)) {
       const h = this.handleAt(p);
       if (h) {
         cursor =
@@ -338,6 +353,7 @@ export class Editor {
   pointerDown(e) {
     if ((e.button !== 0 && e.button !== 2) || this.app.busy) return;
     e.preventDefault();
+    this.overlay.focus({ preventScroll: true });
     this.overlay.setPointerCapture(e.pointerId);
     const p = this.point(e);
     this.hover = p;
@@ -359,7 +375,11 @@ export class Editor {
         this.requestRender();
         return;
       }
-      if (["select", "free", "move", "crop"].includes(a.tool)) {
+      a.layerFocused = false;
+      if (a.textEditor?.active) a.textEditor.finish();
+      const existingHandle = this.handleAt(p);
+      if (d.selectedObjects.some(o => o.type === 'selection' || o.draft) && !existingHandle && !e.ctrlKey && a.prefs.selectionMode === 'paint') a.finishSelection();
+      if (["select", "free", "move", "crop"].includes(a.tool) || (existingHandle && ['shape', 'text'].includes(a.tool))) {
         let handle = this.handleAt(p);
         const hit = d.hit(p.x, p.y);
         if (hit && !handle) {
@@ -375,6 +395,11 @@ export class Editor {
               : [hit.object.id];
           }
           handle = this.handleAt(p);
+          if (hit.object.type === 'shape') {
+            a.width = hit.object.shapeStyle.width;a.outline = hit.object.shapeStyle.outline;a.shapeFill = hit.object.shapeStyle.fill;
+            document.querySelector('#outline').value = a.outline;document.querySelector('#shape-fill').value = a.shapeFill;
+          }
+          a.changedUI();
           a.updateLayers();
         }
         if (handle && d.selectedObjects.length) {
@@ -392,6 +417,7 @@ export class Editor {
             start: p,
             originals,
             before: d.metadata(),
+            lastPosition: { x: 0, y: 0 }, trailLayers: new Set(),
           };
           return;
         }
@@ -443,9 +469,10 @@ export class Editor {
         else a.color1 = picked;
         a.updateColors();
       } else if (a.tool === "text") {
-        a.editText(null, p);
+        if (d.activeLayer.locked || !d.activeLayer.visible) throw new Error('Show and unlock the active layer before adding text.');
+        this.drag = { type: 'text-box', start: p, end: p };
       } else if (a.tool === "zoom") {
-        this.setZoom(a.zoom * (e.button === 2 ? 0.5 : 2), {
+        this.setZoom(stepZoom(a.zoom, e.button === 2 ? -1 : 1), {
           x: e.clientX,
           y: e.clientY,
         });
@@ -539,17 +566,19 @@ export class Editor {
         }
       }
       drag.end = end;
+    } else if (drag.type === 'text-box') {
+      drag.end = p;
     } else if (drag.type === "selection") {
       drag.end = p;
       if (drag.free) drag.path.push(p);
     } else if (drag.type === "move") {
-      const dx = p.x - drag.start.x,
-        dy = p.y - drag.start.y;
+      const dx = Math.round(p.x - drag.start.x), dy = Math.round(p.y - drag.start.y);
+      if (e.shiftKey) this.trail(drag, dx, dy);
       for (const original of drag.originals) {
-        const o = this.doc.objects.find((o) => o.id === original.id);
-        o.x = original.x + dx;
-        o.y = original.y + dy;
+        const o = this.doc.objects.find(o => o.id === original.id);
+        if (o) { o.x = original.x + dx; o.y = original.y + dy; }
       }
+      drag.lastPosition = { x: dx, y: dy };
     } else if (drag.type === "resize") this.resizeObjects(p, e.shiftKey);
     else if (drag.type === "rotate") {
       const b = drag.bounds,
@@ -611,10 +640,13 @@ export class Editor {
       ny = newCy - nh / 2;
     if (d.originals.length === 1) {
       const o = this.doc.objects.find((o) => o.id === d.originals[0].id);
-      o.x = nx;
-      o.y = ny;
-      o.width = nw;
-      o.height = nh;
+      const candidate = { ...o, x: nx, y: ny, width: nw, height: nh };
+      if (o.type === 'text') candidate.minHeight = Math.round(nh);
+      if (['shape', 'text'].includes(o.type)) {
+        this.doc.assertAllocation(Math.ceil(nw) * Math.ceil(nh) * 12);
+        refreshEditable(candidate);
+      }
+      Object.assign(o, candidate);
     } else
       for (const original of d.originals) {
         const o = this.doc.objects.find((o) => o.id === original.id);
@@ -684,30 +716,11 @@ export class Editor {
             "Click polygon corners. Double-click or Enter to finish.",
           );
         }
+      } else if (drag.type === 'text-box') {
+        const rect = this.rect(drag.start, drag.end);
+        this.app.textEditor.begin(null, { x: rect.x, y: rect.y, width: Math.max(120, rect.width), height: Math.max(50, rect.height) });
       } else if (drag.type === "shape") {
-        const edit = d.beginRaster(),
-          r = this.rect(drag.start, drag.end),
-          pad = this.app.width + 2;
-        edit.capture(
-          r.x - pad,
-          r.y - pad,
-          r.width + 2 * pad,
-          r.height + 2 * pad,
-        );
-        drawShape(
-          d.activeLayer.canvas.getContext("2d"),
-          this.app.shape,
-          drag.start,
-          drag.end,
-          {
-            width: this.app.width,
-            color: drag.color,
-            background: drag.background,
-            outline: this.app.outline,
-            fill: this.app.shapeFill,
-          },
-        );
-        edit.commit("Draw " + this.app.shape);
+        this.createShape(this.app.shape, drag.start, drag.end, { width: this.app.width, color: drag.color, background: drag.background, outline: this.app.outline, fill: this.app.shapeFill });
       } else if (drag.type === "selection") {
         let rect = this.rect(drag.start, drag.end);
         if (drag.free) {
@@ -730,13 +743,14 @@ export class Editor {
               this.app.prefs.transparentSelection ? this.app.color2 : null,
               this.app.color2,
             );
-            this.app.tool = "move";
+            this.app.selectionOrigin = drag.free ? 'free' : 'select';
+            this.app.tool = this.app.prefs.selectionMode === 'persistent' ? 'move' : this.app.selectionOrigin;
             this.app.updateTools();
           }
         }
       } else if (["move", "resize", "rotate"].includes(drag.type)) {
         const after = d.metadata();
-        if (
+        if (drag.trailLayers?.size ||
           JSON.stringify(
             drag.originals.map((o) => [o.x, o.y, o.width, o.height, o.angle]),
           ) !==
@@ -751,6 +765,7 @@ export class Editor {
           )
         ) {
           d.history.push({
+            resources: [...new Set([...d.resources(drag.before), ...d.resources(after)])],
             label:
               drag.type === "move"
                 ? "Move objects"
@@ -779,25 +794,33 @@ export class Editor {
     }
     const active = this.doc.activeLayerId;
     this.doc.activeLayerId = layer.id;
-    const points = s.points || [s.start, s.end, ...s.controls],
-      xs = points.map((p) => p.x),
-      ys = points.map((p) => p.y),
-      pad = s.options.width + 2;
-    const edit = this.doc.beginRaster();
-    edit.capture(
-      Math.min(...xs) - pad,
-      Math.min(...ys) - pad,
-      Math.max(...xs) - Math.min(...xs) + 2 * pad,
-      Math.max(...ys) - Math.min(...ys) + 2 * pad,
-    );
-    drawShape(layer.canvas.getContext("2d"), s.name, s.start, s.end, {
-      ...s.options,
-      controls: s.controls,
-      points: s.points,
-    });
-    edit.commit("Draw " + s.name);
+    this.createShape(s.name, s.start, s.end, { ...s.options, controls: s.controls, points: s.points });
     this.doc.activeLayerId = active;
     this.app.changedUI();
+  }
+  createShape(name, start, end, options) {
+    const properties = shapeProperties(name, start, end, options);
+    this.doc.assertAllocation(properties.width * properties.height * 12);
+    const source = shapeSource(properties);
+    this.doc.insert(source, name, false, properties);
+    this.app.changedUI();
+  }
+  trail(drag, dx, dy) {
+    const targets = this.doc.layers.filter(l => l.objects.some(o => drag.originals.some(original => original.id === o.id)));
+    for (const layer of targets) if (!drag.trailLayers.has(layer.id)) {
+      this.doc.assertAllocation(this.doc.width * this.doc.height * 4);
+      const previous = layer.canvas, next = canvas(previous.width, previous.height);
+      next.getContext('2d').drawImage(previous, 0, 0); layer.canvas = next;
+      drag.trailLayers.add(layer.id);
+    }
+    const from = drag.lastPosition, count = Math.max(Math.abs(dx - from.x), Math.abs(dy - from.y), 1);
+    for (let step = 0; step <= count; step++) {
+      const sx = Math.round(from.x + (dx - from.x) * step / count), sy = Math.round(from.y + (dy - from.y) * step / count);
+      for (const original of drag.originals) {
+        const layer = targets.find(l => l.objects.some(o => o.id === original.id));
+        if (layer) drawObject(layer.canvas.getContext('2d'), { ...original, x: original.x + sx, y: original.y + sy });
+      }
+    }
   }
   canvasResizeStart(e) {
     e.preventDefault();
@@ -853,7 +876,7 @@ export class Editor {
   }
   setZoom(zoom, anchor = null) {
     const old = this.app.zoom,
-      z = Math.min(8, Math.max(0.1, zoom));
+      z = nearestZoom(zoom);
     const r = this.viewport.getBoundingClientRect(),
       x = anchor ? anchor.x - r.left : r.width / 2,
       y = anchor ? anchor.y - r.top : r.height / 2,
@@ -869,11 +892,7 @@ export class Editor {
   fit() {
     const r = this.viewport.getBoundingClientRect();
     this.setZoom(
-      Math.min(
-        1,
-        (r.width - 38) / this.doc.width,
-        (r.height - 38) / this.doc.height,
-      ),
+      fitZoom(Math.min(1, (r.width - 38) / this.doc.width, (r.height - 38) / this.doc.height)),
     );
     this.viewport.scrollLeft = 0;
     this.viewport.scrollTop = 0;

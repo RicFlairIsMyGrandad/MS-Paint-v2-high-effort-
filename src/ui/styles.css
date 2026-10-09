@@ -1698,3 +1698,84 @@ body.fullscreen .titlebar {
   }
 }
 .floating-dialog .modal-shade{pointer-events:auto}.text-styles input[type=color]{width:32px;height:29px;padding:2px}
+/* Paint-style ribbon and screen-resolution editing controls. */
+.ribbon { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+.ribbon-group { padding-left: 6px; padding-right: 6px; }
+.clipboard { width: 112px; }
+.image-group { width: 190px; }
+.selection-controls { width: 95px; flex-shrink: 0; padding-top: 3px; }
+.selection-buttons { display: flex; gap: 2px; }
+.selection-buttons button { width: 43px; height: 39px; padding: 5px; border-radius: 0; }
+.selection-buttons svg { width: 29px; height: 29px; color: #006dd9; stroke-dasharray: 2 2; }
+.transparent-toggle { display: flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 11px; }
+.transparent-toggle input { width: 13px; height: 13px; }
+.tools-group { width: 86px; }
+.tool-grid { grid-template-columns: repeat(3, 24px); grid-template-rows: 27px 27px; margin: 8px 0; }
+.tool-grid svg { width: 19px; height: 19px; }
+.brush-group { width: 65px; }
+.brush-split { display: flex; flex-direction: column; width: 52px; }
+.brush-button { height: 49px; border-radius: 0; padding: 3px; }
+.brush-button > svg { width: 39px; height: 39px; }
+.brush-menu-button { height: 24px; padding: 0; font-size: 11px; gap: 0; border-radius: 0; }
+.shapes-group { width: 236px; }
+.shape-gallery { grid-template-columns: repeat(7, 20px); grid-template-rows: repeat(3, 21px); width: 143px; height: 66px; }
+.shape-gallery svg { width: 19px; height: 19px; }
+.shape-options { width: 78px; }
+.shape-options select { width: 63px; font-size: 11px; }
+.size-group { width: 56px; }
+.size-group .ribbon-large { min-width: 40px; height: 71px; }
+.line-sample { width: 31px; gap: 5px; }
+.line-sample i, .size-option i { background: #152a43; }
+.line-sample.pencil-sample { align-items: center; justify-content: center; }
+.line-sample.pencil-sample i { width: 4px; height: 4px; }
+.line-sample.pencil-sample i:not(:first-child) { display: none; }
+#width-label { color: #182b45; font-size: 14px; font-weight: 700; }
+.colors-group { width: 322px; flex: 0 0 322px; padding: 0 4px; }
+.colors-group .group-content { gap: 3px; }
+.color-button { width: 39px; min-width: 39px; padding: 3px 2px; }
+.palette { width: 212px; grid-template-columns: repeat(10, 19px); grid-template-rows: repeat(3, 19px); gap: 2px; margin: 0; }
+.color-chip { width: 19px; height: 19px; border: 1px solid #a0a0a0; border-radius: 0; padding: 1px; box-shadow: inset 0 0 0 1px #fff; }
+.color-chip.special-color { transform: none; margin: 0; }
+.edit-colors { width: 33px; min-width: 33px; font-size: 11px; padding-left: 0; padding-right: 0; }
+.edit-colors:before { width: 24px; height: 28px; }
+.extra-group { width: 133px; min-width: 133px; flex: 0 0 133px; }
+.ai-button { width: 70px; }
+.canvas-dimensions { width: 108px; gap: 3px; }
+.canvas-dimensions > label { display: flex; align-items: center; justify-content: space-between; gap: 3px; font-size: 11px; }
+.canvas-dimensions input { width: 56px; min-width: 0; padding: 2px 3px; height: 23px; font-size: 11px; }
+.canvas-dimensions > button { height: 24px; font-size: 11px; padding: 1px; }
+.canvas-dimensions > button svg { width: 15px; height: 15px; }
+.quick-save { width: 243px; min-width: 243px; padding-left: 9px; }
+.assets-panel { min-width: 180px; max-width: 600px; flex-shrink: 0; }
+.categories { min-height: 65px; max-height: calc(100vh - 390px); overflow-y: auto; flex-shrink: 0; }
+#assets-width-splitter { width: 5px; min-width: 5px; cursor: ew-resize; background: #edf0f4; touch-action: none; border-right: 1px solid #d6dbe3; }
+#assets-width-splitter:hover, #assets-width-splitter:focus { background: #9cccff; }
+.asset-splitter { height: 7px; min-height: 7px; margin: 2px 12px; cursor: ns-resize; touch-action: none; background: linear-gradient(transparent 3px, #c9cfd8 3px, #c9cfd8 4px, transparent 4px); }
+.asset-splitter:hover, .asset-splitter:focus { background: #c9e5ff; }
+.layer-row { grid-template-columns: 24px 42px minmax(0,1fr) 23px 23px; padding-left: 4px; padding-right: 4px; gap: 4px; }
+.layer-row .lock-layer, .layer-row .delete-layer-row { opacity: .75; }
+.layer-row button { padding: 2px; min-width: 0; }
+#display { image-rendering: pixelated; }
+#overlay { image-rendering: auto; }
+.inline-text-editor { position: absolute; z-index: 5; resize: none; border: 1px dashed #087bea; border-radius: 0; background: transparent; overflow: hidden; box-shadow: none !important; margin: 0; outline: none; }
+.text-tab { color: #28771b; }
+.tabs .text-tab.active { border-color: #8acb66; }
+#text-color-slot { display: flex; }
+.text-font-group { width: 218px; }
+.font-controls { display: flex; flex-direction: column; gap: 5px; padding: 6px 0; }
+.font-controls > select { width: 196px; height: 25px; border-radius: 0; padding: 2px 5px; }
+.font-controls > div { display: flex; gap: 3px; }
+#text-size { width: 55px; height: 26px; padding: 2px 4px; border-radius: 0; }
+.text-style-button { width: 29px; height: 26px; padding: 2px; border-radius: 0; }
+.text-style-button.bold { font-weight: bold; }.text-style-button.italic { font-style: italic; }.text-style-button.underline { text-decoration: underline; }.text-style-button.strikeout { text-decoration: line-through; font-size: 10px; }
+.text-background-group { width: 144px; padding-top: 9px; gap: 8px; }
+.text-background-group > label, .speech-options > label { display: flex; gap: 5px; align-items: center; }
+.text-background-group > span { font-size: 11px; color: #59687a; }
+.speech-options { width: 291px; padding-top: 6px; gap: 5px; }
+.speech-options > div:not(.group-label) { display: flex; flex-wrap: wrap; gap: 5px 8px; }
+.speech-options > div > label { display: flex; align-items: center; gap: 4px; font-size: 11px; }
+.speech-options input[type=number] { width: 45px; height: 24px; padding: 2px 3px; }
+.layer-row { display: grid; }
+.line-sample i:nth-child(2) { height: var(--current-stroke, 3px); }
+.floating-dialog.nonmodal .modal-shade { pointer-events: none; }
+#overlay:focus { outline: none; }

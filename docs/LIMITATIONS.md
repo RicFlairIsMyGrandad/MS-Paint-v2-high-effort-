@@ -1,61 +1,55 @@
-# Remaining limitations — 1.0.1
+# Remaining limitations — 1.0.2
 
-These are known differences or unverified areas, not completed acceptance claims.
+These are differences or unverified areas, rather than completed acceptance claims.
 
-1. **Home-edition laptop verification is outstanding.** The exact downloadable
-   Setup and Portable EXEs passed on hosted Windows Server 2022 (10.0.20348)
-   and Windows Server 2025 (10.0.26100). Checks include installation, packaged
-   startup/drawing, clipboard alpha, native saving, offline AI, shortcut targets,
-   the project association command, portable launch and uninstall preserving a
-   user project. These checks do not prove that the user's Windows 10 Home or
-   Windows 11 Home laptop now starts successfully. The original laptop failure
-   has not been reproduced on that hardware. High-DPI/multiple-display behavior,
-   touch/stylus input, launching projects through Explorer's default-app choice,
-   long sessions and SmartScreen reputation remain unverified on a laptop.
-2. **The app and installer are unsigned.** A signing certificate and reputation
-   are not included. This is disclosed in the installation instructions.
-3. **Paint fidelity is close in layout, not exact in all behavior.** Only the
-   PaintPlus concept screenshot was attached. The separate Windows 10 Paint and
-   brush-comparison / issue images described in the specification were not supplied.
-   Pencil uses integer raster lines and the round brush uses continuous rounded
-   strokes. Calligraphy, spray, oil, crayon, marker and watercolor are original
-   approximations, without pixel-for-pixel validation against mspaint.exe.
-4. **Text uses an editing dialog**, rather than Paint's inline text box and
-   contextual text ribbon. Text content, font, size, bold/italic style and opaque
-   background are editable and preserved in projects. Advanced typography and
-   automatic line wrapping are not implemented.
-5. **Some classic Paint commands are absent:** invert selection, print / print
-   preview, scanner / camera acquisition, skew, and brush-textured shape outlines
-   or fills. Shapes support solid outline, no outline, solid fill and no fill.
-   The main requested pencil/brush/eraser/fill/picker/selection/transform workflow
-   is implemented; this is not a claim of every classic Paint command.
-6. **Raster selections operate on the active layer**, not a merged selection
-   across several raster layers. Image/text objects can be selected and grouped
-   across layers; group transforms, flips, duplicates and project persistence work.
-   Only raster layers and simple groups are supported, without Photoshop effects,
-   masks, blending modes or nested group hierarchies.
-7. **The asset index is a saved index**, not a live filesystem watcher. Imports
-   reference files without copying them. New or moved files require re-importing
-   the folder or files. Removing assets never deletes originals. Only the library
-   category names are renamed; source filesystem directories are not renamed.
-8. **AI is CPU-only U2NetP.** It is genuinely local and tested, but imperfect on
-   hair, fine edges, overlapping subjects and complex scenes. Threshold and softness
-   refinement are provided; manual mask painting and GPU acceleration are absent.
-9. **Limits:** nominal dimensions are capped at 16,384 px per side and 64 million
-   pixels, subject to a conservative 512 MB image working-memory estimate.
-   Operations that exceed this estimate are rejected before allocation. The
-   estimate includes primary layer/source canvases, display buffers, undo and
-   transform buffers. Browser caches, color-key copies and runtime allocations
-   can add memory; it is not a hard bound on total operating-system RAM.
-   Undo and redo together retain up to 80 commands and 128 MB, including distinct
-   historical canvas references. A single larger operation is not retained in
-   history and displays a notice. Very large files and extended long-session
-   memory use have not been stress-tested on a Windows laptop.
-10. **Formats:** PNG, JPEG, BMP and WebP export are supported. GIF opens as a static
-    image. Animated GIF, TIFF, color profiles / CMYK and EXIF-orientation workflows
-    are not independently verified. Flattened export does not preserve editable
-    state; use .paintplus projects for that.
+- **Exact Microsoft assets are unfinished (request 3).** The ribbon has colored
+  Paint-style SVG redraws, tighter spacing, adjacent selection buttons and a
+  bordered palette. Icons and custom tool cursors are original approximations,
+  not the exact Windows 10 Paint resource files. The palette and ribbon are not
+  pixel-for-pixel clones of Microsoft's UI. The supplied reference screenshot
+  was used for visual comparison. Text controls, layers, assets and AI necessarily
+  add controls to that layout; narrow windows scroll the ribbon horizontally.
+- **Laptop-specific verification is outstanding.** Hosted Windows checks cover
+  the installer and actual packaged app on Windows Server kernels used by CI.
+  They do not prove operation on the user's Windows 10 Home or Windows 11 Home
+  laptop. High-DPI/multiple-display behavior, touch/stylus input and long sessions
+  still need testing on that hardware. Software rendering and startup diagnostics
+  are included to address the previous blank-window failure.
+- **Unsigned installer and app.** No signing certificate or SmartScreen reputation
+  is included. See the installation instructions.
+- **AI is local CPU U2NetP and remains imperfect.** Hard silhouettes, lower
+  thresholds and working softness controls improve edge adjustment. Complex
+  backgrounds, hair and overlapping subjects can still need manual cleanup.
+  No manual mask painting or GPU inference is implemented. The confidence mask
+  is retained during the refinement session, not stored in .paintplus files for
+  later reopening; the resulting pixels are stored.
+- **Paint fidelity:** Round brush bodies and pencil pixels are tested, but no
+  pixel-for-pixel comparison with mspaint.exe covers every brush or shape.
+  Calligraphy, spray, oil, crayon, marker and watercolor remain approximations.
+  Diagonal/curved brush edges and rounded stroke ends can be antialiased.
+- **Selection scope:** Pixel selections lift the active raster layer. They do not
+  combine multiple raster layers into one selection. Image and text objects can
+  be selected and grouped across layers. Groups do not have Photoshop effects,
+  nested hierarchies, blend modes or masks. In trail mode opaque selection margins
+  also stamp, matching normal opaque selection behavior; enable Transparent to
+  ignore exact Color-2 pixels.
+- **Text:** Font availability depends on the computer. Inline text supports whole
+  box formatting, wrapping, re-editing and speech bubbles; it does not support
+  mixed fonts/styles within one box, vertical writing or rich paragraph alignment.
+  Editable text sits above its layer's raster paint until explicitly committed.
+  Text auto-grows vertically, while the width is set by the drag/resize handles.
+- **Library index:** It is a saved index, not a live filesystem watcher. New or
+  moved source files need re-importing. Removing library entries or categories
+  never deletes original files. Category renaming does not rename disk folders.
+- **Memory and dimensions:** Up to 16,384px per side and 64 million pixels, subject
+  to a conservative 512MB image allocation estimate. Undo/redo together retain
+  up to 80 commands and 128MB. Oversized operations are rejected or, if too large
+  for history alone, a notice explains that they cannot be undone. Browser caches
+  and runtime allocations can add memory; this is not a total OS RAM bound.
+- **Other missing classic commands:** invert selection, printing/print preview,
+  scanner/camera acquisition, skew and textured shape outlines/fills. PNG/JPEG/
+  BMP/WebP export works; animated GIF, TIFF, color profiles/CMYK and EXIF workflows
+  are not independently verified. Save .paintplus to preserve editable state.
 
-The demonstration scene uses original artwork and a blank Foreground layer
-reserved for painting. It is illustrative content, not a copied screenshot.
-The final screenshot is captured from the running desktop application.
+Screenshots come from the running packaged application. The example scene uses
+original artwork; it is not a screenshot mockup.

@@ -38,3 +38,15 @@ floating image objects with `type: selection`.
 Undo history and workspace preferences are deliberately not serialized. Opening
 a project creates a fresh undo history. Library indexes, Quick Save output folder,
 panel states and number shortcuts are per-user settings, separate from projects.
+
+Version 1.0.2 keeps container version 1. New `type: "shape"` objects include
+`shapeName`, immutable `shapeStyle` (width/colors/outline/fill), normalized
+`shapeGeometry` (endpoints, optional curve controls/polygon vertices) and `draft`.
+Their embedded source PNG is regenerated after shape/style transforms.
+
+Text objects add `underline`, `strikeout`, `padding`, `lineGap`, `minHeight`,
+`bubble`, `bubbleWidth`, `bubbleColor` and `background`. Width sets wrapping;
+height grows to fit the content and bubble body. Whole-box formatting and source
+PNG are stored together. The source PNG remains useful to old readers, while
+1.0.2 validates new editable geometry/layout fields before accepting a project.
+AI confidence arrays are transient; only the resulting PNG pixels are saved.

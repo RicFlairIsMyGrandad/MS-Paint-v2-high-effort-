@@ -15,7 +15,7 @@ async function reset(page, w = 300, h = 200) {
   await page.waitForTimeout(100);
 }
 async function drag(page, a, b, button = "left") {
-  const r = await page.locator("#overlay").boundingBox(),
+  const r = await page.locator("#display").boundingBox(),
     z = await page.evaluate(() => paintplus.zoom);
   await page.mouse.move(r.x + a.x * z, r.y + a.y * z);
   await page.mouse.down({ button });
@@ -134,6 +134,8 @@ test("all brush variants produce strokes, shapes honor outline and fill", async 
   await page.locator("#shape-fill").selectOption("solid");
   await drag(page, { x: 160, y: 50 }, { x: 240, y: 110 });
   expect(await at(page, 200, 80)).toEqual([255, 255, 255, 255]);
+  await page.keyboard.press("Enter");
+  await expect.poll(() => page.evaluate(() => paintplus.doc.objects.length)).toBe(0);
   expect(await at(page, 160, 80)).toEqual([24, 71, 241, 255]);
 });
 test("canvas boundary handles resize the canvas, not pixels, and undo", async ({
@@ -514,7 +516,8 @@ test("zoom changes viewport scaling only, rulers and scrolling follow canvas", a
   await reset(page, 1200, 800);
   await page.evaluate(() => paintplus.editor.setZoom(2));
   await expect(page.locator("#zoom-percent")).toHaveText("200%");
-  expect((await page.locator("#overlay").boundingBox()).width).toBe(2400);
+  expect((await page.locator("#display").boundingBox()).width).toBe(2400);
+  expect((await page.locator("#overlay").boundingBox()).width).toBeLessThan(1200);
   expect(await page.evaluate(() => paintplus.doc.width)).toBe(1200);
   await page.evaluate(() => {
     paintplus.editor.viewport.scrollLeft = 200;
@@ -566,7 +569,7 @@ test("text creates editable object, rasterizes from original and undoes", async 
   await page.keyboard.press("5");
   await drag(page, { x: 30, y: 40 }, { x: 30, y: 40 });
   await page.locator("#text-content").fill("PaintPlus\nHello!");
-  await page.getByRole("button", { name: "Insert text", exact: true }).click();
+  await page.locator("[data-action=finish-text]").click();
   expect(await page.evaluate(() => paintplus.doc.objects[0].text)).toBe(
     "PaintPlus\nHello!",
   );

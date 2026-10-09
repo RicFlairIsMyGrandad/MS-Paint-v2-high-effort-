@@ -1,3 +1,4 @@
+import { foregroundPixels } from "./alpha.js";
 import * as ort from "onnxruntime-web/wasm";
 let session;
 self.onmessage = async ({ data: m }) => {
@@ -48,28 +49,15 @@ self.onmessage = async ({ data: m }) => {
       low = Math.min(low, v);
       high = Math.max(high, v);
     }
-    const md = new Uint8ClampedArray(side * side * 4);
-    for (let i = 0; i < mask.length; i++) {
-      const a = Math.round(
-        ((mask[i] - low) / Math.max(0.000001, high - low)) * 255,
-      );
-      md.set([255, 255, 255, a], i * 4);
+    const confidence = new Float32Array(m.width * m.height);
+    const probability = (x, y) => (mask[Math.max(0, Math.min(side - 1, y)) * side + Math.max(0, Math.min(side - 1, x))] - low) / Math.max(0.000001, high - low);
+    for (let y = 0; y < m.height; y++) for (let x = 0; x < m.width; x++) {
+      const sx = (x + 0.5) * side / m.width - 0.5, sy = (y + 0.5) * side / m.height - 0.5,
+        ix = Math.floor(sx), iy = Math.floor(sy), fx = sx - ix, fy = sy - iy;
+      confidence[y * m.width + x] = probability(ix, iy) * (1-fx) * (1-fy) + probability(ix+1, iy) * fx * (1-fy) + probability(ix, iy+1) * (1-fx) * fy + probability(ix+1, iy+1) * fx * fy;
     }
-    const mc = new OffscreenCanvas(side, side);
-    mc.getContext("2d").putImageData(new ImageData(md, side, side), 0, 0);
-    const full = new OffscreenCanvas(m.width, m.height),
-      fctx = full.getContext("2d");
-    fctx.imageSmoothingEnabled = true;
-    fctx.imageSmoothingQuality = "high";
-    fctx.drawImage(mc, 0, 0, m.width, m.height);
-    const alpha = fctx.getImageData(0, 0, m.width, m.height).data,
-      pixels = image.data;
-    for (let i = 0; i < pixels.length; i += 4)
-      pixels[i + 3] = Math.round((pixels[i + 3] * alpha[i + 3]) / 255);
-    self.postMessage(
-      { pixels: pixels.buffer, width: m.width, height: m.height },
-      [pixels.buffer],
-    );
+    const pixels = foregroundPixels(image.data, confidence, 0.1, 0);
+    self.postMessage({ pixels: pixels.buffer, confidence: confidence.buffer, width: m.width, height: m.height }, [pixels.buffer, confidence.buffer]);
   } catch (e) {
     self.postMessage({ error: e.message });
   }

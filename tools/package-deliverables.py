@@ -56,6 +56,8 @@ deliveries = {
     f"PaintPlus-Portable-{version}-x64.exe": root / "release" / f"PaintPlus-Portable-{version}-x64.exe",
     "PaintPlus-Screenshot.png": root / "docs/screenshots/packaged-linux-dialog.png",
     "PaintPlus-Editor.png": root / "docs/screenshots/packaged-linux.png",
+    "PaintPlus-Text.png": root / "docs/screenshots/packaged-linux-text.png",
+    "SpeechExample.paintplus": root / "docs/SpeechExample.paintplus",
     "Example.paintplus": root / "docs/Example.paintplus",
     "Example.png": root / "docs/screenshots/example-export.png",
     "README.txt": root / "README.md",

@@ -42,7 +42,22 @@ const paths = {
   image: "M2 3h20v18H2V3Zm0 15 6-7 5 5 3-4 6 6M17 7h.01",
   check: "m4 12 5 5L21 5",
 };
+const colored = {
+  pencil: '<path fill="#f3c64c" stroke="#997436" d="m4 16 11-12 5 4L8 20l-6 2Z"/><path fill="#f4b5aa" stroke="#9b7672" d="m15 4 2-2 5 4-2 2Z"/><path fill="#eee3c5" stroke="#987c59" d="m4 16 4 4-6 2Z"/><path fill="#373b43" stroke="none" d="m2 22 1-4 3 3Z"/>',
+  eraser: '<path fill="#efadb1" stroke="#aa686a" d="m3 14 10-11 9 8-10 11H9Z"/><path fill="#e9edf1" stroke="#8d969d" d="m3 14 4-4 9 8-4 4H9Z"/>',
+  fill: '<path fill="#dfe9f6" stroke="#748ca9" d="m4 8 7-5 9 9-10 8-8-9Z"/><path fill="#fff" stroke="#8ba2c0" d="m4 8 8-1 8 5-10 8Z"/><path stroke="#667c95" fill="none" d="M5 9V4q4-6 8 0v4"/><path fill="#168de6" stroke="#0865b7" d="M21 14q-4 5 0 8 4-3 0-8Z"/>',
+  dropper: '<path stroke="#6e7d86" fill="#e9f5ff" d="m3 19 11-11 3 3L6 22H2Z"/><path fill="#8096b2" stroke="#56677e" d="m12 4 4-3 7 7-3 4-4-4-2 2-3-3 2-2Z"/><path stroke="#fff" d="m5 18 7-7"/>',
+  zoom: '<path stroke="#786850" stroke-width="3.5" d="m15 16 7 6"/><circle cx="10" cy="10" r="7" fill="#d8efff" stroke="#7b91a9"/><path stroke="#fff" d="M5 10q0-6 6-6"/>',
+  text: '<path fill="#173d75" stroke="none" d="M10 2h4l8 20h-5l-2-6H8l-2 6H2Zm-.9 11h4.8L11.5 6Z"/>',
+  brush: '<rect x="1" y="2" width="21" height="21" rx="1" fill="#f2f7fd" stroke="#9bb3cd"/><path fill="#e59b39" stroke="#a9602f" d="M7 17q-6-1-3-7 6-7 11 1 3 7-6 10Z"/><path fill="#b1cdef" stroke="#5583b4" d="m9 13 10-11 4 2-10 12Z"/><path fill="#654929" stroke="#7f522d" d="m6 12 7 3q-1 8-8 5Z"/><path stroke="#e7c28c" d="m7 14 1 5"/>',
+  paste: '<path fill="#dbe5f1" stroke="#91a2b9" d="M4 4h16v18H4Z"/><path fill="#fafcff" stroke="#8599b6" d="M6 8h12v12H6Z"/><path fill="#cfdae8" stroke="#849ab6" d="M8 2h8v5H8Z"/><path stroke="#a5b7cd" d="M8 11h8m-8 3h8m-8 3h6"/>',
+  save: '<path fill="#9261b7" stroke="#785097" d="M3 2h16l3 3v17H3Z"/><path fill="#eff2f6" stroke="#ddd" d="M7 2h10v8H7Zm0 12h11v10H7Z"/><path stroke="#8767a3" d="M14 3v5m-5 7h7m-7 3h7"/>',
+  folder: '<path fill="#f5d47a" stroke="#987236" d="M2 6V3h9l3 4h8v14H2Z"/><path fill="#ffd161" stroke="#a58038" d="M3 10h20l-3 11H2Z"/>',
+  cut: '<path stroke="#8e9daf" d="m6 15 13-13M18 15 7 2"/><circle cx="5" cy="18" r="3" fill="#e4efff" stroke="#91a9c9"/><circle cx="19" cy="18" r="3" fill="#e4efff" stroke="#91a9c9"/>',
+  duplicate: '<path fill="#fafcff" stroke="#8ba5c7" d="M8 2h13v16H8ZM3 7h13v16H3Z"/><path stroke="#acc0dd" d="M6 11h7m-7 3h7m-7 3h7"/>',
+};
 export function icon(name, size = 20) {
+  if (colored[name]) return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" stroke-width="1" stroke-linejoin="round" aria-hidden="true">${colored[name]}</svg>`;
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[name] || paths.image}"/></svg>`;
 }
 export const shapeNames = [
@@ -89,8 +104,8 @@ export function shapeIcon(name) {
     star5: paths.star,
     star6: "m12 1 3 6 7-1-3 6 3 6-7-1-3 6-3-6-7 1 3-6-3-6 7 1 3-6Z",
     heart: "M12 22S-5 11 4 3q5-3 8 3 3-6 8-3c9 8-8 19-8 19Z",
-    cloud: "M6 20a5 5 0 1 1-2-9A7 7 0 0 1 17 7a5 5 0 1 1 2 13H6Z",
-    callout: "M2 3h20v14H10l-6 5v-5H2V3Z",
+    cloud: "M6 19C0 19 0 11 5 10C3 4 12 1 15 6C22 3 25 13 20 15C21 20 13 23 11 19C9 22 5 22 6 19Z",
+    callout: "M6 3h13q3 0 3 3v10q0 3-3 3H10q-2 4-6 4 3-1 3-4H5q-3 0-3-3V6q0-3 4-3Z",
   };
   return `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35"><path d="${shapes[name]}"/></svg>`;
 }

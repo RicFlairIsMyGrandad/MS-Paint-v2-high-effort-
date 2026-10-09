@@ -246,6 +246,11 @@ export function paintSegment(ctx, a, b, opts) {
       }
     }
   } else {
+    // Odd widths are centred on a pixel centre; even widths on a pixel edge.
+    // Axis-aligned strokes then occupy exactly N solid pixels, without side bleed.
+    const align = value => Math.floor(value) + (width % 2 ? 0.5 : 0);
+    a = { x: align(a.x), y: align(a.y) };
+    b = { x: align(b.x), y: align(b.y) };
     if (brush === "square" && type === "brush") ctx.lineCap = "square";
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);

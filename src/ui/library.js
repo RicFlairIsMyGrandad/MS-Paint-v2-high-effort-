@@ -152,6 +152,11 @@ export class Library {
       this.app.savePrefs();
       this.render();
     });
+    document.querySelector("#categories").addEventListener("contextmenu", event => {
+      const row = event.target.closest(".category");
+      const category = this.categories.find(c => c.id === row?.dataset.category);
+      if (category) { event.preventDefault();this.categoryMenu(category, row); }
+    });
     document
       .querySelector("#asset-search")
       .addEventListener("input", () => this.render());
@@ -419,6 +424,8 @@ export class Library {
           this.categories = this.categories.filter((c) => c.id !== category.id);
           this.assets = this.assets.filter((a) => a.category !== category.id);
           this.current = "all";
+          this.app.prefs.category = 'all';
+          await this.app.savePrefs();
           await this.save();
           this.render();
         },

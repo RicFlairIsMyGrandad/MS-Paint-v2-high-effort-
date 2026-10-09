@@ -135,15 +135,28 @@ export class PaintDocument {
   }
   action(label, fn, bytes = 0) {
     const before = this.metadata();
-    fn();
+    const dirty = this.dirty;
+    try { fn(); }
+    catch (error) { this.restore(before);this.dirty = dirty;throw error; }
     const after = this.metadata();
-    this.history.push({
+    if (!this.inTransaction) this.history.push({
       label,
       resources: [...new Set([...this.resources(before), ...this.resources(after)])],
       undo: () => this.restore(before),
       redo: () => this.restore(after),
     });
     this.changed();
+  }
+  transaction(label, fn) {
+    if (this.inTransaction) return fn();
+    const before = this.metadata(), dirty = this.dirty;
+    this.inTransaction = true;
+    try {
+      const result = fn(), after = this.metadata();
+      this.history.push({ label, resources: [...new Set([...this.resources(before), ...this.resources(after)])], undo: () => this.restore(before), redo: () => this.restore(after) });
+      this.changed();return result;
+    } catch (error) { this.restore(before);this.dirty = dirty;throw error; }
+    finally { this.inTransaction = false; }
   }
   beginRaster() {
     if(!this.activeLayer.visible)throw new Error('Show the active layer before painting.');

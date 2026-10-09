@@ -7,6 +7,10 @@ import { serialize, deserialize, imageCanvas } from "./core/project.js";
 import { resample } from "./core/resample.js";
 import { Editor, selectionBounds, axisBounds } from "./ui/editor.js";
 import { Library } from "./ui/library.js";
+import { TextEditor } from "./ui/text.js";
+import { nearestZoom, stepZoom, zoomLevels } from "./core/zoom.js";
+import { refreshEditable } from "./core/editable.js";
+import { foregroundPixels } from "./core/alpha.js";
 const defaultPrefs = {
   assetsOpen: true,
   layersOpen: true,
@@ -29,10 +33,15 @@ const defaultPrefs = {
     "text",
     "shape",
     "dropper",
-    "crop",
+    "transparent",
     "move",
   ],
   smoothPreview: true,
+  selectionMode: "paint",
+  growCanvasOnPaste: true,
+  assetsWidth: 280,
+  categoriesHeight: 246,
+  textStyle: {},
 };
 export class PaintPlus {
   constructor() {
@@ -77,15 +86,18 @@ export class PaintPlus {
     for (const [key, value] of Object.entries(settings.preferences || {})) {
       if (typeof value === typeof defaultPrefs[key] && !Array.isArray(value) && (typeof value !== "number" || Number.isFinite(value))) this.prefs[key] = value;
     }
-    this.prefs.shortcuts = settings.preferences?.shortcuts;
+    const savedShortcuts = settings.preferences?.shortcuts;
+    this.prefs.shortcuts = Array.isArray(savedShortcuts) ? savedShortcuts.map(tool => tool === "crop" ? "transparent" : tool) : null;
     this.prefs.shortcuts =
       Array.isArray(this.prefs.shortcuts) && this.prefs.shortcuts.length === 10 && this.prefs.shortcuts.every(tool => tools.includes(tool))
         ? this.prefs.shortcuts
         : [...defaultPrefs.shortcuts];
-    this.zoom = Math.min(8, Math.max(0.1, this.prefs.zoom || 1));
+    this.zoom = nearestZoom(this.prefs.zoom);
     document.querySelector("#app").innerHTML = layout();
     this.editor = new Editor(this);
     this.library = new Library(this, settings);
+    this.selectionOrigin = "select";
+    this.textEditor = new TextEditor(this);
     this.bind();
     this.applyPrefs();
     this.changedUI();
@@ -185,6 +197,7 @@ export class PaintPlus {
         ),
       );
     document.querySelector("#width-label").textContent = this.width + " px";
+    document.querySelector(".line-sample").style.setProperty("--current-stroke", Math.min(18, this.width) + "px");
     document.querySelector("[data-action=undo]").disabled =
       !this.doc.history.undoStack.length;
     document.querySelector("[data-action=redo]").disabled =
@@ -193,6 +206,18 @@ export class PaintPlus {
       document.querySelector(`[data-action=${action}]`).disabled =
         !this.doc.selectedObjects.length;
     this.editor?.updateCursor(this.editor.hover);
+    const shape = this.doc.selectedObjects.find(o => o.type === 'shape');
+    const shapeActive = this.tool === 'shape' || !!shape;
+    document.querySelector('#outline').disabled = !shapeActive;
+    document.querySelector('#shape-fill').disabled = !shapeActive;
+    document.querySelector('#selection-transparent').checked = this.prefs.transparentSelection;
+    for (const key of ['width', 'height']) {
+      const field = document.querySelector('#canvas-' + key);
+      if (document.activeElement !== field) field.value = this.doc[key];
+    }
+    document.querySelector('[data-tab=text]').classList.toggle('hidden', this.tool !== 'text' && !this.doc.selectedObjects.some(o => o.type === 'text'));
+    document.querySelector('.line-sample').classList.toggle('pencil-sample', this.tool === 'pencil');
+    this.textEditor?.syncControls();
     this.updateColors();
   }
   updateColors() {
@@ -205,24 +230,80 @@ export class PaintPlus {
       .querySelector("[data-action=color2]")
       .classList.toggle("selected", this.activeColor === 2);
   }
+  switchTab(tab) {
+    const colors = document.querySelector('.colors-group');
+    if (tab === 'text') document.querySelector('#text-color-slot').append(colors);
+    else document.querySelector('#home-ribbon').insertBefore(colors, document.querySelector('.extra-group'));
+    for (const button of document.querySelectorAll('[data-tab]')) button.classList.toggle('active', button.dataset.tab === tab);
+    for (const name of ['home', 'view', 'text']) document.querySelector('#' + name + '-ribbon').classList.toggle('hidden', name !== tab);
+    this.editor.requestRender();
+  }
+  toggleTransparency(value = !this.prefs.transparentSelection) {
+    this.prefs.transparentSelection = value;
+    const selected = this.doc.selectedObjects.filter(o => !['shape','text'].includes(o.type));
+    if (selected.length && this.selectedEditable()) this.doc.action('Selection transparency', () => {
+      for (const object of selected) object.transparentColor = value ? this.color2 : null;
+    });
+    this.savePrefs();this.changedUI();
+  }
+  finishSelection() {
+    const objects = this.doc.selectedObjects.filter(o => o.type === 'selection' || o.draft);
+    this.doc.assertAllocation(this.doc.layers.filter(layer => layer.objects.some(o => objects.includes(o))).length * this.doc.width * this.doc.height * 4);
+    if (objects.length && this.selectedEditable()) this.doc.action('Commit selection', () => {
+      for (const layer of this.doc.layers) {
+        const committing = layer.objects.filter(o => objects.includes(o));
+        if (!committing.length) continue;
+        layer.canvas = cloneCanvas(layer.canvas);
+        for (const object of committing) drawObject(layer.canvas.getContext('2d'), object);
+        layer.objects = layer.objects.filter(o => !committing.includes(o));
+      }
+      this.doc.selected = [];
+    });
+    this.doc.selected = [];this.tool = this.selectionOrigin || 'select';this.changedUI();
+  }
+  updateShapeStyle(patch = {}) {
+    const objects = this.doc.selectedObjects.filter(o => o.type === 'shape');
+    if (objects.length && this.selectedEditable()) this.doc.action('Format shape', () => {
+      for (const object of objects) {
+        this.doc.assertAllocation(object.width * object.height * 12);
+        const candidate = { ...object, shapeStyle: { ...object.shapeStyle, ...patch } };
+        refreshEditable(candidate);Object.assign(object, candidate);
+      }
+    });
+    this.changedUI();
+  }
+  setStrokeWidth(width) {
+    this.width = Math.max(1, Math.min(256, Math.round(width)));
+    this.updateShapeStyle({ width: this.width });
+  }
+  colorChanged(slot = this.activeColor) {
+    this.updateColors();this.updateShapeStyle(slot === 1 ? { color: this.color1 } : { background: this.color2 });
+    if (this.doc.selectedObjects.some(o => o.type === 'text')) this.textEditor.changeStyle(slot === 1 ? { textColor: this.color1, bubbleColor: this.color1 } : { background: this.color2 });
+  }
+  deleteLayer(layer = this.doc.activeLayer) {
+    if (layer.locked) throw new Error('Unlock this layer before deleting it.');
+    if (this.doc.layers.length === 1) this.doc.assertAllocation(this.doc.width * this.doc.height * 4);
+    this.doc.action('Delete layer', () => {
+      this.doc.layers = this.doc.layers.filter(l => l.id !== layer.id);
+      if (!this.doc.layers.length) this.doc.layers.push(createLayer(this.doc.width, this.doc.height, 'Background', this.color2));
+      this.doc.activeLayerId = this.doc.layers.at(-1).id;this.doc.selected = [];
+    });
+    this.changedUI();
+  }
   async setTool(tool) {
+    if (tool === 'transparent') { this.toggleTransparency();return; }
+    if (tool !== 'text') this.textEditor?.finish();
+    if (tool === 'select' || tool === 'free') this.selectionOrigin = tool;
     this.editor.finishPending();
     if (this.editor.drag) this.editor.finishDrag();
     if (!tools.includes(tool)) return;
     if (["pencil", "brush", "eraser", "fill", "shape"].includes(tool) && !this.doc.activeLayer.locked && this.doc.activeLayer.visible) {
-      const editable=this.doc.layers.filter(l=>l.visible&&!l.locked).flatMap(l=>l.objects.filter(o=>this.doc.selected.includes(o.id)||l.id===this.doc.activeLayerId).map(o=>o.id));
+      const editable=this.doc.layers.filter(l=>l.visible&&!l.locked).flatMap(l=>l.objects.filter(o=>o.type !== 'text' && (this.doc.selected.includes(o.id)||l.id===this.doc.activeLayerId)).map(o=>o.id));
       if(editable.length){this.doc.selected=editable;try{await this.runBusy('Committing floating content…',()=>this.doc.rasterize(resample));}catch(e){this.toast(e.message);}}
     }
     this.tool = tool;
-    if (tool === "crop" && this.doc.selectedObjects.length) {
-      const b = selectionBounds(this.doc.selectedObjects);
-      this.editor.selectionRect = {
-        x: b.x,
-        y: b.y,
-        width: b.width,
-        height: b.height,
-      };
-    }
+    if (tool === "text") this.switchTab("text");
+    else if (!document.querySelector("#text-ribbon").classList.contains("hidden")) this.switchTab("home");
     this.updateTools();
     this.editor.requestRender();
   }
@@ -242,6 +323,9 @@ export class PaintPlus {
     document.querySelector("#show-rulers").checked = this.prefs.rulers;
     document.querySelector("#show-grid").checked = this.prefs.grid;
     document.querySelector("#thumb-size").value = this.prefs.thumbSize;
+    document.querySelector('#assets-panel').style.width = Math.max(180, Math.min(600, this.prefs.assetsWidth)) + 'px';
+    document.querySelector('#categories').style.height = Math.max(65, Math.min(650, this.prefs.categoriesHeight)) + 'px';
+    document.querySelector('#assets-width-splitter').classList.toggle('hidden', !this.prefs.assetsOpen);
     this.updateShortcutTable();
     this.editor.requestRender();
   }
@@ -255,7 +339,7 @@ export class PaintPlus {
       "Text",
       "Shape",
       "Eyedropper",
-      "Crop",
+      "Transparent",
       "Move/Transform",
     ];
     document.querySelector("#shortcut-table").innerHTML = this.prefs.shortcuts
@@ -282,20 +366,10 @@ export class PaintPlus {
       if (color) {
         if (this.activeColor === 1) this.color1 = color.dataset.color;
         else this.color2 = color.dataset.color;
-        this.updateColors();
+        this.colorChanged();
       }
       const tab = e.target.closest("[data-tab]");
-      if (tab) {
-        document
-          .querySelectorAll("[data-tab]")
-          .forEach((b) => b.classList.toggle("active", b === tab));
-        document
-          .querySelector("#home-ribbon")
-          .classList.toggle("hidden", tab.dataset.tab !== "home");
-        document
-          .querySelector("#view-ribbon")
-          .classList.toggle("hidden", tab.dataset.tab !== "view");
-      }
+      if (tab) this.switchTab(tab.dataset.tab);
       if (!e.target.closest("#menu") && !e.target.closest("[data-action]"))
         this.closeMenu();
     });
@@ -303,13 +377,12 @@ export class PaintPlus {
       b.addEventListener("contextmenu", (e) => {
         e.preventDefault();
         this.color2 = b.dataset.color;
-        this.updateColors();
+        this.colorChanged(2);
       }),
     );
-    document.querySelector("#outline").onchange = (e) =>
-      (this.outline = e.target.value);
-    document.querySelector("#shape-fill").onchange = (e) =>
-      (this.shapeFill = e.target.value);
+    document.querySelector("#outline").onchange = (e) => { this.outline = e.target.value;this.updateShapeStyle({ outline: this.outline }); };
+    document.querySelector("#shape-fill").onchange = (e) => { this.shapeFill = e.target.value;this.updateShapeStyle({ fill: this.shapeFill }); };
+    document.querySelector("#selection-transparent").onchange = e => this.toggleTransparency(e.target.checked);
     document.querySelector("#filename").oninput = (e) => {
       this.fileName = e.target.value || "Untitled";
       this.updateTitle();
@@ -318,7 +391,7 @@ export class PaintPlus {
       if (e.key === "Enter") this.quickSave();
     };
     document.querySelector("#zoom-slider").oninput = (e) =>
-      this.editor.setZoom(Number(e.target.value) / 100);
+      this.editor.setZoom(zoomLevels[Number(e.target.value)]);
     document.querySelector("#show-rulers").onchange = (e) => {
       this.prefs.rulers = e.target.checked;
       this.applyPrefs();
@@ -336,7 +409,7 @@ export class PaintPlus {
     document.querySelector("#color-picker").oninput = (e) => {
       if (this.activeColor === 1) this.color1 = e.target.value;
       else this.color2 = e.target.value;
-      this.updateColors();
+      this.colorChanged();
     };
     document.querySelector("#open-input").onchange = async (e) => {
       const file = e.target.files[0];
@@ -392,7 +465,9 @@ export class PaintPlus {
       const row = e.target.closest(".layer-row");
       if (!row) return;
       const layer = this.doc.layers.find((l) => l.id === row.dataset.id);
-      if (e.target.closest(".visibility"))
+      this.layerFocused = true;row.focus();
+      if (e.target.closest(".delete-layer-row")) { try { this.deleteLayer(layer); } catch (error) { this.toast(error.message); } }
+      else if (e.target.closest(".visibility"))
         this.doc.action(
           "Toggle layer visibility",
           () => {layer.visible = !layer.visible;if(!layer.visible)this.doc.selected=this.doc.selected.filter(id=>!layer.objects.some(o=>o.id===id));},
@@ -485,6 +560,19 @@ export class PaintPlus {
         this.doc.layers.splice(j, 0, ...this.doc.layers.splice(i, 1));
       });
     });
+    for (const [id, property, axis, minimum, maximum] of [['assets-width-splitter', 'assetsWidth', 'clientX', 180, 600], ['asset-splitter', 'categoriesHeight', 'clientY', 65, 650]]) {
+      const splitter = document.getElementById(id);
+      splitter.addEventListener('pointerdown', event => {
+        event.preventDefault();const start = event[axis], size = this.prefs[property];splitter.setPointerCapture(event.pointerId);
+        splitter.onpointermove = moving => { this.prefs[property] = Math.max(minimum, Math.min(maximum, size + moving[axis] - start));this.applyPrefs(); };
+        splitter.onpointerup = () => { splitter.onpointermove = null;this.savePrefs(); };
+      });
+      splitter.addEventListener('keydown', event => {
+        if (!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) return;
+        event.preventDefault();this.prefs[property] = Math.max(minimum, Math.min(maximum, this.prefs[property] + (['ArrowLeft','ArrowUp'].includes(event.key) ? -10 : 10)));this.applyPrefs();this.savePrefs();
+      });
+    }
+    document.addEventListener('pointerdown', event => { if (!event.target.closest('#layer-list,.layer-actions')) this.layerFocused = false; });
     if (this.settings.outputFolder)
       document.querySelector("#output-folder").textContent =
         this.settings.outputFolder;
@@ -496,7 +584,7 @@ export class PaintPlus {
       .reverse()
       .map(
         (l) =>
-          `<div class="layer-row ${l.id === this.doc.activeLayerId ? "active" : ""} ${l.locked ? "locked" : ""} ${!l.visible ? "hidden-layer" : ""}" data-id="${l.id}" draggable="true"><button class="visibility" title="${l.visible ? "Hide" : "Show"} layer" aria-label="${l.visible ? "Hide" : "Show"} ${this.escape(l.name)}">${icon("eye", 16)}</button><img alt="${this.escape(l.name)} thumbnail"><span class="layer-name">${this.escape(l.name)}${l.objects.some((o) => o.group) ? '<span class="group-badge">▧</span>' : ""}</span><button class="lock-layer" title="${l.locked ? "Unlock" : "Lock"} layer" aria-label="${l.locked ? "Unlock" : "Lock"} ${this.escape(l.name)}">${icon("lock", 15)}</button></div>`,
+          `<div class="layer-row ${l.id === this.doc.activeLayerId ? "active" : ""} ${l.locked ? "locked" : ""} ${!l.visible ? "hidden-layer" : ""}" data-id="${l.id}" draggable="true" tabindex="0"><button class="visibility" title="${l.visible ? "Hide" : "Show"} layer" aria-label="${l.visible ? "Hide" : "Show"} ${this.escape(l.name)}">${icon("eye", 16)}</button><img alt="${this.escape(l.name)} thumbnail"><span class="layer-name">${this.escape(l.name)}${l.objects.some((o) => o.group) ? '<span class="group-badge">▧</span>' : ""}</span><button class="lock-layer" title="${l.locked ? "Unlock" : "Lock"} layer" aria-label="${l.locked ? "Unlock" : "Lock"} ${this.escape(l.name)}">${icon("lock", 15)}</button><button class="delete-layer-row" title="Delete layer" aria-label="Delete ${this.escape(l.name)}">${icon("trash", 15)}</button></div>`,
       )
       .join("");
     for (const l of this.doc.layers) {
@@ -556,6 +644,7 @@ export class PaintPlus {
     this.closeDialog();
     const root = document.querySelector("#modal-root");
     root.classList.toggle("floating-dialog", !!options.floating);
+    root.classList.toggle('nonmodal', !!options.nonmodal);
     root.innerHTML = `<div class="modal-shade"><section class="dialog" role="dialog" aria-label="${this.escape(title)}"><header><span>${this.escape(title)}</span><button class="dialog-close" title="Close" aria-label="Close dialog">${icon("close", 17)}</button></header><div class="dialog-body">${content}</div>${actions.length ? '<div class="dialog-actions"></div>' : ""}</section></div>`;
     const close = () => {
       options.onCancel?.();
@@ -624,6 +713,7 @@ export class PaintPlus {
     if (root) {
       root.replaceChildren();
       root.classList.remove("floating-dialog");
+      root.classList.remove('nonmodal');
     }
     this.modalCancel = null;
   }
@@ -783,11 +873,15 @@ export class PaintPlus {
         await this.chooseOutput();
         break;
       case "undo":
+        this.textEditor.finish();
+        if (document.querySelector("#modal-root.floating-dialog")) this.modalCancel?.();
         this.editor.selectionRect = null;
         doc.history.undo();
         this.changedUI();
         break;
       case "redo":
+        this.textEditor.finish();
+        if (document.querySelector("#modal-root.floating-dialog")) this.modalCancel?.();
         doc.history.redo();
         this.changedUI();
         break;
@@ -816,52 +910,18 @@ export class PaintPlus {
             doc.crop(b);
             this.editor.selectionRect = null;
           } else {
-            await this.setTool("crop");
-            this.toast("Drag a crop rectangle, then click Crop again.");
+            await this.setTool("select");
+            this.toast("Select a rectangle, then click Crop.");
           }
         }
-        break;
-      case "select-menu":
-        this.menu(anchor, [
-          {
-            label: "Rectangular selection",
-            icon: "select",
-            run: () => this.setTool("select"),
-          },
-          {
-            label: "Free-form selection",
-            icon: "free",
-            run: () => this.setTool("free"),
-          },
-          {
-            label: "Select all · Ctrl+A",
-            icon: "select",
-            run: () => this.selectAll(),
-          },
-          {
-            label:
-              (this.prefs.transparentSelection ? "✓ " : "") +
-              "Transparent selection (Color 2)",
-            icon: "dropper",
-            run: () => {
-              this.prefs.transparentSelection =
-                !this.prefs.transparentSelection;
-              if (this.doc.selected.length)
-                this.doc.action("Selection transparency", () => {
-                  for (const o of this.doc.selectedObjects)
-                    o.transparentColor = this.prefs.transparentSelection
-                      ? this.color2
-                      : null;
-                });
-              this.savePrefs();
-              this.changedUI();
-            },
-          },
-        ]);
         break;
       case "resize":
         this.resizeDialog();
         break;
+      case "finish-text":
+        this.textEditor.finish();break;
+      case "apply-canvas-size":
+        doc.resizeCanvas(Number(document.querySelector('#canvas-width').value), Number(document.querySelector('#canvas-height').value), this.color2);break;
       case "canvas-size":
         this.canvasDialog();
         break;
@@ -962,26 +1022,7 @@ export class PaintPlus {
         );
         break;
       case "delete-layer":
-        if (doc.layers.length <= 1) {
-          this.toast(
-            "Keep at least one layer. Clear the canvas or create another layer first.",
-          );
-          break;
-        }
-        if (layer.locked)
-          throw new Error("Unlock this layer before deleting it.");
-        if (
-          await this.confirm(
-            "Delete layer?",
-            `Delete “${layer.name}” and its contents? You can undo this change.`,
-          )
-        )
-          doc.action("Delete layer", () => {
-            doc.layers = doc.layers.filter((l) => l.id !== layer.id);
-            doc.activeLayerId = doc.layers[doc.layers.length - 1].id;
-            doc.selected = [];
-          });
-        break;
+        this.deleteLayer(layer);break;
       case "merge-layer":
         doc.mergeDown();
         break;
@@ -998,9 +1039,11 @@ export class PaintPlus {
         doc.ungroupSelected();
         break;
       case "rasterize":
+        this.textEditor.finish();
         await this.runBusy("Rendering from original pixels…", () =>
           doc.rasterize(resample),
         );
+        this.tool = this.selectionOrigin || "select";
         break;
       case "duplicate":
         doc.duplicateSelected();
@@ -1078,10 +1121,10 @@ export class PaintPlus {
         this.help();
         break;
       case "zoom-in":
-        this.editor.setZoom(this.zoom * 1.25);
+        this.editor.setZoom(stepZoom(this.zoom, 1));
         break;
       case "zoom-out":
-        this.editor.setZoom(this.zoom / 1.25);
+        this.editor.setZoom(stepZoom(this.zoom, -1));
         break;
       case "zoom-reset":
         this.editor.setZoom(1);
@@ -1100,6 +1143,9 @@ export class PaintPlus {
   }
   keyDown(e) {
     const target = e.target;
+    if ((e.ctrlKey || e.metaKey) && ['z','y'].includes(e.key.toLowerCase())) {
+      e.preventDefault();this.action(e.key.toLowerCase() === 'y' || e.shiftKey ? 'redo' : 'undo').catch(error => this.toast(error.message));return;
+    }
     if (target.closest("input,textarea,select,[contenteditable=true]")) {
       if (e.key === "Escape") this.modalCancel?.();
       return;
@@ -1116,7 +1162,7 @@ export class PaintPlus {
       this.editor.requestRender();
       return;
     }
-    if (document.querySelector("#modal-root .dialog")) return;
+    if (document.querySelector("#modal-root:not(.floating-dialog) .dialog")) return;
     if (this.busy) return;
     if (e.key === "Enter" && this.editor.pendingShape) {
       e.preventDefault();
@@ -1125,11 +1171,7 @@ export class PaintPlus {
     }
     if (e.ctrlKey && (e.code === "NumpadAdd" || e.code === "NumpadSubtract")) {
       e.preventDefault();
-      this.width = Math.max(
-        1,
-        Math.min(256, this.width + (e.code === "NumpadAdd" ? 1 : -1)),
-      );
-      this.updateTools();
+      this.setStrokeWidth(this.width + (e.code === "NumpadAdd" ? 1 : -1));
       return;
     }
     const ctrl = e.ctrlKey || e.metaKey,
@@ -1164,7 +1206,7 @@ export class PaintPlus {
       e.preventDefault();
       this.setTool(this.prefs.shortcuts[Number(e.key)]);
       return;
-    } else if (e.key === "Delete") action = "delete";
+    } else if (e.key === "Delete") action = this.layerFocused || target.closest(".layer-row") ? "delete-layer" : "delete";
     else if (e.key === "Enter" && this.doc.selected.length)
       action = "rasterize";
     else if (
@@ -1173,10 +1215,17 @@ export class PaintPlus {
     ) {
       e.preventDefault();
       if (!this.selectedEditable()) return;
-      const step = e.shiftKey ? 10 : 1,
+      const step = 1,
         dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0,
         dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
-      this.doc.action("Nudge objects", () => {
+      this.doc.action(e.shiftKey ? "Smear selection" : "Nudge objects", () => {
+        if (e.shiftKey) for (const layer of this.doc.layers) {
+          const objects = layer.objects.filter(o => this.doc.selected.includes(o.id));
+          if (!objects.length) continue;
+          this.doc.assertAllocation(this.doc.width * this.doc.height * 4);
+          layer.canvas = cloneCanvas(layer.canvas);
+          for (const object of objects) drawObject(layer.canvas.getContext('2d'), object);
+        }
         for (const o of this.doc.selectedObjects) {
           o.x += dx;
           o.y += dy;
@@ -1196,8 +1245,7 @@ export class PaintPlus {
         .map((width) => ({
           label: width + " px",
           run: () => {
-            this.width = width;
-            this.updateTools();
+            this.setStrokeWidth(width);
           },
         }))
         .concat([
@@ -1217,8 +1265,7 @@ export class PaintPlus {
                   Number(v) > 256
                 )
                   throw new Error("Enter a whole number from 1 to 256.");
-                this.width = Number(v);
-                this.updateTools();
+                this.setStrokeWidth(Number(v));
               }
             },
           },
@@ -1286,9 +1333,10 @@ export class PaintPlus {
     }
   }
   settingsDialog() {
+    const previousTransparency = this.prefs.transparentSelection;
     this.dialog(
       "PaintPlus settings",
-      `<label class="check-row"><input id="pref-own-layer" type="checkbox" ${this.prefs.assetOwnLayer ? "checked" : ""}> Insert assets on their own layer</label><label class="check-row"><input id="pref-aspect" type="checkbox" ${this.prefs.aspectLock ? "checked" : ""}> Maintain aspect ratio while resizing objects</label><label class="check-row"><input id="pref-transparent" type="checkbox" ${this.prefs.transparentSelection ? "checked" : ""}> Transparent selection (Color 2)</label><label class="check-row"><input id="pref-smooth" type="checkbox" ${this.prefs.smoothPreview ? "checked" : ""}> Smooth preview while resizing</label><div class="prefs-row"><label>Fill tolerance (0 = exact)</label><input id="pref-tolerance" type="number" min="0" max="100" value="${this.prefs.fillTolerance}"></div><p>True PNG alpha is always preserved. Color-2 transparency removes only exact matches and applies to floating pixel selections. Right-click a palette color to set Color 2.</p>`,
+      `<label class="check-row"><input id="pref-own-layer" type="checkbox" ${this.prefs.assetOwnLayer ? "checked" : ""}> Insert assets on their own layer</label><label class="check-row"><input id="pref-aspect" type="checkbox" ${this.prefs.aspectLock ? "checked" : ""}> Maintain aspect ratio while resizing objects</label><label class="check-row"><input id="pref-transparent" type="checkbox" ${this.prefs.transparentSelection ? "checked" : ""}> Transparent selection (Color 2)</label><label class="check-row"><input id="pref-smooth" type="checkbox" ${this.prefs.smoothPreview ? "checked" : ""}> Smooth preview while resizing</label><div class="prefs-row"><label>Selection behavior</label><select id="pref-selection-mode"><option value="paint" ${this.prefs.selectionMode === "paint" ? "selected" : ""}>Paint: click outside to commit</option><option value="persistent" ${this.prefs.selectionMode === "persistent" ? "selected" : ""}>Keep floating selections editable</option></select></div><label class="check-row"><input id="pref-grow-paste" type="checkbox" ${this.prefs.growCanvasOnPaste ? "checked" : ""}> Expand the canvas to fit larger pasted images</label><div class="prefs-row"><label>Fill tolerance (0 = exact)</label><input id="pref-tolerance" type="number" min="0" max="100" value="${this.prefs.fillTolerance}"></div><p>True PNG alpha is always preserved. Color-2 transparency removes only exact matches and applies to floating pixel selections. Right-click a palette color to set Color 2.</p>`,
       [
         { label: "Cancel", run: () => this.closeDialog() },
         {
@@ -1301,6 +1349,8 @@ export class PaintPlus {
               document.querySelector("#pref-aspect").checked;
             this.prefs.transparentSelection =
               document.querySelector("#pref-transparent").checked;
+            this.prefs.selectionMode = document.querySelector("#pref-selection-mode").value;
+            this.prefs.growCanvasOnPaste = document.querySelector("#pref-grow-paste").checked;
             this.prefs.smoothPreview =
               document.querySelector("#pref-smooth").checked;
             this.prefs.fillTolerance = Math.max(
@@ -1311,7 +1361,7 @@ export class PaintPlus {
               ),
             );
             const selected = this.doc.selectedObjects;
-            if (selected.length)
+            if (selected.length && previousTransparency !== this.prefs.transparentSelection)
               this.doc.action("Selection transparency", () => {
                 for (const o of selected)
                   o.transparentColor = this.prefs.transparentSelection
@@ -1459,6 +1509,7 @@ export class PaintPlus {
     this.editor.fit();
   }
   async exportBytes(format) {
+    this.textEditor.finish();
     if (format === "paintplus")
       return new TextEncoder().encode(serialize(this.doc));
     const out = canvas(this.doc.width, this.doc.height),
@@ -1485,6 +1536,11 @@ export class PaintPlus {
             source: resized,
             transparentColor: null,
             smoothPreview: true,
+  selectionMode: "paint",
+  growCanvasOnPaste: true,
+  assetsWidth: 280,
+  categoriesHeight: 246,
+  textStyle: {},
           });
         }
       }
@@ -1633,15 +1689,17 @@ export class PaintPlus {
       );
       const ctx = source.getContext("2d");
       ctx.translate(-b.x, -b.y);
-      for (const o of this.doc.selectedObjects) drawObject(ctx, o);
+      for (const o of this.doc.selectedObjects) drawObject(ctx, { ...o, transparentColor: null });
     } else {
       source = this.doc.composite();
     }
     this.clipboard = cloneCanvas(source);
-    if (window.desktop) await window.desktop.copyImage(source.toDataURL());
+    const external = canvas(source.width, source.height), externalContext = external.getContext('2d');
+    externalContext.fillStyle = this.color2;externalContext.fillRect(0, 0, source.width, source.height);externalContext.drawImage(source, 0, 0);
+    if (window.desktop) await window.desktop.copyImage(external.toDataURL());
     else if (navigator.clipboard?.write) {
       try {
-        const blob = await new Promise((r) => source.toBlob(r));
+        const blob = await new Promise((r) => external.toBlob(r));
         await navigator.clipboard.write([
           new ClipboardItem({ "image/png": blob }),
         ]);
@@ -1676,8 +1734,10 @@ export class PaintPlus {
       this.toast("The clipboard does not contain an image.");
       return;
     }
-    this.doc.insert(source, "Pasted image", this.prefs.assetOwnLayer, {
-      transparentColor: this.prefs.transparentSelection ? this.color2 : null,
+    this.doc.transaction('Paste image', () => {
+      if (this.prefs.growCanvasOnPaste && (source.width > this.doc.width || source.height > this.doc.height))
+        this.doc.resizeCanvas(Math.max(source.width, this.doc.width), Math.max(source.height, this.doc.height), this.color2);
+      this.doc.insert(source, "Pasted image", this.prefs.assetOwnLayer, { transparentColor: this.prefs.transparentSelection ? this.color2 : null });
     });
     this.setTool("move");
     this.changedUI();
@@ -1840,6 +1900,11 @@ export class PaintPlus {
           ? (keyControl.checked ? keyColor : null)
           : original.transparentColor;
         o.smoothPreview = document.querySelector("#resize-smooth").checked;
+        if (["shape", "text"].includes(o.type)) {
+          this.doc.assertAllocation(Math.ceil(nw) * Math.ceil(nh) * 12);
+          if (o.type === "text") o.minHeight = Math.round(nh);
+          refreshEditable(o);
+        }
       }
       this.editor.requestRender();
     };
@@ -2077,93 +2142,10 @@ export class PaintPlus {
     this.changedUI();
   }
   editText(object = null, point = { x: 20, y: 20 }) {
-    if (this.doc.activeLayer.locked) {
-      this.toast("Unlock this layer before adding text.");
-      return;
-    }
-    this.dialog(
-      object ? "Edit text" : "Insert text",
-      `<div class="text-styles"><input id="text-color" type="color" title="Text color" value="${object?.textColor || this.color1}"><select id="text-font"><option>Segoe UI</option><option>Arial</option><option>Calibri</option><option>Times New Roman</option><option>Consolas</option><option>Georgia</option></select><input id="text-size" type="number" min="4" max="512" value="${object?.fontSize || 28}" title="Font size"><label class="check-row"><input id="text-bold" type="checkbox" ${object?.bold ? "checked" : ""}> Bold</label><label class="check-row"><input id="text-italic" type="checkbox" ${object?.italic ? "checked" : ""}> Italic</label></div><textarea id="text-content" class="text-editor" placeholder="Type your text…">${this.escape(object?.text || "")}</textarea><label class="check-row"><input id="text-opaque" type="checkbox" ${object?.opaque ? "checked" : ""}> Opaque background (Color 2)</label><p>Text remains editable. Double-click its object to edit it again.</p>`,
-      [
-        { label: "Cancel", run: () => this.closeDialog() },
-        {
-          label: object ? "Apply" : "Insert text",
-          primary: true,
-          run: () => {
-            const text = document.querySelector("#text-content").value;
-            if (!text.trim()) throw new Error("Enter some text.");
-            const font = document.querySelector("#text-font").value,
-              fontSize = Math.max(
-                4,
-                Math.min(
-                  512,
-                  Number(document.querySelector("#text-size").value) || 28,
-                ),
-              ),
-              bold = document.querySelector("#text-bold").checked,
-              italic = document.querySelector("#text-italic").checked,
-              opaque = document.querySelector("#text-opaque").checked;
-            const measure = canvas(1, 1).getContext("2d");
-            measure.font = `${italic ? "italic " : ""}${bold ? "bold " : ""}${fontSize}px "${font}"`;
-            const lines = text.split("\n"),
-              w = Math.max(
-                1,
-                Math.ceil(
-                  Math.max(
-                    ...lines.map((line) => measure.measureText(line).width),
-                  ),
-                ) + 8,
-              ),
-              h = Math.ceil(lines.length * fontSize * 1.3) + 6;
-            if (w * h > 64000000) throw new Error("Text is too large.");
-            const source = canvas(w, h),
-              ctx = source.getContext("2d");
-            if (opaque) {
-              ctx.fillStyle = this.color2;
-              ctx.fillRect(0, 0, w, h);
-            }
-            ctx.font = measure.font;
-            ctx.textBaseline = "top";
-            ctx.fillStyle = document.querySelector("#text-color").value;
-            lines.forEach((line, i) =>
-              ctx.fillText(line, 4, 3 + i * fontSize * 1.3),
-            );
-            const props = {
-              type: "text",
-              text,
-              font,
-              fontSize,
-              bold,
-              italic,
-              opaque,
-              textColor: document.querySelector("#text-color").value,
-            };
-            if (object)
-              this.doc.action("Edit text", () =>
-                Object.assign(object, {
-                  source,
-                  width: w,
-                  height: h,
-                  ...props,
-                }),
-              );
-            else
-              this.doc.insert(source, "Text", false, {
-                ...props,
-                x: point.x,
-                y: point.y,
-              });
-            this.closeDialog();
-            this.setTool("move");
-            this.changedUI();
-          },
-        },
-      ],
-    );
-    document.querySelector("#text-font").value = object?.font || "Segoe UI";
-    setTimeout(() => document.querySelector("#text-content")?.focus(), 40);
+    this.textEditor.begin(object, { ...point, width: 260, height: 60 });
   }
   async removeBackground() {
+    this.textEditor.finish();
     let object = this.doc.selectedObjects[0];
     if (this.doc.selectedObjects.length > 1) {
       this.toast("Select one image or selection to remove its background.");
@@ -2189,7 +2171,8 @@ export class PaintPlus {
     }
     try {
       this.doc.assertAllocation(object.source.width * object.source.height * 32 + 96 * 1024 * 1024);
-      const source = await this.runBusy(
+      const original = object.source;
+      const { source, confidence } = await this.runBusy(
         "Preparing offline background removal…",
         () =>
           new Promise((resolve, reject) => {
@@ -2223,7 +2206,7 @@ export class PaintPlus {
                   0,
                   0,
                 );
-                resolve(c);
+                resolve({ source: c, confidence: new Float32Array(m.confidence) });
               }
             };
             worker.onerror = (e) => {
@@ -2249,67 +2232,31 @@ export class PaintPlus {
       this.tool = "move";
       this.changedUI();
       this.toast("Background removed locally. Undo restores the original.");
-      this.refineAlphaDialog(object);
+      this.refineAlphaDialog(object, original, confidence);
     } catch (e) {
       this.toast("Background removal failed: " + e.message, 9000);
     }
   }
-  refineAlphaDialog(object) {
-    const original = object.source;
-    this.dialog(
-      "Refine background mask",
-      `<p>The model is best on a single clear foreground subject. Adjust the alpha edge if needed.</p><div class="prefs-row"><label>Edge threshold</label><input id="alpha-threshold" type="range" min="0" max="200" value="0"></div><div class="prefs-row"><label>Edge softness</label><input id="alpha-softness" type="range" min="0" max="100" value="30"></div><p>Cancel keeps the initial AI result. The source alpha is never made more opaque.</p>`,
-      [
-        {
-          label: "Cancel",
-          run: () => {
-            object.source = original;
-            this.closeDialog();
-            this.changedUI();
-          },
-        },
-        {
-          label: "Apply",
-          primary: true,
-          run: () => {
-            const output = object.source;
-            object.source = original;
-            this.doc.action("Refine alpha", () => (object.source = output));
-            this.closeDialog();
-          },
-        },
-      ],
-      {
-        onCancel: () => {
-          object.source = original;
-          this.changedUI();
-        },
-      },
-    );
+  refineAlphaDialog(object, originalPixels, confidence) {
+    const initial = object.source, originalData = originalPixels.getContext('2d').getImageData(0, 0, originalPixels.width, originalPixels.height);
+    let applied = false;
+    this.dialog('Refine background mask',
+      `<p>Drag this panel aside and zoom the canvas to inspect the edges. Lower the threshold to recover weak details. The local model may need manual cleanup.</p><div class="prefs-row"><label>Threshold <output id="alpha-threshold-value">10%</output></label><input id="alpha-threshold" type="range" min="-1" max="100" step="0.01" value="10"></div><div class="prefs-row"><label>Softness <output id="alpha-softness-value">0%</output></label><input id="alpha-softness" type="range" min="0" max="100" step="0.1" value="0"></div><label class="check-row"><input id="alpha-hard" type="checkbox" checked> Hard opaque edges</label><p>Refinement always starts from the original pixels and model confidence. Cancel keeps the initial result.</p>`,
+      [{ label: 'Cancel', run: () => { this.closeDialog();this.changedUI(); } },
+       { label: 'Apply', primary: true, run: () => { const output = object.source;object.source = initial;this.doc.action('Refine alpha', () => { object.source = output; });applied = true;this.closeDialog(); } }],
+      { floating: true, nonmodal: true, cleanup: () => { if (!applied) object.source = initial;this.editor.requestRender(); } });
     const refine = () => {
-      const threshold = Number(
-          document.querySelector("#alpha-threshold").value,
-        ),
-        soft = Number(document.querySelector("#alpha-softness").value),
-        c = cloneCanvas(original),
-        ctx = c.getContext("2d"),
-        data = ctx.getImageData(0, 0, c.width, c.height);
-      for (let i = 3; i < data.data.length; i += 4) {
-        const a = data.data[i];
-        data.data[i] = Math.min(
-          a,
-          Math.max(
-            0,
-            Math.min(255, ((a - threshold) / Math.max(1, soft)) * 255),
-          ),
-        );
-      }
-      ctx.putImageData(data, 0, 0);
-      object.source = c;
-      this.editor.requestRender();
+      const threshold = Number(document.querySelector('#alpha-threshold').value) / 100,
+        softness = document.querySelector('#alpha-hard').checked ? 0 : Number(document.querySelector('#alpha-softness').value) / 100;
+      document.querySelector('#alpha-threshold-value').value = (threshold * 100).toFixed(2) + '%';
+      document.querySelector('#alpha-softness-value').value = (softness * 100).toFixed(1) + '%';
+      const source = canvas(initial.width, initial.height);
+      source.getContext('2d').putImageData(new ImageData(foregroundPixels(originalData.data, confidence, threshold, softness), source.width, source.height), 0, 0);
+      object.source = source;this.editor.requestRender();
     };
-    document.querySelector("#alpha-threshold").oninput = refine;
-    document.querySelector("#alpha-softness").oninput = refine;
+    document.querySelector('#alpha-threshold').oninput = refine;
+    document.querySelector('#alpha-softness').oninput = () => { document.querySelector('#alpha-hard').checked = Number(document.querySelector('#alpha-softness').value) === 0;refine(); };
+    document.querySelector('#alpha-hard').onchange = refine;
   }
   selectedEditable() {
     if (

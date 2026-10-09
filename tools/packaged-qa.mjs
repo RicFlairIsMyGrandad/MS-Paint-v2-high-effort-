@@ -30,6 +30,32 @@ try {
   const box=await page.locator("#overlay").boundingBox();
   await page.mouse.move(box.x+30,box.y+30);await page.mouse.down();await page.mouse.move(box.x+80,box.y+30);await page.mouse.up();
   assert.deepEqual(await page.evaluate(()=>[...paintplus.doc.activeLayer.canvas.getContext("2d").getImageData(50,30,1,1).data]),[24,71,241,255]);
+  // Exercise the revised editor in the installed ASAR, including the native
+  // external clipboard path rather than the browser's in-app copy fallback.
+  await page.evaluate(()=>{paintplus.width=3;paintplus.editor.createShape('rectangle',{x:140,y:60},{x:240,y:120},{width:3,color:'#000000',background:'#ffffff',outline:'solid',fill:'none'});});
+  await page.keyboard.press('Control+NumpadAdd');
+  assert.equal(await page.evaluate(()=>paintplus.doc.selectedObjects[0].shapeStyle.width),4);
+  await page.evaluate(()=>paintplus.finishSelection());
+  await page.evaluate(()=>paintplus.editText(null,{x:100,y:140}));
+  await page.locator('#text-content').fill('Editable speech bubble\nInstalled Windows test');
+  await page.locator('#text-bubble').check();
+  await page.locator('#text-line-gap').fill('5');
+  await page.locator('[data-action=finish-text]').click();
+  assert.deepEqual(await page.evaluate(()=>{const o=paintplus.doc.selectedObjects[0];return[o.type,o.bubble,o.lineGap,o.text];}),['text',true,5,'Editable speech bubble\nInstalled Windows test']);
+  await page.evaluate(()=>paintplus.editText(paintplus.doc.selectedObjects[0]));
+  await page.locator('#text-content').fill('Re-edited on canvas');
+  await page.locator('#text-content').press('Control+Enter');
+  await page.keyboard.press('Control+z');
+  assert.equal(await page.evaluate(()=>paintplus.doc.selectedObjects[0].text),'Editable speech bubble\nInstalled Windows test');
+  await page.evaluate(()=>paintplus.switchTab('home'));
+  const externalCopy = await page.evaluate(async()=>{
+    const source=document.createElement('canvas');source.width=20;source.height=20;
+    const ctx=source.getContext('2d');ctx.fillStyle='#ffeedd';ctx.fillRect(0,0,20,20);
+    paintplus.color2='#ffeedd';paintplus.doc.insert(source,'Color 2 clipboard',false,{transparentColor:'#ffeedd'});
+    await paintplus.copy();const image=new Image();image.src=await desktop.pasteImage();await image.decode();
+    ctx.clearRect(0,0,20,20);ctx.drawImage(image,0,0);paintplus.color2='#ffffff';return [...ctx.getImageData(10,10,1,1).data];
+  });
+  assert.deepEqual(externalCopy,[255,238,221,255]);
   const clipboardPixels = await page.evaluate(async()=>{
     const source=document.createElement('canvas');source.width=3;source.height=1;
     const context=source.getContext('2d');context.fillStyle='#ff0000';context.fillRect(0,0,1,1);
@@ -49,14 +75,25 @@ try {
   const savedPNG=await readFile(smoke.first.path);assert.deepEqual([...savedPNG.subarray(0,8)],[137,80,78,71,13,10,26,10]);
   assert.deepEqual(await readFile(smoke.second.path),savedPNG);
   const savedProject=JSON.parse(await readFile(smoke.project.path,'utf8'));assert.equal(savedProject.version,1);assert(savedProject.layers.length>1);
+  if (!windows) {
+    await application.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setSize(1920,1080));
+    await page.waitForFunction(()=>innerWidth===1920);
+  }
   await page.evaluate(()=>{paintplus.doc.dirty=false;return paintplus.demo();});
+  await page.evaluate(()=>{paintplus.editor.setZoom(1);paintplus.editor.viewport.scrollLeft=0;paintplus.editor.viewport.scrollTop=0;});
   await mkdir("docs/screenshots",{recursive:true});
   await page.screenshot({path:`docs/screenshots/packaged-${windows?"windows":"linux"}.png`});
   await page.evaluate(()=>paintplus.resizeDialog());
   await page.screenshot({path:`docs/screenshots/packaged-${windows?"windows":"linux"}-dialog.png`});
+  await page.evaluate(x=>{paintplus.closeDialog();paintplus.doc.selected=[];paintplus.color1='#000000';paintplus.editText(null,{x,y:160});},windows?100:620);
+  await page.locator('#text-content').fill('Editable speech bubbles\nwith adjustable spacing.');
+  await page.locator('#text-bubble').check();await page.locator('#text-opaque').check();await page.locator('[data-text-style=bold]').click();
+  await page.screenshot({path:`docs/screenshots/packaged-${windows?"windows":"linux"}-text.png`});
+  await page.locator('[data-action=finish-text]').click();
+  if (!windows) await writeFile('docs/SpeechExample.paintplus',Buffer.from(await page.evaluate(async()=>[...await paintplus.exportBytes('paintplus')])));
   const log=await readFile(path.join(profile,"startup.log"),"utf8");
   assert(log.includes('"event":"renderer-ready"'));assert(!log.includes('"event":"resource-error"'));assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
-  const result={...runtime,installationPathHasSpacesAndUnicode:true,firstLaunchReady:true,pointerDrawing:true,clipboardAlpha:true,savedPNGBytes:true,savedEditableProject:true,...smoke,rendererErrors:errors,externalRequests:external};
+  const result={...runtime,installationPathHasSpacesAndUnicode:true,firstLaunchReady:true,pointerDrawing:true,editableShapes:true,inlineSpeechText:true,externalCopyPreservesColor2:true,clipboardAlpha:true,savedPNGBytes:true,savedEditableProject:true,...smoke,rendererErrors:errors,externalRequests:external};
   await writeFile(`docs/packaged-${windows?"windows":"linux"}-test-results.json`,JSON.stringify(result,null,2));
   console.log(JSON.stringify(result));
 } catch(error) {

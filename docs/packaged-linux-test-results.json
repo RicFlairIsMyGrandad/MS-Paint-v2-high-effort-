@@ -1,6 +1,6 @@
 {
   "isPackaged": true,
-  "appPath": "/tmp/PaintPlus packaged Ω AyAzHy/installed app with spaces/resources/app.asar",
+  "appPath": "/tmp/PaintPlus packaged Ω hEuFcT/installed app with spaces/resources/app.asar",
   "platform": "linux",
   "gpuStatus": {
     "2d_canvas": "unavailable_software",
@@ -23,25 +23,28 @@
   "installationPathHasSpacesAndUnicode": true,
   "firstLaunchReady": true,
   "pointerDrawing": true,
+  "editableShapes": true,
+  "inlineSpeechText": true,
+  "externalCopyPreservesColor2": true,
   "clipboardAlpha": true,
   "savedPNGBytes": true,
   "savedEditableProject": true,
   "clipboardOK": true,
   "aiInferenceOK": true,
   "first": {
-    "path": "/tmp/PaintPlus packaged Ω AyAzHy/images/PaintPlus-smoke.png",
+    "path": "/tmp/PaintPlus packaged Ω hEuFcT/images/PaintPlus-smoke.png",
     "name": "PaintPlus-smoke.png"
   },
   "second": {
-    "path": "/tmp/PaintPlus packaged Ω AyAzHy/images/PaintPlus-smoke (2).png",
+    "path": "/tmp/PaintPlus packaged Ω hEuFcT/images/PaintPlus-smoke (2).png",
     "name": "PaintPlus-smoke (2).png"
   },
   "collisionOK": true,
   "project": {
-    "path": "/tmp/PaintPlus packaged Ω AyAzHy/images/PaintPlus-project-smoke.paintplus",
+    "path": "/tmp/PaintPlus packaged Ω hEuFcT/images/PaintPlus-project-smoke.paintplus",
     "name": "PaintPlus-project-smoke.paintplus"
   },
-  "projectBytes": 171329,
+  "projectBytes": 182407,
   "protocol": "paintplus:",
   "aiModel": true,
   "rendererErrors": [],

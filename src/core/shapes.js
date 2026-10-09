@@ -125,16 +125,18 @@ export function shapePath(ctx, name, x, y, w, h) {
       y + h * 0.8,
     );
     ctx.closePath();
-  } else if (name === "callout")
-    polygon(ctx, [
-      [x, y],
-      [x + w, y],
-      [x + w, y + h * 0.75],
-      [x + w * 0.4, y + h * 0.75],
-      [x + w * 0.15, y + h],
-      [x + w * 0.15, y + h * 0.75],
-      [x, y + h * 0.75],
-    ]);
+  } else if (name === "callout") speechBubblePath(ctx, x, y, w, h);
+}
+export function speechBubblePath(ctx, x, y, w, h) {
+  const bottom = y + h * 0.76, r = Math.min(w * 0.09, h * 0.14, 20);
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, bottom - r); ctx.quadraticCurveTo(x + w, bottom, x + w - r, bottom);
+  ctx.lineTo(x + w * 0.28, bottom);
+  ctx.bezierCurveTo(x + w * 0.23, y + h * 0.96, x + w * 0.13, y + h * 1.04, x + w * 0.02, y + h * 0.98);
+  ctx.bezierCurveTo(x + w * 0.13, y + h * 0.95, x + w * 0.16, y + h * 0.87, x + w * 0.17, bottom);
+  ctx.lineTo(x + r, bottom); ctx.quadraticCurveTo(x, bottom, x, bottom - r);
+  ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath();
 }
 export function drawShape(ctx, name, a, b, opts) {
   if (!["line", "curve", "polygon"].includes(name)) {

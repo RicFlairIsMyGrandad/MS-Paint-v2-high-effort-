@@ -1,5 +1,6 @@
 import { canvas } from "./raster.js";
 import { PaintDocument } from "./document.js";
+import { shapeNames } from '../ui/icons.js';
 export async function imageCanvas(url) {
   const img = new Image();
   img.src = url;
@@ -128,6 +129,18 @@ export async function deserialize(text, onChange = () => {}) {
           o.width * o.height > 64000000
         )
           throw new Error("Invalid object transform.");
+        if (o.type === 'shape') {
+          const style = o.shapeStyle, geometry = o.shapeGeometry;
+          const point = value => value && Number.isFinite(value.x) && Number.isFinite(value.y) && Math.abs(value.x) <= 100 && Math.abs(value.y) <= 100;
+          if (!shapeNames.includes(o.shapeName) || !style || !Number.isInteger(style.width) || style.width < 1 || style.width > 256 || ![style.color, style.background].every(color => typeof color === 'string' && /^#[0-9a-f]{6}$/i.test(color)) || !['none','solid'].includes(style.outline) || !['none','solid'].includes(style.fill) || !geometry || !point(geometry.a) || !point(geometry.b) || (geometry.controls && (!Array.isArray(geometry.controls) || geometry.controls.length > 2 || !geometry.controls.every(point))) || (geometry.points && (!Array.isArray(geometry.points) || geometry.points.length > 10000 || !geometry.points.every(point))))
+            throw new Error('Invalid editable shape.');
+        }
+        if (o.type === 'text') {
+          if (typeof o.text !== 'string' || o.text.length > 1000000 || typeof o.font !== 'string' || o.font.length > 100 || !Number.isFinite(o.fontSize) || o.fontSize < 4 || o.fontSize > 512)
+            throw new Error('Invalid editable text.');
+          for (const [key, limit] of [['padding',100],['lineGap',200],['bubbleWidth',32],['minHeight',16384]])
+            if (o[key] !== undefined && (!Number.isFinite(o[key]) || o[key] < 0 || o[key] > limit)) throw new Error('Invalid text layout.');
+        }
         return { ...o, source: sources[o.source] };
       }),
     };

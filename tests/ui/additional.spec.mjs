@@ -33,11 +33,9 @@ test("curve supports two bend drags and one undoable commit", async ({
   );
   expect(
     await page.evaluate(() => paintplus.doc.history.undoStack.at(-1).label),
-  ).toBe("Draw curve");
+  ).toBe("Insert curve");
   const changed = await page.evaluate(() => {
-    const data = paintplus.doc.activeLayer.canvas
-      .getContext("2d")
-      .getImageData(0, 0, 320, 240).data;
+    const data = paintplus.doc.composite().getContext("2d").getImageData(0, 0, 320, 240).data;
     let count = 0;
     for (let i = 0; i < data.length; i += 4) if (data[i] !== 255) count++;
     return count;
@@ -66,7 +64,7 @@ test("polygon click corners and Enter produces a filled shape", async ({
   await page.keyboard.press("Enter");
   expect(
     await page.evaluate(() => [
-      ...paintplus.doc.activeLayer.canvas
+      ...paintplus.doc.composite()
         .getContext("2d")
         .getImageData(110, 75, 1, 1).data,
     ]),
@@ -172,13 +170,7 @@ test("selection options switch Color 2 transparency and preserve true alpha", as
     paintplus.tool = "move";
     paintplus.changedUI();
   });
-  await page.locator("[data-action=select-menu]").click();
-  await page
-    .getByRole("button", {
-      name: "Transparent selection (Color 2)",
-      exact: true,
-    })
-    .click();
+  await page.locator("#selection-transparent").check();
   expect(
     await page.evaluate(() => paintplus.doc.objects[0].transparentColor),
   ).toBe("#ffffff");
@@ -343,7 +335,7 @@ test("right-click eraser on a transparent layer preserves partial alpha and leav
   expect(await page.evaluate(()=>[...paintplus.doc.activeLayer.canvas.getContext("2d").getImageData(50,50,1,1).data])).toEqual([0,0,0,alpha]);
 });
 test("a missing application script shows a usable startup error instead of a white screen", async ({page}) => {
-  await page.route("**/src/app.js",route=>route.abort());
+  await page.route(/\/src\/app\.js(?:\?.*)?$/,route=>route.abort());
   await page.goto("/");
   await expect(page.getByRole("heading",{name:"PaintPlus could not start"})).toBeVisible();
   await expect(page.getByRole("button",{name:"Restart editor"})).toBeVisible();
