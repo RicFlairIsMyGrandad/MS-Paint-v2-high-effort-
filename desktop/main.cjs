@@ -12,6 +12,7 @@ const syncFS = require("node:fs");
 const path = require("node:path");
 const { randomUUID } = require("node:crypto");
 const { assetHandler } = require("./resources.cjs");
+const { execFile } = require('node:child_process');
 // The editor and AI are CPU-compatible. Prefer the stable software renderer on
 // Windows laptops where GPU/driver failures can leave an otherwise loaded window white.
 if (process.platform === "win32" && !process.argv.includes("--enable-hardware-acceleration")) app.disableHardwareAcceleration();
@@ -103,6 +104,15 @@ function setupIPC() {
     }
   });
   ipcMain.handle("settings:get", () => settings);
+  ipcMain.handle('fonts:list', () => new Promise(resolve => {
+    const windows = process.platform === 'win32';
+    const command = windows ? 'powershell.exe' : 'fc-list';
+    const args = windows ? ['-NoProfile','-NonInteractive','-Command', "[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new(); Add-Type -AssemblyName System.Drawing; [System.Drawing.Text.InstalledFontCollection]::new().Families | ForEach-Object { $_.Name }"] : [':','family'];
+    execFile(command,args,{windowsHide:true,timeout:10000,maxBuffer:1024*1024},(error,output) => {
+      if(error){resolve([]);return;}
+      resolve([...new Set(output.split(/[\r\n,]+/).map(name=>name.trim()).filter(name=>name&&name.length<100))].sort());
+    });
+  }));
   ipcMain.handle("settings:set", async (_, patch) => {
     for (const key of ["preferences", "library", "categories"])
       if (patch[key] !== undefined) settings[key] = patch[key];

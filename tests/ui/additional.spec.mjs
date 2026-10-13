@@ -56,9 +56,9 @@ test("polygon click corners and Enter produces a filled shape", async ({
 }) => {
   await open(page);
   await page.locator("[data-shape=polygon]").click();
-  await page.locator("#shape-fill").selectOption("solid");
   await page.evaluate(() => (paintplus.color2 = "#ff7f27"));
   await stroke(page, [30, 30], [180, 30]);
+  await page.locator("#shape-fill").selectOption("solid");
   const r = await page.locator("#overlay").boundingBox();
   await page.mouse.click(r.x + 120, r.y + 160);
   await page.keyboard.press("Enter");

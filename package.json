@@ -1,6 +1,6 @@
 {
   "name": "paintplus",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "type": "module",
   "description": "A local Paint-style desktop editor with layers, editable assets and offline background removal",
@@ -24,6 +24,7 @@
     "@playwright/test": "1.56.1",
     "electron": "38.2.0",
     "electron-builder": "26.0.12",
+    "resedit": "3.0.2",
     "vite": "7.1.9"
   },
   "build": {
@@ -79,6 +80,7 @@
         "name": "PaintPlus project",
         "role": "Editor"
       }
-    ]
+    ],
+    "afterPack": "desktop/build-icon.cjs"
   }
 }

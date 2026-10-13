@@ -4,25 +4,20 @@ import {
   localPoint,
   hitObject,
 } from "../core/document.js";
-import { paintSegment, replaceColorSegment, floodFill, colorAt, canvas } from "../core/raster.js";
+import { paintSegment, replaceColorSegment, floodFill, colorAt, canvas, stampBounds, pixelSegment, softBrushCap } from "../core/raster.js";
 import { drawShape } from "../core/shapes.js";
 import { zoomLevels, nearestZoom, stepZoom, fitZoom } from "../core/zoom.js";
 import { shapeProperties, shapeSource, refreshEditable } from "../core/editable.js";
-const cursorSVG = (path, x = 1, y = 22) =>
-  `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='26' height='26'><path d='${path}' fill='white' stroke='#162e48' stroke-width='1.6'/></svg>`)}") ${x} ${y}, crosshair`;
+const cursorSVG = (body, x=2,y=22) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'>${body}</svg>`)}") ${x} ${y}, crosshair`;
+const cross = cursorSVG("<path d='M14 2v24M2 14h24' stroke='white' stroke-width='3'/><path d='M14 2v24M2 14h24' stroke='#333' stroke-width='1'/><circle cx='14' cy='14' r='4' fill='white' stroke='#777'/><path d='M14 11v6M11 14h6' stroke='#777'/>",14,14);
 export const cursors = {
-  pencil: cursorSVG("m3 17 13-13 5 5L8 22H3v-5Z M13 7l5 5"),
-  brush: cursorSVG("m9 14 10-12 4 4-12 10 M9 14c-7-2-3 6-8 9 12 3 13-5 8-9Z"),
-  eraser: cursorSVG("m2 15 10-12 11 9-10 11H9l-7-8Z M7 10l10 8"),
-  fill: cursorSVG("m3 8 8-6 11 10-11 10L1 12l2-4Z M3 8h17 M22 17l2 5h-4l2-5Z"),
-  dropper: cursorSVG("m4 17 12-12 5 5-12 12H3v-5Z M14 3l9 9"),
-  text: "text",
-  select: "crosshair",
-  free: "crosshair",
-  crop: "crosshair",
-  shape: "crosshair",
-  move: "move",
-  zoom: "zoom-in",
+  pencil: cursorSVG("<path d='m3 22 3-7L18 3l5 5L11 20Z' fill='#f7f7f7' stroke='#333'/><path d='m7 16 12-12M10 19 22 7' stroke='#999'/><path d='m3 22 2-5 3 3Z' fill='#333'/>",3,22),
+  brush: cursorSVG("<path d='M14 3v7m0 8v7M3 14h7m8 0h7' stroke='white' stroke-width='3'/><path d='M14 3v7m0 8v7M3 14h7m8 0h7' stroke='#888'/>",14,14),
+  eraser: 'none',
+  fill: cursorSVG("<path d='M9 4h7v5M8 7l10 9-7 7-9-8Z' fill='#f7f7f7' stroke='#333'/><path d='m4 13 8-3 7 7-8 6Z' fill='#d7d7d7' stroke='#777'/><path d='M21 16q-4 7 1 8 4-3-1-8Z' fill='#333'/>",3,22),
+  dropper: cursorSVG("<path d='m3 22 1-5 11-11 5 5L9 22Z' fill='#e6e6e6' stroke='#444'/><path d='m13 5 3-3 8 8-3 3Z' fill='#777' stroke='#333'/><path d='m4 21 10-10' stroke='white'/>",3,22),
+  text: 'text', select: cross, free: cross, shape: cross, move: 'move',
+  zoom: cursorSVG("<path d='m18 18 7 7' stroke='#555' stroke-width='4'/><circle cx='12' cy='12' r='8' fill='#fafafa' stroke='#555' stroke-width='2'/><path d='M7 12a5 5 0 0 1 5-5' fill='none' stroke='#bbb' stroke-width='2'/>",12,12),
 };
 export function selectionBounds(objects) {
   if (!objects.length) return null;
@@ -85,6 +80,7 @@ export class Editor {
     this.viewport = document.querySelector("#viewport");
     this.drag = null;
     this.hover = null;
+    this.pointerInside = false;
     this.pendingRender = false;
     this.selectionRect = null;
     this.paintActive = false;
@@ -97,8 +93,10 @@ export class Editor {
     });
     this.overlay.addEventListener("contextmenu", (e) => e.preventDefault());
     this.overlay.addEventListener("pointerleave", () => {
+      this.pointerInside = false;
       document.querySelector("#brush-cursor").style.display = "none";
     });
+    this.overlay.addEventListener('pointerenter',()=>{this.pointerInside=true;});
     this.overlay.addEventListener("dblclick", (e) => {
       if (this.pendingShape?.name === "polygon") {
         this.finishPending();
@@ -169,7 +167,7 @@ export class Editor {
     for (const l of d.layers)
       if (l.visible) {
         ctx.drawImage(l.canvas, 0, 0);
-        for (const o of l.objects) drawObject(ctx, this.app.textEditor?.objectId === o.id ? { ...o, source: this.app.textEditor.backgroundSource || o.source } : o);
+        for (const o of l.objects) drawObject(ctx, o);
       }
     const over = this.overlay.getContext("2d");
     over.setTransform(1, 0, 0, 1, 0, 0);
@@ -191,23 +189,10 @@ export class Editor {
       over.stroke();
       over.restore();
     }
-    if (this.drag?.type === "shape") {
-      const c = this.drag.color;
-      drawShape(over, this.app.shape, this.drag.start, this.drag.end, {
-        width: this.app.width,
-        color: c,
-        background: this.drag.background,
-        outline: this.app.outline,
-        fill: this.app.shapeFill,
-      });
-    }
-    if (this.pendingShape) {
-      const s = this.pendingShape;
-      drawShape(over, s.name, s.start, s.end, {
-        ...s.options,
-        controls: s.controls,
-        points: s.points,
-      });
+    if (this.drag?.type === 'shape') this.drawShapePreview(over,this.app.shape,this.drag.start,this.drag.end,{width:this.app.width,color:this.drag.color,background:this.drag.background,outline:this.app.outline,fill:this.app.shapeFill});
+    if (this.pendingShape) { const shape=this.pendingShape;this.drawShapePreview(over,shape.name,shape.start,shape.end,{...shape.options,controls:shape.controls,points:shape.points}); }
+    if (this.app.tool==='zoom' && this.hover) {
+      const area=this.zoomArea(this.hover);over.save();over.lineWidth=1/z;over.strokeStyle='#fff';over.strokeRect(area.x,area.y,area.width,area.height);over.strokeStyle='#29394c';over.setLineDash([5/z,3/z]);over.strokeRect(area.x,area.y,area.width,area.height);over.restore();
     }
     if (this.drag?.type === "selection" || this.drag?.type === 'text-box') {
       over.save();
@@ -252,6 +237,17 @@ export class Editor {
       z * 100 + "%";
     document.querySelector("#zoom-slider").value = zoomLevels.indexOf(nearestZoom(z));
     this.app.textEditor?.position();
+  }
+  drawShapePreview(context,name,start,end,options) {
+    const key=JSON.stringify([name,start,end,options]);
+    try {
+      if(this.preview?.key!==key) {const properties=shapeProperties(name,start,end,options);this.doc.assertAllocation(properties.width*properties.height*12);this.preview={key,object:{...properties,source:shapeSource(properties),angle:0,flipH:false,flipV:false}};}
+      drawObject(context,this.preview.object);
+    } catch(error) { if(this.previewError!==error.message){this.previewError=error.message;this.app.toast(error.message);} }
+  }
+  zoomArea(point) {
+    const target=nearestZoom(this.app.zoom*2),ratio=target/this.app.zoom,width=Math.min(this.doc.width,this.viewport.clientWidth/this.app.zoom)/ratio,height=Math.min(this.doc.height,this.viewport.clientHeight/this.app.zoom)/ratio;
+    return {x:Math.max(0,Math.min(this.doc.width-width,point.x-width/2)),y:Math.max(0,Math.min(this.doc.height-height,point.y-height/2)),width,height,target};
   }
   drawOutline(ctx, o, color = "#006ce8") {
     ctx.save();
@@ -341,6 +337,11 @@ export class Editor {
     }
     if (this.drag?.type === "rotate") cursor = "grabbing";
     this.overlay.style.cursor = cursor;
+    const ghost=document.querySelector('#brush-cursor');
+    if(p && this.pointerInside && ['brush','pencil','eraser'].includes(this.app.tool) && !this.drag?.type?.includes('resize')) {
+      const bounds=stampBounds(p,this.app.width),zoom=this.app.zoom;ghost.className=this.app.tool==='eraser'?'eraser-ghost':'round-ghost';
+      Object.assign(ghost.style,{display:'block',left:bounds.x*zoom+'px',top:bounds.y*zoom+'px',width:bounds.width*zoom+'px',height:bounds.height*zoom+'px','--ink':this.app.color1});
+    } else ghost.style.display='none';
   }
   rect(a, b) {
     return {
@@ -401,6 +402,7 @@ export class Editor {
           }
           a.changedUI();
           a.updateLayers();
+          if (hit.object.type === "text") a.switchTab("text");
         }
         if (handle && d.selectedObjects.length) {
           if (
@@ -447,6 +449,7 @@ export class Editor {
           color,
           background,
           right: e.button === 2,
+          initialWidth: a.width, brush: a.brush, tool: a.tool,
         };
         this.stroke(p, p);
       } else if (a.tool === "fill") {
@@ -472,10 +475,12 @@ export class Editor {
         if (d.activeLayer.locked || !d.activeLayer.visible) throw new Error('Show and unlock the active layer before adding text.');
         this.drag = { type: 'text-box', start: p, end: p };
       } else if (a.tool === "zoom") {
-        this.setZoom(stepZoom(a.zoom, e.button === 2 ? -1 : 1), {
+        const area=this.zoomArea(p);
+        this.setZoom(nearestZoom(a.zoom * (e.button === 2 ? .5 : 2)), {
           x: e.clientX,
           y: e.clientY,
         });
+        if(e.button===0){this.viewport.scrollLeft=area.x*this.app.zoom+7;this.viewport.scrollTop=area.y*this.app.zoom+7;this.requestRender();}
       } else if (a.tool === "shape") {
         if (d.activeLayer.locked) throw new Error("This layer is locked.");
         this.drag = { type: "shape", start: p, end: p, color, background };
@@ -499,13 +504,9 @@ export class Editor {
     const ctx = layer.canvas.getContext("2d");
     if (app.tool === "eraser" && drag.right) {
       replaceColorSegment(ctx, a, b, app.color1, app.color2, app.width);
-    } else if (app.tool === "eraser" && this.doc.layers.indexOf(layer) === 0)
-      paintSegment(ctx, a, b, {
-        type: "brush",
-        brush: "square",
-        color: app.color2,
-        width: app.width,
-      });
+    } else if (app.tool === 'eraser' && this.doc.layers.indexOf(layer) === 0) {
+      ctx.save();ctx.fillStyle=app.color2;pixelSegment(ctx,a,b,app.width);ctx.restore();
+    }
     else
       paintSegment(ctx, a, b, {
         type: app.tool,
@@ -521,16 +522,7 @@ export class Editor {
     this.updateCursor(p);
     document.querySelector("#cursor-status span").textContent =
       Math.floor(p.x) + ", " + Math.floor(p.y) + " px";
-    const ring = document.querySelector("#brush-cursor");
-    if (["brush", "eraser"].includes(this.app.tool)) {
-      ring.style.display = "block";
-      ring.style.left = p.x * this.app.zoom + "px";
-      ring.style.top = p.y * this.app.zoom + "px";
-      ring.style.width = Math.max(3, this.app.width * this.app.zoom) + "px";
-      ring.style.height = Math.max(3, this.app.width * this.app.zoom) + "px";
-      ring.style.borderRadius =
-        this.app.tool === "eraser" || this.app.brush === "square" ? "0" : "50%";
-    } else ring.style.display = "none";
+    if (this.app.tool === 'zoom') this.requestRender();
     const drag = this.drag;
     if (!drag) return;
     if (drag.type === "curve-bend") {
@@ -640,7 +632,7 @@ export class Editor {
       ny = newCy - nh / 2;
     if (d.originals.length === 1) {
       const o = this.doc.objects.find((o) => o.id === d.originals[0].id);
-      const candidate = { ...o, x: nx, y: ny, width: nw, height: nh };
+      const candidate = { ...o, x: Math.round(nx), y: Math.round(ny), width: Math.round(nw), height: Math.round(nh) };
       if (o.type === 'text') candidate.minHeight = Math.round(nh);
       if (['shape', 'text'].includes(o.type)) {
         this.doc.assertAllocation(Math.ceil(nw) * Math.ceil(nh) * 12);
@@ -658,7 +650,9 @@ export class Editor {
   }
   pointerUp(e) {
     if (!this.drag) return;
+    const drag=this.drag, clickText=drag.type==='move' && Math.hypot(drag.start.x-this.point(e).x,drag.start.y-this.point(e).y)<1 ? this.doc.selectedObjects.find(object=>object.type==='text') : null;
     this.finishDrag();
+    if(clickText)this.app.editText(clickText);
     if (this.overlay.hasPointerCapture(e.pointerId))
       this.overlay.releasePointerCapture(e.pointerId);
   }
@@ -668,7 +662,8 @@ export class Editor {
     this.drag = null;
     const d = this.doc;
     try {
-      if (drag.type === "paint")
+      if (drag.type === "paint") {
+        if(drag.tool==='brush' && drag.brush==='round') {const ctx=d.activeLayer.canvas.getContext('2d');softBrushCap(ctx,drag.start,drag.initialWidth,drag.color);softBrushCap(ctx,drag.last,this.app.width,drag.color);}
         drag.edit.commit(
           this.app.tool === "eraser"
             ? "Erase"
@@ -676,6 +671,7 @@ export class Editor {
               ? "Pencil stroke"
               : "Brush stroke",
         );
+      }
       else if (drag.type === "curve-bend") {
         this.pendingShape.phase++;
         if (this.pendingShape.phase >= 2) this.finishPending();
@@ -764,18 +760,7 @@ export class Editor {
             ]),
           )
         ) {
-          d.history.push({
-            resources: [...new Set([...d.resources(drag.before), ...d.resources(after)])],
-            label:
-              drag.type === "move"
-                ? "Move objects"
-                : drag.type === "resize"
-                  ? "Resize objects"
-                  : "Rotate objects",
-            undo: () => d.restore(drag.before),
-            redo: () => d.restore(after),
-          });
-          d.changed();
+          this.app.recordTransform(drag.before,drag.type === 'move' ? 'Move objects' : drag.type === 'resize' ? 'Resize objects' : 'Rotate objects');
         }
       }
     } catch (err) {
@@ -802,7 +787,8 @@ export class Editor {
     const properties = shapeProperties(name, start, end, options);
     this.doc.assertAllocation(properties.width * properties.height * 12);
     const source = shapeSource(properties);
-    this.doc.insert(source, name, false, properties);
+    const object = this.doc.insert(source, name, false, properties),command=this.doc.history.undoStack.at(-1);
+    command.sessionKey=object.id;command.sessionOpen=true;
     this.app.changedUI();
   }
   trail(drag, dx, dy) {

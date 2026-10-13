@@ -14,7 +14,7 @@ output = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("/workspace/shared/dow
 output.mkdir(parents=True, exist_ok=True)
 files = [root / name for name in ("README.md", "LICENSE", ".gitignore", "package.json", "package-lock.json", "index.html", "vite.config.mjs", "playwright.config.mjs")]
 for folder in ("src", "desktop", "tests", "tools", "docs", "assets", ".github", "public"):
-    files.extend(path for path in (root / folder).rglob("*") if path.is_file() and "__pycache__" not in path.parts and not (folder == "public" and path.relative_to(root / "public").parts[0] in {"demo", "models", "ort"}))
+    files.extend(path for path in (root / folder).rglob("*") if path.is_file() and "__pycache__" not in path.parts and not (folder == "public" and path.relative_to(root / "public").parts[0] in {"demo", "models", "ort", "fonts", "icon.png"}))
 files = sorted(set(files))
 source = output / f"PaintPlus-Source-{version}.zip"
 with zipfile.ZipFile(source, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as archive:

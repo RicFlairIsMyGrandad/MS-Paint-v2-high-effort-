@@ -14,9 +14,10 @@ active layer. Floating image objects preserve their source canvases and carry
 position, dimensions, angle, flips and sampling properties. Editable shapes also
 store normalized geometry and style; resizing regenerates the raster preview
 rather than stretching a stroke. Text stores content and whole-box formatting,
-wrap width, padding, line gap and optional speech-bubble style. A stage textarea
-supports inline editing over a background-only preview; finished text uses its
-rendered source canvas and remains editable in project files.
+wrap width, padding, line gap and optional speech-bubble style. A transparent contenteditable stage element supplies selection and a caret over
+the same rendered canvas used after typing. Rich style runs store point sizes and
+formatting per selected portion. Whole-pixel transforms avoid a finalization shift.
+Installed font names are queried locally; bundled WOFF2 fonts work offline.
 
 The image display remains at document pixel resolution with pixelated CSS scaling.
 A separate device-pixel-resolution overlay covers only the visible viewport.

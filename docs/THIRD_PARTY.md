@@ -33,3 +33,18 @@ f0028975282a6f2946797175ac406a95096f29c5dcda98048148668dfa36eff8  electron-v38.2
 License texts are bundled in `public/legal/` (copied into the application) and
 Electron's LICENSE / LICENSES.chromium.html are included in its distribution.
 No runtime package-signature, artifact-checksum or TLS verification was disabled.
+
+## Bundled fonts in 1.0.3
+
+Caveat, Inter, Lora, Merriweather, Pacifico and Roboto Mono come from the
+Google Fonts source repository under SIL Open Font License 1.1. Each font's
+license, source URL and SHA-256 is included in assets/fonts. The bundled WOFF2
+files are Latin subsets, with punctuation and currency characters. Derived
+family names are prefixed PaintPlus; Merriweather pins width and optical size
+while preserving variable weight. Other characters use the installed font
+fallback. System fonts are enumerated locally and are not redistributed.
+
+The new palette/brush app icon was generated for this release at the user's
+request. Its full-resolution source is in assets/design and the Windows ICO
+and PNG derivatives are in assets. Windows PE branding uses resedit 3.0.2 and
+pe-library 2.0.1 (MIT), only during the build.

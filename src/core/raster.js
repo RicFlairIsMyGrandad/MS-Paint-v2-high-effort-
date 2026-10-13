@@ -165,35 +165,8 @@ export function paintSegment(ctx, a, b, opts) {
     ctx.globalCompositeOperation = "destination-out";
     ctx.lineCap = "square";
   }
-  if (type === "pencil") {
-    // Integer Bresenham produces the continuous, un-antialiased pencil.
-    let x = Math.floor(a.x),
-      y = Math.floor(a.y),
-      bx = Math.floor(b.x),
-      by = Math.floor(b.y),
-      dx = Math.abs(bx - x),
-      dy = -Math.abs(by - y),
-      sx = x < bx ? 1 : -1,
-      sy = y < by ? 1 : -1,
-      err = dx + dy;
-    for (;;) {
-      ctx.fillRect(
-        x - Math.floor(width / 2),
-        y - Math.floor(width / 2),
-        width,
-        width,
-      );
-      if (x === bx && y === by) break;
-      const e = 2 * err;
-      if (e >= dy) {
-        err += dy;
-        x += sx;
-      }
-      if (e <= dx) {
-        err += dx;
-        y += sy;
-      }
-    }
+  if (type === "pencil" || type === "eraser") {
+    pixelSegment(ctx, a, b, width, type === 'pencil');
   } else if (
     type === "brush" &&
     [
@@ -267,4 +240,57 @@ export function paintSegment(ctx, a, b, opts) {
     }
   }
   ctx.restore();
+}
+
+const circleSpans = new Map();
+export function stampBounds(point, width) {
+  const size = Math.max(1, Math.round(width));
+  return { x: Math.floor(point.x) - Math.floor(size / 2), y: Math.floor(point.y) - Math.floor(size / 2), width: size, height: size };
+}
+export function pixelSegment(ctx, a, b, width, round = false) {
+  const size = Math.max(1, Math.round(width)), offset = Math.floor(size / 2);
+  let spans = circleSpans.get(size);
+  if (round && !spans) {
+    const radius = (size - 1) / 2 + 0.25, centre = (size - 1) / 2;
+    spans = Array.from({ length: size }, (_, y) => {
+      let left = size, right = -1;
+      for (let x = 0; x < size; x++) if ((x - centre) ** 2 + (y - centre) ** 2 <= radius ** 2) { left = Math.min(left, x);right = Math.max(right, x); }
+      return { left, length: Math.max(0, right - left + 1) };
+    });
+    circleSpans.set(size, spans);
+  }
+  let x = Math.floor(a.x), y = Math.floor(a.y);
+  const bx = Math.floor(b.x), by = Math.floor(b.y), dx = Math.abs(bx - x), dy = -Math.abs(by - y), sx = x < bx ? 1 : -1, sy = y < by ? 1 : -1;
+  let err = dx + dy;
+  for (;;) {
+    if (round) spans.forEach((span, row) => { if (span.length) ctx.fillRect(x - offset + span.left, y - offset + row, span.length, 1); });
+    else ctx.fillRect(x - offset, y - offset, size, size);
+    if (x === bx && y === by) break;
+    const doubled = err * 2;
+    if (doubled >= dy) { err += dy;x += sx; }
+    if (doubled <= dx) { err += dx;y += sy; }
+  }
+}
+export function softBrushCap(ctx, point, width, color) {
+  const radius = width / 2, x = Math.floor(point.x) + (width % 2 ? .5 : 0), y = Math.floor(point.y) + (width % 2 ? .5 : 0), rgb = hexRGB(color);
+  const gradient = ctx.createRadialGradient(x, y, Math.max(0, radius - .45), x, y, radius + .4);
+  gradient.addColorStop(0, `rgba(${rgb.join(',')},1)`);gradient.addColorStop(1, `rgba(${rgb.join(',')},0)`);
+  ctx.save();ctx.fillStyle = gradient;ctx.beginPath();ctx.arc(x, y, radius + .4, 0, Math.PI * 2);ctx.fill();ctx.restore();
+}
+// Polygon masks operate on pixel centres, with either complete inclusion or none.
+export function polygonMask(width, height, points, offsetX = 0, offsetY = 0) {
+  const mask = new Uint8Array(width * height);
+  for (let row = 0; row < height; row++) {
+    const y = row + offsetY + .5, intersections = [];
+    for (let index = 0, previous = points.length - 1; index < points.length; previous = index++) {
+      const a = points[previous], b = points[index];
+      if ((a.y > y) !== (b.y > y)) intersections.push(a.x + (y - a.y) * (b.x - a.x) / (b.y - a.y));
+    }
+    intersections.sort((a,b) => a-b);
+    for (let index = 0; index + 1 < intersections.length; index += 2) {
+      const left = Math.max(0, Math.ceil(intersections[index] - offsetX - .5)), right = Math.min(width - 1, Math.floor(intersections[index+1] - offsetX - .5));
+      for (let x = left; x <= right; x++) mask[row * width + x] = 1;
+    }
+  }
+  return mask;
 }

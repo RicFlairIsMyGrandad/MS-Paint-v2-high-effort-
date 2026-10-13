@@ -1,0 +1,66 @@
+[
+  {
+    "family": "PaintPlus Caveat",
+    "displayFamily": "Caveat",
+    "file": "caveat.woff2",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/caveat/Caveat%5Bwght%5D.ttf",
+    "license": "https://raw.githubusercontent.com/google/fonts/main/ofl/caveat/OFL.txt",
+    "bytes": 85644,
+    "subset": "Latin U+0000\u2013024F, punctuation U+2000\u2013206F, currency U+20A0\u201320CF",
+    "sha256": "2fc41be780b1b3c05370c911e9f86e7391ef56f8a819a345ac630f06ee07b022"
+  },
+  {
+    "family": "PaintPlus Inter",
+    "displayFamily": "Inter",
+    "file": "inter.woff2",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf",
+    "license": "https://raw.githubusercontent.com/google/fonts/main/ofl/inter/OFL.txt",
+    "bytes": 150492,
+    "subset": "Latin U+0000\u2013024F, punctuation U+2000\u2013206F, currency U+20A0\u201320CF",
+    "sha256": "07ca878a5bdd10ed15a06df6190d2cc3a357aff140f18c2bdedb6aff04d6c472"
+  },
+  {
+    "family": "PaintPlus Lora",
+    "displayFamily": "Lora",
+    "file": "lora.woff2",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/lora/Lora%5Bwght%5D.ttf",
+    "license": "https://raw.githubusercontent.com/google/fonts/main/ofl/lora/OFL.txt",
+    "bytes": 44088,
+    "subset": "Latin U+0000\u2013024F, punctuation U+2000\u2013206F, currency U+20A0\u201320CF",
+    "sha256": "30906a4bbbe150ecf57113714b1e5c13660cbcafdde469e6274d054fc5fe7c14"
+  },
+  {
+    "family": "PaintPlus Merriweather",
+    "displayFamily": "Merriweather",
+    "file": "merriweather.woff2",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/merriweather/Merriweather%5Bopsz%2Cwdth%2Cwght%5D.ttf",
+    "license": "https://raw.githubusercontent.com/google/fonts/main/ofl/merriweather/OFL.txt",
+    "bytes": 358768,
+    "subset": "Latin U+0000\u2013024F, punctuation U+2000\u2013206F, currency U+20A0\u201320CF",
+    "fixedAxes": {
+      "wdth": 100,
+      "opsz": 18
+    },
+    "sha256": "962b9afd5d6bcf4259b61ed845f28180e8809311d494773270a5180e8644f9ad"
+  },
+  {
+    "family": "PaintPlus Pacifico",
+    "displayFamily": "Pacifico",
+    "file": "pacifico.woff2",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/pacifico/Pacifico-Regular.ttf",
+    "license": "https://raw.githubusercontent.com/google/fonts/main/ofl/pacifico/OFL.txt",
+    "bytes": 53228,
+    "subset": "Latin U+0000\u2013024F, punctuation U+2000\u2013206F, currency U+20A0\u201320CF",
+    "sha256": "992a4abf9fd052265f7bbb46213e080e44ddca99f4b4389c922925cbcf242b24"
+  },
+  {
+    "family": "PaintPlus Roboto Mono",
+    "displayFamily": "Roboto Mono",
+    "file": "roboto-mono.woff2",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/robotomono/RobotoMono%5Bwght%5D.ttf",
+    "license": "https://raw.githubusercontent.com/google/fonts/main/ofl/robotomono/OFL.txt",
+    "bytes": 47656,
+    "subset": "Latin U+0000\u2013024F, punctuation U+2000\u2013206F, currency U+20A0\u201320CF",
+    "sha256": "fe9e89c526ac51a234928323a0f35a9b9ca5f8f5e7c8cb71c0f95097a9210624"
+  }
+]

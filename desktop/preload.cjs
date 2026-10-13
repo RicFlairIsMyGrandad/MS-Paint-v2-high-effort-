@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld("desktop", {
   reportError: (detail) => ipcRenderer.send("startup:error", detail),
   startupLogPath: () => ipcRenderer.invoke("startup:log-path"),
   getSettings: () => ipcRenderer.invoke("settings:get"),
+  fonts: () => ipcRenderer.invoke('fonts:list'),
   saveSettings: (patch) => ipcRenderer.invoke("settings:set", patch),
   windowAction: (action) => ipcRenderer.invoke("window:action", action),
   setDirty: (value) => ipcRenderer.send("document:dirty", value),

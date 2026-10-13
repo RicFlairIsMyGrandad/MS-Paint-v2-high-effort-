@@ -136,10 +136,14 @@ export async function deserialize(text, onChange = () => {}) {
             throw new Error('Invalid editable shape.');
         }
         if (o.type === 'text') {
-          if (typeof o.text !== 'string' || o.text.length > 1000000 || typeof o.font !== 'string' || o.font.length > 100 || !Number.isFinite(o.fontSize) || o.fontSize < 4 || o.fontSize > 512)
+          if (typeof o.text !== 'string' || o.text.length > 1000000 || typeof o.font !== 'string' || o.font.length > 100 || !Number.isFinite(o.fontSize) || o.fontSize < 1 || o.fontSize > (o.fontUnit === "pt" ? 384 : 512))
             throw new Error('Invalid editable text.');
+          if (o.textRuns !== undefined && (!Array.isArray(o.textRuns) || o.textRuns.length > 10000 || o.textRuns.map(run => run.text).join('') !== o.text)) throw new Error('Invalid text runs.');
+          for (const run of o.textRuns || []) {
+            if (typeof run.text !== 'string' || (run.font !== undefined && (typeof run.font !== 'string' || run.font.length > 100)) || (run.fontSize !== undefined && (!Number.isFinite(run.fontSize) || run.fontSize < 1 || run.fontSize > 512)) || (run.textColor !== undefined && !/^#[0-9a-f]{6}$/i.test(run.textColor))) throw new Error('Invalid rich text style.');
+          }
           for (const [key, limit] of [['padding',100],['lineGap',200],['bubbleWidth',32],['minHeight',16384]])
-            if (o[key] !== undefined && (!Number.isFinite(o[key]) || o[key] < 0 || o[key] > limit)) throw new Error('Invalid text layout.');
+            if (o[key] !== undefined && (!Number.isFinite(o[key]) || o[key] < (key === 'lineGap' ? -100 : 0) || o[key] > limit)) throw new Error('Invalid text layout.');
         }
         return { ...o, source: sources[o.source] };
       }),

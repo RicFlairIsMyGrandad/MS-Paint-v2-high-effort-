@@ -50,3 +50,9 @@ height grows to fit the content and bubble body. Whole-box formatting and source
 PNG are stored together. The source PNG remains useful to old readers, while
 1.0.2 validates new editable geometry/layout fields before accepting a project.
 AI confidence arrays are transient; only the resulting PNG pixels are saved.
+
+Version 1.0.3 adds `fontUnit: "pt"` and immutable `textRuns`, whose concatenated
+text equals `text`. Each run has its own text/font/point size/colour/style fields.
+Older font sizes without fontUnit retain pixel semantics and are presented as
+equivalent points during editing. `lineGap` can be negative. Width controls remain
+workspace preferences rather than undoable object edits.

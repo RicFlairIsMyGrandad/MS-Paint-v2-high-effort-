@@ -61,9 +61,9 @@ test("pencil, Color 1 / Color 2, cursor and Ctrl+Numpad widths", async ({
   await drag(page, { x: 20, y: 45 }, { x: 150, y: 45 }, "right");
   expect(await at(page, 60, 45)).toEqual([237, 28, 36, 255]);
   await page.keyboard.press("Control+NumpadAdd");
-  expect(await page.evaluate(() => paintplus.width)).toBe(5);
+  expect(await page.evaluate(() => paintplus.width)).toBe(2);
   await page.keyboard.press("Control+NumpadSubtract");
-  expect(await page.evaluate(() => paintplus.width)).toBe(4);
+  expect(await page.evaluate(() => paintplus.width)).toBe(1);
 });
 test("brush widths and 100 strokes stay on the active raster layer with undo/redo", async ({
   page,
@@ -131,9 +131,9 @@ test("all brush variants produce strokes, shapes honor outline and fill", async 
     await drag(page, { x: 25, y: 25 }, { x: 120, y: 45 });
   }
   await page.locator("[data-shape=rectangle]").click();
-  await page.locator("#shape-fill").selectOption("solid");
   await drag(page, { x: 160, y: 50 }, { x: 240, y: 110 });
-  expect(await at(page, 200, 80)).toEqual([255, 255, 255, 255]);
+  await page.locator("#shape-fill").selectOption("solid");
+  expect(await page.evaluate(() => [...paintplus.doc.composite().getContext("2d").getImageData(200,80,1,1).data])).toEqual([255,255,255,255]);
   await page.keyboard.press("Enter");
   await expect.poll(() => page.evaluate(() => paintplus.doc.objects.length)).toBe(0);
   expect(await at(page, 160, 80)).toEqual([24, 71, 241, 255]);

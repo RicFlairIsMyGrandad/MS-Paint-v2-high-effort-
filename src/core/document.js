@@ -1,4 +1,4 @@
-import { canvas, cloneCanvas, colorKey } from "./raster.js";
+import { canvas, cloneCanvas, colorKey, polygonMask, hexRGB } from "./raster.js";
 import { History, RasterEdit } from "./history.js";
 export const id = () =>
   globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
@@ -139,12 +139,12 @@ export class PaintDocument {
     try { fn(); }
     catch (error) { this.restore(before);this.dirty = dirty;throw error; }
     const after = this.metadata();
-    if (!this.inTransaction) this.history.push({
-      label,
+    const command = {
+      label, before, after,
       resources: [...new Set([...this.resources(before), ...this.resources(after)])],
-      undo: () => this.restore(before),
-      redo: () => this.restore(after),
-    });
+      undo: () => this.restore(command.before), redo: () => this.restore(command.after),
+    };
+    if (!this.inTransaction) this.history.push(command);
     this.changed();
   }
   transaction(label, fn) {
@@ -311,36 +311,20 @@ export class PaintDocument {
     if (w < 1 || h < 1) return null;
     const l = this.activeLayer;
     if (l.locked) throw new Error("This layer is locked.");
-    this.assertAllocation(w * h * 16);
+    this.assertAllocation(w * h * 32);
     const src = canvas(w, h),
       ctx = src.getContext("2d");
-    if (path) {
-      ctx.beginPath();
-      path.forEach((p, i) =>
-        i ? ctx.lineTo(p.x - x, p.y - y) : ctx.moveTo(p.x - x, p.y - y),
-      );
-      ctx.closePath();
-      ctx.clip();
+    const mask = path ? polygonMask(w, h, path, x, y) : null;
+    const before = l.canvas.getContext("2d").getImageData(x, y, w, h), lifted = new Uint8ClampedArray(before.data), erased = new Uint8ClampedArray(before.data);
+    const replacement = this.layers.indexOf(l) === 0 ? [...hexRGB(paintBackground), 255] : [0, 0, 0, 0];
+    for (let pixel = 0; pixel < w * h; pixel++) {
+      if (!mask || mask[pixel]) erased.set(replacement, pixel * 4);
+      else lifted[pixel * 4 + 3] = 0;
     }
-    ctx.drawImage(l.canvas, -x, -y);
-    const before = l.canvas.getContext("2d").getImageData(x, y, w, h);
+    const sourceImage = ctx.createImageData(w,h);sourceImage.data.set(lifted);ctx.putImageData(sourceImage,0,0);
+    const erasedImage = l.canvas.getContext('2d').createImageData(w,h);erasedImage.data.set(erased);
+    const erase = () => l.canvas.getContext('2d').putImageData(erasedImage,x,y);
     let obj;
-    const erase = () => {
-      const c = l.canvas.getContext("2d");
-      c.save();
-      if (path) {
-        c.beginPath();
-        path.forEach((p, i) => (i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)));
-        c.closePath();
-        c.clip();
-      }
-      c.clearRect(x, y, w, h);
-      if (this.layers.indexOf(l) === 0) {
-        c.fillStyle = paintBackground;
-        c.fillRect(x, y, w, h);
-      }
-      c.restore();
-    };
     erase();
     obj = {
       id: id(),
@@ -353,7 +337,7 @@ export class PaintDocument {
       angle: 0,
       flipH: false,
       flipV: false,
-      resampling: "lanczos",
+      resampling: "nearest",
       type: "selection",
       transparentColor,
     };

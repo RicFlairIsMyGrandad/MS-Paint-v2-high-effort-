@@ -1,6 +1,6 @@
 {
   "isPackaged": true,
-  "appPath": "/tmp/PaintPlus packaged Ω hEuFcT/installed app with spaces/resources/app.asar",
+  "appPath": "/tmp/PaintPlus packaged Ω cKnTlq/installed app with spaces/resources/app.asar",
   "platform": "linux",
   "gpuStatus": {
     "2d_canvas": "unavailable_software",
@@ -25,6 +25,11 @@
   "pointerDrawing": true,
   "editableShapes": true,
   "inlineSpeechText": true,
+  "richTextFormatting": true,
+  "typingPixelsUnchanged": true,
+  "bundledFonts": true,
+  "systemFontCatalog": true,
+  "brandedExecutableIcons": false,
   "externalCopyPreservesColor2": true,
   "clipboardAlpha": true,
   "savedPNGBytes": true,
@@ -32,19 +37,19 @@
   "clipboardOK": true,
   "aiInferenceOK": true,
   "first": {
-    "path": "/tmp/PaintPlus packaged Ω hEuFcT/images/PaintPlus-smoke.png",
+    "path": "/tmp/PaintPlus packaged Ω cKnTlq/images/PaintPlus-smoke.png",
     "name": "PaintPlus-smoke.png"
   },
   "second": {
-    "path": "/tmp/PaintPlus packaged Ω hEuFcT/images/PaintPlus-smoke (2).png",
+    "path": "/tmp/PaintPlus packaged Ω cKnTlq/images/PaintPlus-smoke (2).png",
     "name": "PaintPlus-smoke (2).png"
   },
   "collisionOK": true,
   "project": {
-    "path": "/tmp/PaintPlus packaged Ω hEuFcT/images/PaintPlus-project-smoke.paintplus",
+    "path": "/tmp/PaintPlus packaged Ω cKnTlq/images/PaintPlus-project-smoke.paintplus",
     "name": "PaintPlus-project-smoke.paintplus"
   },
-  "projectBytes": 182407,
+  "projectBytes": 179317,
   "protocol": "paintplus:",
   "aiModel": true,
   "rendererErrors": [],

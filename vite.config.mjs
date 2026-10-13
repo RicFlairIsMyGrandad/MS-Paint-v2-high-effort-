@@ -9,6 +9,8 @@ export default defineConfig({
       // Prepare public assets before Vite scans publicDir on a fresh checkout.
       // buildStart is too late for the dev server's initial file index on Windows.
       configResolved() {
+        cpSync("assets/icon.png", "public/icon.png");
+        mkdirSync("public/fonts", {recursive:true});cpSync("assets/fonts", "public/fonts", {recursive:true});
         mkdirSync("public/ort", { recursive: true });
         const dir = "node_modules/onnxruntime-web/dist";
         if (existsSync(dir))

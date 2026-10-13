@@ -42,6 +42,8 @@ const defaultPrefs = {
   assetsWidth: 280,
   categoriesHeight: 246,
   textStyle: {},
+  toolWidths: {},
+  favoriteFonts: [],
 };
 export class PaintPlus {
   constructor() {
@@ -49,7 +51,8 @@ export class PaintPlus {
     this.color1 = "#1847f1";
     this.color2 = "#ffffff";
     this.activeColor = 1;
-    this.width = 4;
+    this.toolWidths = {};
+    this.strokeOverrides = new Map();
     this.tool = "select";
     this.brush = "round";
     this.shape = "rectangle";
@@ -92,11 +95,14 @@ export class PaintPlus {
       Array.isArray(this.prefs.shortcuts) && this.prefs.shortcuts.length === 10 && this.prefs.shortcuts.every(tool => tools.includes(tool))
         ? this.prefs.shortcuts
         : [...defaultPrefs.shortcuts];
+    this.prefs.favoriteFonts = Array.isArray(settings.preferences?.favoriteFonts) ? settings.preferences.favoriteFonts.filter(font => typeof font === 'string' && font.length < 100).slice(0,200) : [];
+    this.toolWidths = Object.fromEntries(Object.entries(this.prefs.toolWidths || {}).filter(([key,value]) => typeof key === 'string' && Number.isInteger(value) && value >= 1 && value <= 256));
     this.zoom = nearestZoom(this.prefs.zoom);
     document.querySelector("#app").innerHTML = layout();
     this.editor = new Editor(this);
     this.library = new Library(this, settings);
     this.selectionOrigin = "select";
+    await Promise.all(['Caveat','Inter','Lora','Merriweather','Pacifico','Roboto Mono'].map(name => document.fonts.load('16px "PaintPlus ' + name + '"')));
     this.textEditor = new TextEditor(this);
     this.bind();
     this.applyPrefs();
@@ -111,6 +117,46 @@ export class PaintPlus {
       }
     });
     return this;
+  }
+  widthKey() {
+    const shape = this.doc?.selectedObjects.find(object => object.type === 'shape');
+    if (shape) return 'shape:' + shape.shapeName;
+    return this.tool === 'shape' ? 'shape:' + this.shape : this.tool === 'brush' ? 'brush:' + this.brush : this.tool || 'other';
+  }
+  get width() {
+    const selected = this.doc?.selectedObjects.find(object => object.type === 'shape');
+    return selected?.shapeStyle.width ?? this.toolWidths?.[this.widthKey()] ?? (this.tool === 'pencil' ? 1 : 4);
+  }
+  set width(value) {
+    this.toolWidths ||= {};this.toolWidths[this.widthKey()] = Math.max(1,Math.min(256,Math.round(value)));
+    if (this.prefs) this.prefs.toolWidths = { ...this.toolWidths };
+  }
+  sessionKey(objects = this.doc.selectedObjects) { return objects.map(object => object.id).sort().join(','); }
+  updateSession(command, after = this.doc.metadata()) {
+    command.after = after;command.resources = [...new Set([...this.doc.resources(command.before), ...this.doc.resources(after)])];
+    this.doc.history.redoStack = [];this.doc.history.trim();this.doc.changed();
+  }
+  recordTransform(before, label) {
+    const key = this.sessionKey(), previous = this.doc.history.undoStack.at(-1);
+    if (previous?.sessionOpen && previous.sessionKey === key) this.updateSession(previous);
+    else {
+      const command = { label, before, after: this.doc.metadata(), sessionKey: key, sessionOpen: true };
+      command.resources = [...new Set([...this.doc.resources(before), ...this.doc.resources(command.after)])];
+      command.undo = () => this.doc.restore(command.before);command.redo = () => this.doc.restore(command.after);
+      this.doc.history.push(command);this.doc.changed();
+    }
+  }
+  coalesceCommit(previous) {
+    if (previous?.sessionOpen && this.doc.history.undoStack.at(-2) === previous) {
+      this.doc.history.undoStack.pop();this.updateSession(previous);previous.sessionOpen = false;
+    }
+  }
+  closeObjectSession() { const previous = this.doc.history.undoStack.at(-1);if (previous) previous.sessionOpen = false; }
+  restoreStrokeWidths() {
+    for (const object of this.doc.objects) if (object.type === 'shape' && this.strokeOverrides.has(object.id) && object.shapeStyle.width !== this.strokeOverrides.get(object.id)) {
+      const candidate = {...object, shapeStyle: {...object.shapeStyle, width: this.strokeOverrides.get(object.id)}};
+      this.doc.assertAllocation(object.width*object.height*12);refreshEditable(candidate);Object.assign(object,candidate);
+    }
   }
   escape(s) {
     return String(s).replace(
@@ -198,6 +244,7 @@ export class PaintPlus {
       );
     document.querySelector("#width-label").textContent = this.width + " px";
     document.querySelector(".line-sample").style.setProperty("--current-stroke", Math.min(18, this.width) + "px");
+    document.querySelector(".line-sample").style.setProperty("--circle-size", Math.min(30, this.width) + "px");
     document.querySelector("[data-action=undo]").disabled =
       !this.doc.history.undoStack.length;
     document.querySelector("[data-action=redo]").disabled =
@@ -207,7 +254,7 @@ export class PaintPlus {
         !this.doc.selectedObjects.length;
     this.editor?.updateCursor(this.editor.hover);
     const shape = this.doc.selectedObjects.find(o => o.type === 'shape');
-    const shapeActive = this.tool === 'shape' || !!shape;
+    const shapeActive = !!shape || !!this.editor.pendingShape || this.editor.drag?.type === 'shape';
     document.querySelector('#outline').disabled = !shapeActive;
     document.querySelector('#shape-fill').disabled = !shapeActive;
     document.querySelector('#selection-transparent').checked = this.prefs.transparentSelection;
@@ -216,7 +263,7 @@ export class PaintPlus {
       if (document.activeElement !== field) field.value = this.doc[key];
     }
     document.querySelector('[data-tab=text]').classList.toggle('hidden', this.tool !== 'text' && !this.doc.selectedObjects.some(o => o.type === 'text'));
-    document.querySelector('.line-sample').classList.toggle('pencil-sample', this.tool === 'pencil');
+    document.querySelector('.line-sample').classList.toggle('round-sample', ['pencil','brush'].includes(this.tool));
     this.textEditor?.syncControls();
     this.updateColors();
   }
@@ -247,6 +294,7 @@ export class PaintPlus {
     this.savePrefs();this.changedUI();
   }
   finishSelection() {
+    const previous = this.doc.history.undoStack.at(-1);
     const objects = this.doc.selectedObjects.filter(o => o.type === 'selection' || o.draft);
     this.doc.assertAllocation(this.doc.layers.filter(layer => layer.objects.some(o => objects.includes(o))).length * this.doc.width * this.doc.height * 4);
     if (objects.length && this.selectedEditable()) this.doc.action('Commit selection', () => {
@@ -259,22 +307,24 @@ export class PaintPlus {
       }
       this.doc.selected = [];
     });
+    this.coalesceCommit(previous);this.closeObjectSession();
     this.doc.selected = [];this.tool = this.selectionOrigin || 'select';this.changedUI();
   }
-  updateShapeStyle(patch = {}) {
-    const objects = this.doc.selectedObjects.filter(o => o.type === 'shape');
-    if (objects.length && this.selectedEditable()) this.doc.action('Format shape', () => {
-      for (const object of objects) {
-        this.doc.assertAllocation(object.width * object.height * 12);
-        const candidate = { ...object, shapeStyle: { ...object.shapeStyle, ...patch } };
-        refreshEditable(candidate);Object.assign(object, candidate);
-      }
-    });
+  updateShapeStyle(patch = {}, history = true) {
+    if (this.editor.pendingShape) this.editor.pendingShape.options = {...this.editor.pendingShape.options, ...patch};
+    const objects = this.doc.selectedObjects.filter(object => object.type === 'shape'), previous = this.doc.history.undoStack.at(-1);
+    const apply = () => { for (const object of objects) { this.doc.assertAllocation(object.width*object.height*12);const candidate = {...object,shapeStyle:{...object.shapeStyle,...patch}};refreshEditable(candidate);Object.assign(object,candidate); } };
+    if (objects.length && this.selectedEditable()) {
+      if (!history || previous?.sessionOpen && previous.sessionKey === this.sessionKey()) { apply();if(previous?.sessionOpen && previous.sessionKey === this.sessionKey())this.updateSession(previous);else this.doc.changed(); }
+      else this.doc.action('Format shape',apply);
+    }
     this.changedUI();
   }
   setStrokeWidth(width) {
-    this.width = Math.max(1, Math.min(256, Math.round(width)));
-    this.updateShapeStyle({ width: this.width });
+    this.width = Math.max(1,Math.min(256,Math.round(width)));
+    const selectedWidth = this.toolWidths[this.widthKey()];
+    for(const object of this.doc.selectedObjects) if(object.type === 'shape')this.strokeOverrides.set(object.id,selectedWidth);
+    this.updateShapeStyle({width:selectedWidth},false);this.savePrefs();
   }
   colorChanged(slot = this.activeColor) {
     this.updateColors();this.updateShapeStyle(slot === 1 ? { color: this.color1 } : { background: this.color2 });
@@ -295,6 +345,7 @@ export class PaintPlus {
     if (tool !== 'text') this.textEditor?.finish();
     if (tool === 'select' || tool === 'free') this.selectionOrigin = tool;
     this.editor.finishPending();
+    if (this.doc.selectedObjects.some(object => object.draft) && ['brush','pencil','eraser','fill','shape'].includes(tool)) this.finishSelection();
     if (this.editor.drag) this.editor.finishDrag();
     if (!tools.includes(tool)) return;
     if (["pencil", "brush", "eraser", "fill", "shape"].includes(tool) && !this.doc.activeLayer.locked && this.doc.activeLayer.visible) {
@@ -429,6 +480,16 @@ export class PaintPlus {
       e.target.value = "";
       e.target.removeAttribute("webkitdirectory");
     };
+    for(const bar of document.querySelectorAll('.titlebar,.tabs,.ribbon')) bar.addEventListener('wheel',event=>{
+      if(!event.deltaY)return;event.preventDefault();
+      const tabs=[...document.querySelectorAll('[data-tab]:not(.hidden)')],index=tabs.findIndex(tab=>tab.classList.contains('active')),next=Math.max(0,Math.min(tabs.length-1,index+(event.deltaY>0?1:-1)));
+      this.switchTab(tabs[next].dataset.tab);
+    },{passive:false});
+    document.addEventListener('pointerdown',event=>{
+      if(this.busy||event.target.closest('#canvas-stage,.ribbon,.tabs,.titlebar,#menu,#modal-root,[data-action],input,select,[data-canvas-handle]'))return;
+      if(this.prefs.selectionMode==='paint'&&this.doc.selectedObjects.some(object=>object.type==='selection'||object.draft))this.finishSelection();
+      else {this.closeObjectSession();this.doc.selected=[];this.changedUI();}
+    });
     document.addEventListener("keydown", (e) => this.keyDown(e));
     this.editor.viewport.addEventListener("dragover", (e) => {
       e.preventDefault();
@@ -876,13 +937,18 @@ export class PaintPlus {
         this.textEditor.finish();
         if (document.querySelector("#modal-root.floating-dialog")) this.modalCancel?.();
         this.editor.selectionRect = null;
+        this.closeObjectSession();
         doc.history.undo();
+        this.restoreStrokeWidths();
         this.changedUI();
         break;
       case "redo":
         this.textEditor.finish();
         if (document.querySelector("#modal-root.floating-dialog")) this.modalCancel?.();
+        this.closeObjectSession();
         doc.history.redo();
+        this.restoreStrokeWidths();
+        { const command=doc.history.undoStack.at(-1);if(command?.sessionKey===this.sessionKey() && doc.selectedObjects.some(object=>object.draft))command.sessionOpen=true; }
         this.changedUI();
         break;
       case "paste":
@@ -1038,13 +1104,12 @@ export class PaintPlus {
       case "ungroup":
         doc.ungroupSelected();
         break;
-      case "rasterize":
-        this.textEditor.finish();
-        await this.runBusy("Rendering from original pixels…", () =>
-          doc.rasterize(resample),
-        );
-        this.tool = this.selectionOrigin || "select";
-        break;
+      case "rasterize": {
+        this.textEditor.finish();const previous=doc.history.undoStack.at(-1);
+        if(doc.selectedObjects.length && doc.selectedObjects.every(object=>object.type==='selection'||object.draft))this.finishSelection();
+        else { await this.runBusy('Rendering from original pixels…',()=>doc.rasterize(resample));this.coalesceCommit(previous);this.closeObjectSession(); }
+        this.tool=this.selectionOrigin||'select';break;
+      }
       case "duplicate":
         doc.duplicateSelected();
         break;
@@ -1218,7 +1283,8 @@ export class PaintPlus {
       const step = 1,
         dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0,
         dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
-      this.doc.action(e.shiftKey ? "Smear selection" : "Nudge objects", () => {
+      const before = this.doc.metadata();
+      {
         if (e.shiftKey) for (const layer of this.doc.layers) {
           const objects = layer.objects.filter(o => this.doc.selected.includes(o.id));
           if (!objects.length) continue;
@@ -1230,7 +1296,8 @@ export class PaintPlus {
           o.x += dx;
           o.y += dy;
         }
-      });
+      }
+      this.recordTransform(before,e.shiftKey ? "Smear selection" : "Nudge objects");
       return;
     }
     if (action) {
@@ -1541,6 +1608,8 @@ export class PaintPlus {
   assetsWidth: 280,
   categoriesHeight: 246,
   textStyle: {},
+  toolWidths: {},
+  favoriteFonts: [],
           });
         }
       }
