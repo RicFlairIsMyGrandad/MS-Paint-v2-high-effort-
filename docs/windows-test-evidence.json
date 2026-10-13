@@ -1,36 +1,36 @@
 {
-  "run": "37971775432",
-  "source": "8a9bb8c59adb93307e1444addd48510ecadf5a3e",
-  "url": "https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/actions/runs/37971775432",
-  "version": "1.0.2",
+  "run": "38457947297",
+  "source": "b46b0f1234bb8e2aa7ae680dacf5bdad30138bb4",
+  "url": "https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/actions/runs/38457947297",
+  "version": "1.0.3",
   "exactExecutableChecksums": {
-    "PaintPlus-Setup-1.0.2-x64.exe": "03d22ff3376ce2e8b34756631cf378ef49d10228350a0fd055e1bbcf9a7a605d",
-    "PaintPlus-Portable-1.0.2-x64.exe": "68516fd31e1d3b3d39edd9893ef89af9cd8fcfc908404e6dc6f4d6ac9e77007d"
+    "PaintPlus-Setup-1.0.3-x64.exe": "8b0d95a68858ea3cfe6899b2edeae46b523033792643c3337473239bd1b37ced",
+    "PaintPlus-Portable-1.0.3-x64.exe": "c7a49bfe33ff67ddcf03689f6e8d1e1abe98f4cd8c01203005269e3656b2d64f"
   },
   "runners": [
     {
       "target": "windows-2022",
       "os": "Windows Server 2022 Datacenter",
       "release": "10.0.20348",
-      "corePassed": 46,
-      "uiPassed": 53,
+      "corePassed": 64,
+      "uiPassed": 68,
       "installedPackagedChecksPassed": true,
       "portablePassed": true,
       "shortcutsAndAssociationPassed": true,
       "uninstallPreservedProject": true,
-      "evidenceBranch": "windows-evidence-37971775432-windows-2022"
+      "evidenceBranch": "windows-evidence-38457947297-windows-2022"
     },
     {
       "target": "windows-latest",
       "os": "Windows Server 2025 Datacenter",
       "release": "10.0.26100",
-      "corePassed": 46,
-      "uiPassed": 53,
+      "corePassed": 64,
+      "uiPassed": 68,
       "installedPackagedChecksPassed": true,
       "portablePassed": true,
       "shortcutsAndAssociationPassed": true,
       "uninstallPreservedProject": true,
-      "evidenceBranch": "windows-evidence-37971775432-windows-latest"
+      "evidenceBranch": "windows-evidence-38457947297-windows-latest"
     }
   ]
 }

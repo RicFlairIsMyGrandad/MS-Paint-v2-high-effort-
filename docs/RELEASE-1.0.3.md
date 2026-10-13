@@ -29,3 +29,10 @@ pixel-for-pixel reproduction of Microsoft's executable or GDI text renderer.
 Advanced paragraph alignment, per-character baseline offsets and manual AI mask
 painting remain outside this release. Hosted Windows evidence is recorded in
 TESTING.md; it does not replace testing on the user's specific Home-edition laptop.
+
+Validation: 64 core tests and 68 UI workflows passed locally and on both hosted
+Windows runners. [Run 38457947297](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/actions/runs/38457947297) installed and launched
+the exact release Setup EXE, checked native fonts/clipboard/offline AI, launched
+Portable and verified safe uninstall. Both archives pass integrity checks and
+contain the same version-1.0.3 application. Full logs, hashes and verification
+boundaries are in TESTING.md.

@@ -45,9 +45,9 @@ ELECTRON_BUILDER_CACHE=/workspace/.cache/electron-builder \
 ```
 
 `signAndEditExecutable: false` avoids Wine-based resource signing on Linux. The
-installer and portable launchers use the original PaintPlus icon, and installed
-shortcuts use `resources/icon.ico`. The inner Electron application executable
-retains its upstream executable icon; the window uses PaintPlus's icon.
+installer, portable launcher, installed application and window use the PaintPlus
+icon. Shortcuts use `resources/icon.ico`. The `afterPack` hook updates the inner
+executable's icon and version resources using pinned JavaScript PE libraries.
 Production signing is not configured. Add a certificate through a secure build
 system if releasing publicly; never commit certificate credentials.
 
@@ -93,7 +93,6 @@ A mismatched candidate fails validation instead of testing stale app code.
 Build commands disable automatic release publishing; downloads are published
 explicitly after validation.
 
-Version 1.0.3 brands Windows executable icon/version resources with the
-`desktop/build-icon.cjs` afterPack hook. This uses pinned pure JavaScript PE
-libraries, without Wine. Bundled font files and licenses are already in assets;
+Version 1.0.3 uses `desktop/build-icon.cjs` for that resource update without Wine.
+Bundled font files and licenses are already in assets;
 Python/font conversion tools are not needed to build the download.
