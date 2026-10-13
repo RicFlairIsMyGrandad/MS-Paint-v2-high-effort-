@@ -1,9 +1,9 @@
-# Remaining limitations — 1.0.2
+# Remaining limitations — 1.0.3
 
 These are differences or unverified areas, rather than completed acceptance claims.
 
-- **Exact Microsoft assets are unfinished (request 3).** The ribbon has colored
-  Paint-style SVG redraws, tighter spacing, adjacent selection buttons and a
+- **Microsoft resources are not copied.** The ribbon has colored
+  refined SVG icons, tighter spacing, adjacent selection buttons and a
   bordered palette. Icons and custom tool cursors are original approximations,
   not the exact Windows 10 Paint resource files. The palette and ribbon are not
   pixel-for-pixel clones of Microsoft's UI. The supplied reference screenshot
@@ -33,11 +33,14 @@ These are differences or unverified areas, rather than completed acceptance clai
   nested hierarchies, blend modes or masks. In trail mode opaque selection margins
   also stamp, matching normal opaque selection behavior; enable Transparent to
   ignore exact Color-2 pixels.
-- **Text:** Font availability depends on the computer. Inline text supports whole
-  box formatting, wrapping, re-editing and speech bubbles; it does not support
-  mixed fonts/styles within one box, vertical writing or rich paragraph alignment.
-  Editable text sits above its layer's raster paint until explicitly committed.
-  Text auto-grows vertically, while the width is set by the drag/resize handles.
+- **Text:** Mixed font/point-size/colour/style runs, favorites and re-editing are
+  implemented. Font availability depends on the computer; six Latin font families
+  are bundled. Other characters use installed fallback fonts. Paragraph alignment,
+  per-character baseline offsets and complex RTL/advanced typesetting are not
+  independently verified. Source pixels are retained in older projects until
+  their text is edited, when the new renderer regenerates them. Font substitution
+  can change edited text when an original font is unavailable. Editable text sits
+  above its layer's raster until explicitly committed.
 - **Library index:** It is a saved index, not a live filesystem watcher. New or
   moved source files need re-importing. Removing library entries or categories
   never deletes original files. Category renaming does not rename disk folders.
