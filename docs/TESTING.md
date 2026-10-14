@@ -1,11 +1,13 @@
 # Validation of PaintPlus 1.0.4
 
-84 Node tests and 89 Chromium workflows pass locally. New regressions cover
+87 Node tests and 89 Chromium workflows pass locally. New regressions cover
 visible brush caps, binary freeform previews, Color-2 layer removal, cut into
 new layer with undo, stable visibility clicks, universal handles, outside-click
 confirmation, text key handling, two-digit/fractional font sizes, dropdowns,
 underline thickness/descender gaps, fixed bubble geometry and grey shadows.
 The production Vite build passes.
+Native font lookup shares one cached request, allows slower Windows startup and
+falls back to installed machine/user registry entries if GDI lookup fails.
 
 The packaged Linux app passes startup, default dimensions, pointer drawing,
 shapes, mixed text formatting, stable typing pixels, two-digit font size entry,
