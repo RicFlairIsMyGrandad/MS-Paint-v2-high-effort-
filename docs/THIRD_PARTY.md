@@ -44,7 +44,7 @@ family names are prefixed PaintPlus; Merriweather pins width and optical size
 while preserving variable weight. Other characters use the installed font
 fallback. System fonts are enumerated locally and are not redistributed.
 
-The new palette/brush app icon was generated for this release at the user's
-request. Its full-resolution source is in assets/design and the Windows ICO
+The current transparent easel app icon was generated for version 1.0.4 at the
+user's request. Its full-resolution source is in assets/design and the Windows ICO
 and PNG derivatives are in assets. Windows PE branding uses resedit 3.0.2 and
 pe-library 2.0.1 (MIT), only during the build.

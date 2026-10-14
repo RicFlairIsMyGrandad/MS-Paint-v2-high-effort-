@@ -554,7 +554,8 @@ test("tool cursors change across drawing, text, selection, eyedropper and handle
       await page.locator("#overlay").evaluate((el) => el.style.cursor),
     );
   }
-  expect(new Set(cursors).size).toBe(9);
+  expect(new Set(cursors).size).toBe(8);
+  expect(cursors[6]).toBe(cursors[7]); // Legacy Move now aliases selection.
   await sprite(page);
   await page.mouse.move(340 + 64, 204 + 80);
   await expect(page.locator("[data-canvas-handle=corner]")).toHaveCSS(
@@ -578,9 +579,8 @@ test("text creates editable object, rasterizes from original and undoes", async 
     .poll(() => page.evaluate(() => paintplus.doc.objects.length))
     .toBe(0);
   await page.keyboard.press("Control+z");
-  expect(await page.evaluate(() => paintplus.doc.objects[0].text)).toBe(
-    "PaintPlus\nHello!",
-  );
+  expect(await page.evaluate(() => paintplus.doc.objects.length)).toBe(0);
+  expect(await page.evaluate(() => [...paintplus.doc.activeLayer.canvas.getContext('2d').getImageData(35,50,1,1).data])).toEqual([255,255,255,255]);
 });
 test("Lanczos worker rasterizes object and preserves undoable original", async ({
   page,

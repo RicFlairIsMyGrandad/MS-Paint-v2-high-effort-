@@ -191,13 +191,13 @@ test("raster undo works after layer metadata undo restores layer references", ()
   d.history.redo();
   assert.deepEqual(pixel(d.activeLayer.canvas, 20, 10), [24, 71, 241, 255]);
 });
-test("selection lifting and undo restore pixels and floating object", () => {
+test("selection lifting fills Color 2 on upper layers and undo restores original pixels", () => {
   const d = new PaintDocument(80, 60);
   d.addLayer("Ink");
   stroke(d);
   d.selectRegion({ x: 5, y: 5, width: 40, height: 20 });
   assert.equal(d.objects.length, 1);
-  assert.equal(pixel(d.activeLayer.canvas, 20, 10)[3], 0);
+  assert.deepEqual(pixel(d.activeLayer.canvas, 20, 10), [255,255,255,255]);
   d.action("Move", () => (d.objects[0].x = 20));
   d.history.undo();
   d.history.undo();
@@ -205,7 +205,7 @@ test("selection lifting and undo restore pixels and floating object", () => {
   assert.deepEqual(pixel(d.activeLayer.canvas, 20, 10), [24, 71, 241, 255]);
   d.history.redo();
   assert.equal(d.objects.length, 1);
-  assert.equal(pixel(d.activeLayer.canvas, 20, 10)[3], 0);
+  assert.deepEqual(pixel(d.activeLayer.canvas, 20, 10), [255,255,255,255]);
 });
 test("free-form selection preserves transparency outside polygon", () => {
   const d = new PaintDocument(40, 40);

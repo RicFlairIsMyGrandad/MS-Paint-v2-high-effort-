@@ -142,7 +142,8 @@ export async function deserialize(text, onChange = () => {}) {
           for (const run of o.textRuns || []) {
             if (typeof run.text !== 'string' || (run.font !== undefined && (typeof run.font !== 'string' || run.font.length > 100)) || (run.fontSize !== undefined && (!Number.isFinite(run.fontSize) || run.fontSize < 1 || run.fontSize > 512)) || (run.textColor !== undefined && !/^#[0-9a-f]{6}$/i.test(run.textColor))) throw new Error('Invalid rich text style.');
           }
-          for (const [key, limit] of [['padding',100],['lineGap',200],['bubbleWidth',32],['minHeight',16384]])
+          if(o.bubbleShadow!==undefined&&typeof o.bubbleShadow!=='boolean')throw new Error('Invalid bubble shadow.');
+          for (const [key, limit] of [['padding',100],['lineGap',200],['bubbleWidth',32],['minHeight',16384],['textBoxWidth',16384],['shadowOffset',100]])
             if (o[key] !== undefined && (!Number.isFinite(o[key]) || o[key] < (key === 'lineGap' ? -100 : 0) || o[key] > limit)) throw new Error('Invalid text layout.');
         }
         return { ...o, source: sources[o.source] };

@@ -127,14 +127,24 @@ export function shapePath(ctx, name, x, y, w, h) {
     ctx.closePath();
   } else if (name === "callout") speechBubblePath(ctx, x, y, w, h);
 }
-export function speechBubblePath(ctx, x, y, w, h) {
-  const bottom = y + h * 0.76, r = Math.min(w * 0.09, h * 0.14, 20);
+export const bubbleGeometry = { radius: 9, tailWidth: 30, tailHeight: 46, tailInset: 40 };
+export function speechBubblePath(ctx, x, y, w, h, fixed = false) {
+  const bottom = y + (fixed ? Math.max(18, h - bubbleGeometry.tailHeight) : h * .76),
+    r = fixed ? Math.min(bubbleGeometry.radius, w / 2, (bottom - y) / 2) : Math.min(w * .09, h * .14, 20);
   ctx.moveTo(x + r, y);
   ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
   ctx.lineTo(x + w, bottom - r); ctx.quadraticCurveTo(x + w, bottom, x + w - r, bottom);
-  ctx.lineTo(x + w * 0.28, bottom);
-  ctx.bezierCurveTo(x + w * 0.23, y + h * 0.96, x + w * 0.13, y + h * 1.04, x + w * 0.02, y + h * 0.98);
-  ctx.bezierCurveTo(x + w * 0.13, y + h * 0.95, x + w * 0.16, y + h * 0.87, x + w * 0.17, bottom);
+  if (fixed) {
+    const left = x + Math.max(r, Math.min(bubbleGeometry.tailInset, w - r - bubbleGeometry.tailWidth)),
+      right = left + bubbleGeometry.tailWidth, tip = Math.max(x + 2, left - 35), tail = bubbleGeometry.tailHeight;
+    ctx.lineTo(right, bottom);
+    ctx.bezierCurveTo(right - 10, bottom + tail * .72, left - 5, bottom + tail * 1.12, tip, bottom + tail);
+    ctx.bezierCurveTo(left - 20, bottom + tail * .9, left - 5, bottom + tail * .42, left, bottom);
+  } else {
+    ctx.lineTo(x + w * .28, bottom);
+    ctx.bezierCurveTo(x + w * .23, y + h * .96, x + w * .13, y + h * 1.04, x + w * .02, y + h * .98);
+    ctx.bezierCurveTo(x + w * .13, y + h * .95, x + w * .16, y + h * .87, x + w * .17, bottom);
+  }
   ctx.lineTo(x + r, bottom); ctx.quadraticCurveTo(x, bottom, x, bottom - r);
   ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath();
 }

@@ -68,7 +68,7 @@ function colorKeyCached(o) {
   return map.get(o.transparentColor);
 }
 export class PaintDocument {
-  constructor(width = 1200, height = 800, onChange = () => {}) {
+  constructor(width = 731, height = 411, onChange = () => {}) {
     if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1 || width > 16384 || height > 16384 || width * height > 64000000 || width * height * 12 > 512 * 1024 * 1024)
       throw new Error("Canvas dimensions exceed the supported image memory budget.");
     this.width = width;
@@ -233,13 +233,39 @@ export class PaintDocument {
       }
     return out;
   }
-  deleteSelected() {
+  paintRemovedObjects(objects, background) {
+    const layers=this.layers.filter(layer=>layer.objects.some(object=>objects.includes(object)));
+    this.assertAllocation(this.width*this.height*layers.length*12);
+    const replacement=[...hexRGB(background),255];
+    for(const layer of layers) {
+      const mask=canvas(this.width,this.height),context=mask.getContext('2d');
+      for(const object of layer.objects.filter(object=>objects.includes(object)))drawObject(context,object);
+      const covered=context.getImageData(0,0,this.width,this.height).data;
+      const output=cloneCanvas(layer.canvas),pixels=output.getContext('2d').getImageData(0,0,this.width,this.height);
+      for(let i=0;i<covered.length;i+=4)if(covered[i+3])pixels.data.set(replacement,i);
+      output.getContext('2d').putImageData(pixels,0,0);layer.canvas=output;
+    }
+  }
+  cutIntoLayer(background = '#ffffff') {
+    const objects=this.selectedObjects;
+    if(!objects.length)return;
+    if(this.layers.some(layer=>layer.locked&&layer.objects.some(object=>objects.includes(object))))throw new Error('Unlock selected layers first.');
+    this.assertAllocation(this.width*this.height*(this.layers.length+4)*4);
+    this.action('Cut into new layer',()=>{
+      this.paintRemovedObjects(objects,background);
+      for(const layer of this.layers)layer.objects=layer.objects.filter(object=>!objects.includes(object));
+      const layer=createLayer(this.width,this.height,'Cut selection',background);layer.objects=objects;
+      this.layers.push(layer);this.activeLayerId=layer.id;
+    });
+  }
+  deleteSelected(background = null) {
     if (!this.selected.length) return;
     const locked = this.layers.some(
       (l) => l.locked && l.objects.some((o) => this.selected.includes(o.id)),
     );
     if (locked) throw new Error("Unlock selected layers first.");
     this.action("Delete objects", () => {
+      if(background)this.paintRemovedObjects(this.selectedObjects,background);
       for (const l of this.layers)
         l.objects = l.objects.filter((o) => !this.selected.includes(o.id));
       this.selected = [];
@@ -306,8 +332,8 @@ export class PaintDocument {
   ) {
     const x = Math.max(0, Math.floor(rect.x)),
       y = Math.max(0, Math.floor(rect.y)),
-      w = Math.min(this.width - x, Math.ceil(rect.width)),
-      h = Math.min(this.height - y, Math.ceil(rect.height));
+      w = Math.min(this.width - x, Math.ceil(rect.x + rect.width) - x),
+      h = Math.min(this.height - y, Math.ceil(rect.y + rect.height) - y);
     if (w < 1 || h < 1) return null;
     const l = this.activeLayer;
     if (l.locked) throw new Error("This layer is locked.");
@@ -316,7 +342,7 @@ export class PaintDocument {
       ctx = src.getContext("2d");
     const mask = path ? polygonMask(w, h, path, x, y) : null;
     const before = l.canvas.getContext("2d").getImageData(x, y, w, h), lifted = new Uint8ClampedArray(before.data), erased = new Uint8ClampedArray(before.data);
-    const replacement = this.layers.indexOf(l) === 0 ? [...hexRGB(paintBackground), 255] : [0, 0, 0, 0];
+    const replacement = [...hexRGB(paintBackground), 255];
     for (let pixel = 0; pixel < w * h; pixel++) {
       if (!mask || mask[pixel]) erased.set(replacement, pixel * 4);
       else lifted[pixel * 4 + 3] = 0;

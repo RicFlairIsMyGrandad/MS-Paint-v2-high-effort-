@@ -56,3 +56,11 @@ text equals `text`. Each run has its own text/font/point size/colour/style field
 Older font sizes without fontUnit retain pixel semantics and are presented as
 equivalent points during editing. `lineGap` can be negative. Width controls remain
 workspace preferences rather than undoable object edits.
+
+Version 1.0.4 adds textBoxWidth, bubbleShadow and shadowOffset. textBoxWidth is
+the wrapping/bubble width before adding shadow extent; width/height remain the
+rendered source bounds. The renderer regenerates fixed corner/tail geometry.
+Shadow colour is always #808080 rather than a stored or user-selected colour.
+New fields are validated when reading projects. Clicking outside in default
+Paint mode confirms editable objects to their layer raster; save before doing
+so to retain their metadata.

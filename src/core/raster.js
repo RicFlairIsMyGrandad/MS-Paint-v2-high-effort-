@@ -273,9 +273,21 @@ export function pixelSegment(ctx, a, b, width, round = false) {
 }
 export function softBrushCap(ctx, point, width, color) {
   const radius = width / 2, x = Math.floor(point.x) + (width % 2 ? .5 : 0), y = Math.floor(point.y) + (width % 2 ? .5 : 0), rgb = hexRGB(color);
-  const gradient = ctx.createRadialGradient(x, y, Math.max(0, radius - .45), x, y, radius + .4);
+  const gradient = ctx.createRadialGradient(x, y, Math.max(0, radius - .45), x, y, radius + 1.1);
   gradient.addColorStop(0, `rgba(${rgb.join(',')},1)`);gradient.addColorStop(1, `rgba(${rgb.join(',')},0)`);
-  ctx.save();ctx.fillStyle = gradient;ctx.beginPath();ctx.arc(x, y, radius + .4, 0, Math.PI * 2);ctx.fill();ctx.restore();
+  ctx.save();ctx.fillStyle = gradient;ctx.beginPath();ctx.arc(x, y, radius + 1.1, 0, Math.PI * 2);ctx.fill();ctx.restore();
+}
+export function maskBoundary(mask, width, height, offsetX = 0, offsetY = 0) {
+  const edges = [];
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    if (!mask[y * width + x]) continue;
+    const px = x + offsetX, py = y + offsetY;
+    if (!y || !mask[(y - 1) * width + x]) edges.push([px, py, px + 1, py]);
+    if (y === height - 1 || !mask[(y + 1) * width + x]) edges.push([px, py + 1, px + 1, py + 1]);
+    if (!x || !mask[y * width + x - 1]) edges.push([px, py, px, py + 1]);
+    if (x === width - 1 || !mask[y * width + x + 1]) edges.push([px + 1, py, px + 1, py + 1]);
+  }
+  return edges;
 }
 // Polygon masks operate on pixel centres, with either complete inclusion or none.
 export function polygonMask(width, height, points, offsetX = 0, offsetY = 0) {

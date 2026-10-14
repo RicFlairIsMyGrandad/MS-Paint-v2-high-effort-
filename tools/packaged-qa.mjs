@@ -4,6 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import assert from "node:assert/strict";
 const windows = process.platform === "win32";
+const version=JSON.parse(await readFile('package.json','utf8')).version;
 const original = path.resolve(process.env.PAINTPLUS_TEST_EXECUTABLE || (windows ? "release/win-unpacked/PaintPlus.exe" : "release/linux-unpacked/paintplus"));
 const directory = await mkdtemp(path.join(os.tmpdir(), "PaintPlus packaged Ω "));
 const installation = path.join(directory, "installed app with spaces");
@@ -22,6 +23,7 @@ page.on("pageerror", e=>errors.push(e.message));
 page.on("request", request=>{if(/^https?:/.test(request.url()))external.push(request.url());});
 try {
   await page.waitForFunction(()=>window.paintplus,{},{timeout:45000});
+  assert.deepEqual(await page.evaluate(()=>[paintplus.doc.width,paintplus.doc.height]),[731,411]);
   await page.locator(".asset-card img").evaluateAll(imgs=>Promise.all(imgs.map(img=>img.decode())));
   const runtime = await application.evaluate(({app})=>({isPackaged:app.isPackaged,appPath:app.getAppPath(),platform:process.platform,gpuStatus:app.getGPUFeatureStatus()}));
   assert(runtime.isPackaged);assert(runtime.appPath.endsWith("app.asar"));
@@ -49,7 +51,9 @@ try {
   assert.equal(await page.evaluate(()=>paintplus.doc.selectedObjects[0].text),'Editable speech bubble\nInstalled Windows test');
   await page.evaluate(()=>paintplus.editText(paintplus.doc.selectedObjects[0]));
   await page.evaluate(()=>paintplus.textEditor.restoreSelection({start:0,end:8}));
-  await page.locator('#text-size').fill('24');
+  await page.locator('#text-size').fill('');await page.locator('#text-size').press('2');await page.locator('#text-size').press('4');
+  assert.equal(await page.locator('#text-size').evaluate(node=>document.activeElement===node),true);
+  assert.equal(await page.evaluate(()=>paintplus.doc.selectedObjects[0].text),'Editable speech bubble\nInstalled Windows test');
   const richRuns=await page.evaluate(()=>paintplus.doc.selectedObjects[0].textRuns);
   assert.equal(richRuns[0].text,'Editable');assert.equal(richRuns[0].fontSize,24);
   assert.equal(await page.evaluate(()=>document.fonts.check('16px "PaintPlus Inter"')),true);
@@ -61,10 +65,21 @@ try {
   if(windows){
     const PE=await import('pe-library'),R=await import('resedit');
     const entries=PE.NtExecutableResource.from(PE.NtExecutable.from(await readFile(original),{ignoreCert:true})).entries;
-    const version=R.Resource.VersionInfo.fromEntries(entries)[0].getStringValues({lang:1033,codepage:1200});
-    assert.equal(version.ProductName,'PaintPlus');assert.equal(version.FileVersion,'1.0.3.0');
+    const strings=R.Resource.VersionInfo.fromEntries(entries)[0].getStringValues({lang:1033,codepage:1200});
+    assert.equal(strings.ProductName,'PaintPlus');assert.equal(strings.FileVersion,`${version}.0`);
     const groups=R.Resource.IconGroupEntry.fromEntries(entries);assert(groups.every(group=>group.getIconItemsFromEntries(entries).length===7));
   }
+  await page.evaluate(()=>paintplus.editText(paintplus.doc.selectedObjects[0]));
+  await page.locator('#text-bubble-shadow').check();await page.locator('#text-shadow-offset').fill('3');
+  assert.equal(await page.evaluate(()=>{const o=paintplus.doc.selectedObjects[0],pixels=o.source.getContext('2d').getImageData(0,0,o.source.width,o.source.height).data;return Array.from({length:pixels.length/4},(_,index)=>index*4).some(i=>pixels[i]===128&&pixels[i+1]===128&&pixels[i+2]===128&&pixels[i+3]===255);}),true);
+  const imageBox=await page.locator('#display').boundingBox();await page.mouse.click(imageBox.x+400,imageBox.y+360);
+  assert.equal(await page.evaluate(()=>paintplus.doc.objects.length),0);
+  const eye=page.locator('.layer-row .visibility').first();await eye.click();assert.equal(await eye.getAttribute('aria-pressed'),'false');await eye.click();assert.equal(await eye.getAttribute('aria-pressed'),'true');
+  await page.evaluate(()=>paintplus.doc.selectRegion({x:140,y:60,width:100,height:60},null,null,paintplus.color2));
+  await page.mouse.click(imageBox.x+160,imageBox.y+80,{button:'right'});
+  await page.locator('#menu').getByRole('button',{name:'Cut into new layer',exact:true}).click();
+  assert.deepEqual(await page.evaluate(()=>{const o=paintplus.doc.selectedObjects[0],layer=paintplus.doc.activeLayer;return[layer.canvas.width,layer.canvas.height,o.x,o.y,...layer.canvas.getContext('2d').getImageData(730,410,1,1).data];}),[731,411,140,60,255,255,255,255]);
+  await page.evaluate(()=>paintplus.finishSelection());
   await page.evaluate(()=>paintplus.switchTab('home'));
   const externalCopy = await page.evaluate(async()=>{
     const source=document.createElement('canvas');source.width=20;source.height=20;
@@ -103,16 +118,16 @@ try {
   await page.screenshot({path:`docs/screenshots/packaged-${windows?"windows":"linux"}.png`});
   await page.evaluate(()=>paintplus.resizeDialog());
   await page.screenshot({path:`docs/screenshots/packaged-${windows?"windows":"linux"}-dialog.png`});
-  await page.evaluate(x=>{paintplus.closeDialog();paintplus.doc.selected=[];paintplus.color1='#000000';paintplus.textEditor.defaults.fontSize=14;paintplus.doc.addLayer('Speech');paintplus.editText(null,{x,y:160});},windows?100:620);
-  await page.locator('#text-content').fill('Editable speech bubbles\nwith adjustable spacing.');
-  await page.locator('#text-bubble').check();await page.locator('#text-opaque').check();await page.locator('#text-content').press('Control+a');await page.locator('[data-text-style=bold]').click();
+  await page.evaluate(x=>{paintplus.closeDialog();paintplus.doc.selected=[];paintplus.color1='#000000';paintplus.textEditor.defaults.fontSize=16;paintplus.doc.addLayer('Speech');paintplus.editText(null,{x,y:160});},windows?100:620);
+  await page.locator('#text-content').fill('Fixed-size corners & tail.\nSharp text: fgjkpqrwyz');
+  await page.locator('#text-bubble').check();await page.locator('#text-opaque').check();await page.locator('#text-bubble-shadow').check();await page.locator('#text-shadow-offset').fill('3');await page.locator('#text-content').press('Control+a');await page.locator('[data-text-style=bold]').click();await page.locator('[data-text-style=underline]').click();
   await page.evaluate(()=>{const length=paintplus.doc.selectedObjects[0].text.length;paintplus.textEditor.restoreSelection({start:length,end:length});});
   await page.screenshot({path:`docs/screenshots/packaged-${windows?"windows":"linux"}-text.png`});
   await page.locator('[data-action=finish-text]').click();
   if (!windows) await writeFile('docs/SpeechExample.paintplus',Buffer.from(await page.evaluate(async()=>[...await paintplus.exportBytes('paintplus')])));
   const log=await readFile(path.join(profile,"startup.log"),"utf8");
   assert(log.includes('"event":"renderer-ready"'));assert(!log.includes('"event":"resource-error"'));assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
-  const result={...runtime,installationPathHasSpacesAndUnicode:true,firstLaunchReady:true,pointerDrawing:true,editableShapes:true,inlineSpeechText:true,richTextFormatting:true,typingPixelsUnchanged:true,bundledFonts:true,systemFontCatalog:true,brandedExecutableIcons:windows,externalCopyPreservesColor2:true,clipboardAlpha:true,savedPNGBytes:true,savedEditableProject:true,...smoke,rendererErrors:errors,externalRequests:external};
+  const result={...runtime,version,installationPathHasSpacesAndUnicode:true,firstLaunchReady:true,defaultCanvasDimensions:true,pointerDrawing:true,editableShapes:true,inlineSpeechText:true,richTextFormatting:true,typingPixelsUnchanged:true,fontSizeInputTwoDigits:true,bubbleShadow:true,outsideClickCommits:true,selectionContextMenu:true,color2CutLayer:true,layerVisibilityOneClick:true,bundledFonts:true,systemFontCatalog:true,brandedExecutableIcons:windows,externalCopyPreservesColor2:true,clipboardAlpha:true,savedPNGBytes:true,savedEditableProject:true,...smoke,rendererErrors:errors,externalRequests:external};
   await writeFile(`docs/packaged-${windows?"windows":"linux"}-test-results.json`,JSON.stringify(result,null,2));
   console.log(JSON.stringify(result));
 } catch(error) {

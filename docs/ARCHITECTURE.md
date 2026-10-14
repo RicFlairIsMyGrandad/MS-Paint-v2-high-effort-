@@ -17,6 +17,11 @@ rather than stretching a stroke. Text stores content and whole-box formatting,
 wrap width, padding, line gap and optional speech-bubble style. A transparent contenteditable stage element supplies selection and a caret over
 the same rendered canvas used after typing. Rich style runs store point sizes and
 formatting per selected portion. Whole-pixel transforms avoid a finalization shift.
+Text bubbles regenerate fixed corners and tails; a fixed-grey shadow extends
+source bounds separately from wrapping width. Underlines scale by point size
+and skip glyph ink. All active selections share transformation handles.
+Default outside-click confirmation rasterizes selected objects. Layer UI rows
+are keyed by ID so refreshes retain visibility button identity.
 Installed font names are queried locally; bundled WOFF2 fonts work offline.
 
 The image display remains at document pixel resolution with pixelated CSS scaling.

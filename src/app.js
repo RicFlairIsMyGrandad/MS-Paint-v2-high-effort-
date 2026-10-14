@@ -47,7 +47,7 @@ const defaultPrefs = {
 };
 export class PaintPlus {
   constructor() {
-    this.doc = new PaintDocument(1200, 800, () => this.changedUI());
+    this.doc = new PaintDocument(731, 411, () => this.changedUI());
     this.color1 = "#1847f1";
     this.color2 = "#ffffff";
     this.activeColor = 1;
@@ -257,6 +257,7 @@ export class PaintPlus {
     const shapeActive = !!shape || !!this.editor.pendingShape || this.editor.drag?.type === 'shape';
     document.querySelector('#outline').disabled = !shapeActive;
     document.querySelector('#shape-fill').disabled = !shapeActive;
+    document.querySelector('.shape-options').classList.toggle('enabled',shapeActive);
     document.querySelector('#selection-transparent').checked = this.prefs.transparentSelection;
     for (const key of ['width', 'height']) {
       const field = document.querySelector('#canvas-' + key);
@@ -294,8 +295,9 @@ export class PaintPlus {
     this.savePrefs();this.changedUI();
   }
   finishSelection() {
+    this.textEditor?.finish();
     const previous = this.doc.history.undoStack.at(-1);
-    const objects = this.doc.selectedObjects.filter(o => o.type === 'selection' || o.draft);
+    const objects = [...this.doc.selectedObjects];
     this.doc.assertAllocation(this.doc.layers.filter(layer => layer.objects.some(o => objects.includes(o))).length * this.doc.width * this.doc.height * 4);
     if (objects.length && this.selectedEditable()) this.doc.action('Commit selection', () => {
       for (const layer of this.doc.layers) {
@@ -341,6 +343,7 @@ export class PaintPlus {
     this.changedUI();
   }
   async setTool(tool) {
+    if(tool==='move')tool=this.selectionOrigin||'select';
     if (tool === 'transparent') { this.toggleTransparency();return; }
     if (tool !== 'text') this.textEditor?.finish();
     if (tool === 'select' || tool === 'free') this.selectionOrigin = tool;
@@ -391,7 +394,7 @@ export class PaintPlus {
       "Shape",
       "Eyedropper",
       "Transparent",
-      "Move/Transform",
+      "Select/transform",
     ];
     document.querySelector("#shortcut-table").innerHTML = this.prefs.shortcuts
       .map(
@@ -486,8 +489,8 @@ export class PaintPlus {
       this.switchTab(tabs[next].dataset.tab);
     },{passive:false});
     document.addEventListener('pointerdown',event=>{
-      if(this.busy||event.target.closest('#canvas-stage,.ribbon,.tabs,.titlebar,#menu,#modal-root,[data-action],input,select,[data-canvas-handle]'))return;
-      if(this.prefs.selectionMode==='paint'&&this.doc.selectedObjects.some(object=>object.type==='selection'||object.draft))this.finishSelection();
+      if(this.busy||!event.target.closest('.workspace')||event.target.closest('#canvas-stage,[data-canvas-handle]'))return;
+      if(this.prefs.selectionMode==='paint'&&this.doc.selectedObjects.length)this.finishSelection();
       else {this.closeObjectSession();this.doc.selected=[];this.changedUI();}
     });
     document.addEventListener("keydown", (e) => this.keyDown(e));
@@ -526,7 +529,8 @@ export class PaintPlus {
       const row = e.target.closest(".layer-row");
       if (!row) return;
       const layer = this.doc.layers.find((l) => l.id === row.dataset.id);
-      this.layerFocused = true;row.focus();
+      this.layerFocused = true;if(!e.target.closest('button'))row.focus();
+      if(this.prefs.selectionMode==='paint'&&this.doc.selectedObjects.length&&e.target.closest('.visibility,.lock-layer'))this.finishSelection();
       if (e.target.closest(".delete-layer-row")) { try { this.deleteLayer(layer); } catch (error) { this.toast(error.message); } }
       else if (e.target.closest(".visibility"))
         this.doc.action(
@@ -547,7 +551,7 @@ export class PaintPlus {
         if (e.ctrlKey || e.shiftKey)
           this.doc.selected = [...new Set([...this.doc.selected, ...ids])];
         else this.doc.selected = ids;
-        this.tool = "move";
+        this.tool = this.selectionOrigin||"select";
         this.changedUI();
       }
       this.updateLayers();
@@ -641,13 +645,23 @@ export class PaintPlus {
   updateLayers() {
     const list = document.querySelector("#layer-list");
     if (!list) return;
-    list.innerHTML = [...this.doc.layers]
-      .reverse()
-      .map(
-        (l) =>
-          `<div class="layer-row ${l.id === this.doc.activeLayerId ? "active" : ""} ${l.locked ? "locked" : ""} ${!l.visible ? "hidden-layer" : ""}" data-id="${l.id}" draggable="true" tabindex="0"><button class="visibility" title="${l.visible ? "Hide" : "Show"} layer" aria-label="${l.visible ? "Hide" : "Show"} ${this.escape(l.name)}">${icon("eye", 16)}</button><img alt="${this.escape(l.name)} thumbnail"><span class="layer-name">${this.escape(l.name)}${l.objects.some((o) => o.group) ? '<span class="group-badge">▧</span>' : ""}</span><button class="lock-layer" title="${l.locked ? "Unlock" : "Lock"} layer" aria-label="${l.locked ? "Unlock" : "Lock"} ${this.escape(l.name)}">${icon("lock", 15)}</button><button class="delete-layer-row" title="Delete layer" aria-label="Delete ${this.escape(l.name)}">${icon("trash", 15)}</button></div>`,
-      )
-      .join("");
+    const rows=new Map([...list.children].map(row=>[row.dataset.id,row]));
+    [...this.doc.layers].reverse().forEach((layer,index)=>{
+      let row=rows.get(layer.id);
+      if(!row) {
+        row=document.createElement('div');row.dataset.id=layer.id;row.draggable=true;row.tabIndex=0;
+        row.innerHTML=`<button class="visibility" draggable="false">${icon("eye",16)}</button><img><span class="layer-name"></span><button class="lock-layer" draggable="false">${icon("lock",15)}</button><button class="delete-layer-row" draggable="false">${icon("trash",15)}</button>`;
+      }
+      row.className=`layer-row ${layer.id===this.doc.activeLayerId?'active':''} ${layer.locked?'locked':''} ${!layer.visible?'hidden-layer':''}`;
+      const visibility=row.querySelector('.visibility'),lock=row.querySelector('.lock-layer'),remove=row.querySelector('.delete-layer-row');
+      visibility.title=(layer.visible?'Hide':'Show')+' layer';visibility.setAttribute('aria-label',(layer.visible?'Hide ':'Show ')+layer.name);visibility.setAttribute('aria-pressed',String(layer.visible));
+      lock.title=(layer.locked?'Unlock':'Lock')+' layer';lock.setAttribute('aria-label',(layer.locked?'Unlock ':'Lock ')+layer.name);
+      remove.title='Delete layer';remove.setAttribute('aria-label','Delete '+layer.name);
+      row.querySelector('img').alt=layer.name+' thumbnail';row.querySelector('.layer-name').innerHTML=this.escape(layer.name)+(layer.objects.some(object=>object.group)?'<span class="group-badge">▧</span>':'');
+      if(list.children[index]!==row)list.insertBefore(row,list.children[index]||null);
+      rows.delete(layer.id);
+    });
+    for(const row of rows.values())row.remove();
     for (const l of this.doc.layers) {
       const thumb = canvas(42, 42),
         ctx = thumb.getContext("2d"),
@@ -664,6 +678,16 @@ export class PaintPlus {
       for (const o of l.objects) drawObject(ctx, o);
       list.querySelector(`[data-id="${l.id}"] img`).src = thumb.toDataURL();
     }
+  }
+  selectionMenu(x,y) {
+    const editable=this.selectedEditable();
+    this.menuAt(x,y,[
+      {label:'Cut',icon:'cut',disabled:!editable,run:async()=>{this.textEditor.finish();await this.action('cut');}},
+      {label:'Copy',icon:'duplicate',run:async()=>{this.textEditor.finish();await this.action('copy');}},
+      {label:'Delete',icon:'trash',disabled:!editable,run:()=>{this.textEditor.finish();return this.action('delete');}},
+      null,
+      {label:'Cut into new layer',icon:'duplicate',disabled:!editable,run:()=>{this.textEditor.finish();this.closeObjectSession();this.doc.cutIntoLayer(this.color2);this.tool=this.selectionOrigin||'select';this.switchTab('home');this.changedUI();}}
+    ]);
   }
   menu(anchor, items) {
     const r = anchor?.getBoundingClientRect() || { left: 70, bottom: 62 };
@@ -966,7 +990,7 @@ export class PaintPlus {
           this.toast("Select pixels or objects to cut.");
           break;
         }
-        if (await this.copy()) doc.deleteSelected();
+        if (await this.copy()) doc.deleteSelected(this.color2);
         break;
       case "crop":
         {
@@ -1114,7 +1138,7 @@ export class PaintPlus {
         doc.duplicateSelected();
         break;
       case "delete":
-        doc.deleteSelected();
+        doc.deleteSelected(this.color2);
         break;
       case "toggle-assets":
         this.prefs.assetsOpen = !this.prefs.assetsOpen;
@@ -1271,7 +1295,7 @@ export class PaintPlus {
       e.preventDefault();
       this.setTool(this.prefs.shortcuts[Number(e.key)]);
       return;
-    } else if (e.key === "Delete") action = this.layerFocused || target.closest(".layer-row") ? "delete-layer" : "delete";
+    } else if (e.key === "Delete") { if(!this.layerFocused&&this.doc.selectedObjects.some(object=>object.type==='text'))return;action = this.layerFocused || target.closest(".layer-row") ? "delete-layer" : "delete"; }
     else if (e.key === "Enter" && this.doc.selected.length)
       action = "rasterize";
     else if (
@@ -1488,7 +1512,7 @@ export class PaintPlus {
       ))
     )
       return;
-    this.doc = new PaintDocument(1200, 800, () => this.changedUI());
+    this.doc = new PaintDocument(731, 411, () => this.changedUI());
     this.currentFile = null;
     this.fileName = "Untitled";
     document.querySelector("#filename").value = this.fileName;
@@ -1971,7 +1995,7 @@ export class PaintPlus {
         o.smoothPreview = document.querySelector("#resize-smooth").checked;
         if (["shape", "text"].includes(o.type)) {
           this.doc.assertAllocation(Math.ceil(nw) * Math.ceil(nh) * 12);
-          if (o.type === "text") o.minHeight = Math.round(nh);
+          if (o.type === "text") {const offset=o.bubble&&o.bubbleShadow?Math.round(o.shadowOffset||0):0;o.textBoxWidth=Math.max(30,Math.round(o.width)-offset);o.minHeight=Math.max(1,Math.round(o.height)-offset);}
           refreshEditable(o);
         }
       }
@@ -2298,7 +2322,7 @@ export class PaintPlus {
         object.source = source;
         object.transparentColor = null;
       });
-      this.tool = "move";
+      this.tool = this.selectionOrigin||"select";
       this.changedUI();
       this.toast("Background removed locally. Undo restores the original.");
       this.refineAlphaDialog(object, original, confidence);
@@ -2355,7 +2379,7 @@ export class PaintPlus {
         this.color2,
       );
     }
-    this.tool = "move";
+    this.tool = this.selectionOrigin||"select";
     this.changedUI();
   }
   async demo() {
@@ -2372,7 +2396,7 @@ export class PaintPlus {
         new URL("demo/landscape.png", document.baseURI).href,
       );
       const c = await resample(landscape, 1200, 800);
-      this.doc = new PaintDocument(1200, 800, () => this.changedUI());
+      this.doc = new PaintDocument(731, 411, () => this.changedUI());
       this.doc.activeLayer.canvas = c;
       this.doc.activeLayer.locked = true;
       const hero = await this.library.insert("hero");
@@ -2404,7 +2428,7 @@ export class PaintPlus {
       this.doc.dirty = false;
       this.fileName = "MyScene";
       document.querySelector("#filename").value = this.fileName;
-      this.tool = "move";
+      this.tool = this.selectionOrigin||"select";
       this.currentFile = null;
     });
     this.editor.fit();

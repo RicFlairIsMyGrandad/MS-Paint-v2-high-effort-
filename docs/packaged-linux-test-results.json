@@ -1,6 +1,6 @@
 {
   "isPackaged": true,
-  "appPath": "/tmp/PaintPlus packaged Ω IRM80m/installed app with spaces/resources/app.asar",
+  "appPath": "/tmp/PaintPlus packaged Ω ftBW5h/installed app with spaces/resources/app.asar",
   "platform": "linux",
   "gpuStatus": {
     "2d_canvas": "unavailable_software",
@@ -20,13 +20,21 @@
     "webgpu": "disabled_off",
     "webnn": "unavailable_software"
   },
+  "version": "1.0.4",
   "installationPathHasSpacesAndUnicode": true,
   "firstLaunchReady": true,
+  "defaultCanvasDimensions": true,
   "pointerDrawing": true,
   "editableShapes": true,
   "inlineSpeechText": true,
   "richTextFormatting": true,
   "typingPixelsUnchanged": true,
+  "fontSizeInputTwoDigits": true,
+  "bubbleShadow": true,
+  "outsideClickCommits": true,
+  "selectionContextMenu": true,
+  "color2CutLayer": true,
+  "layerVisibilityOneClick": true,
   "bundledFonts": true,
   "systemFontCatalog": true,
   "brandedExecutableIcons": false,
@@ -37,19 +45,19 @@
   "clipboardOK": true,
   "aiInferenceOK": true,
   "first": {
-    "path": "/tmp/PaintPlus packaged Ω IRM80m/images/PaintPlus-smoke.png",
+    "path": "/tmp/PaintPlus packaged Ω ftBW5h/images/PaintPlus-smoke.png",
     "name": "PaintPlus-smoke.png"
   },
   "second": {
-    "path": "/tmp/PaintPlus packaged Ω IRM80m/images/PaintPlus-smoke (2).png",
+    "path": "/tmp/PaintPlus packaged Ω ftBW5h/images/PaintPlus-smoke (2).png",
     "name": "PaintPlus-smoke (2).png"
   },
   "collisionOK": true,
   "project": {
-    "path": "/tmp/PaintPlus packaged Ω IRM80m/images/PaintPlus-project-smoke.paintplus",
+    "path": "/tmp/PaintPlus packaged Ω ftBW5h/images/PaintPlus-project-smoke.paintplus",
     "name": "PaintPlus-project-smoke.paintplus"
   },
-  "projectBytes": 179317,
+  "projectBytes": 131424,
   "protocol": "paintplus:",
   "aiModel": true,
   "rendererErrors": [],

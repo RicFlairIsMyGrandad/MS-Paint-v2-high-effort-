@@ -1809,3 +1809,20 @@ body.fullscreen .titlebar {
 #brush-cursor.eraser-ghost { border-radius:0;box-shadow:0 0 0 1px #fff; }
 #brush-cursor.round-ghost { border-radius:50%;box-shadow:0 0 0 1px #fff8; background:color-mix(in srgb,var(--ink) 16%,transparent); }
 #brush-cursor.round-ghost:after { content:'';position:absolute;left:50%;top:50%;width:1px;height:1px;background:#111;box-shadow:0 0 0 1px #fff;transform:translate(-50%,-50%); }
+
+/* Active shape options use the same contrast as other ribbon commands. */
+.shape-options label { color:#a3adba; }
+.shape-options label svg { opacity:.42; }
+.shape-options.enabled label { color:#111; }
+.shape-options.enabled label svg { opacity:1; }
+.shape-options.enabled select { color:#111; opacity:1; }
+.font-size-combo { display:inline-flex; width:55px; height:26px; border:1px solid #a9bdd6; background:#fff; }
+#text-size { width:39px; height:24px; border:0; padding:2px 3px; }
+#text-size-toggle { width:15px; min-width:15px; height:24px; padding:0; border:0; border-left:1px solid #a9bdd6; border-radius:0; background:#eaf2fc; font-size:11px; }
+.font-size-options { position:fixed; z-index:1200; min-width:55px; width:55px; padding:2px; overflow-y:auto; border-radius:0; }
+.font-size-options button { display:block; width:100%; min-height:21px; padding:2px 4px; justify-content:flex-start; border-radius:0; font-size:12px; }
+.font-size-options button.selected { background:#d7e9ff; border-color:#8eb9f0; }
+.speech-options { min-width:310px; }
+.bubble-shadow-controls { display:flex; gap:14px; margin-top:4px; align-items:center; }
+.bubble-shadow-controls input[type=number] { width:44px; }
+.speech-options .group-label { bottom:2px; }

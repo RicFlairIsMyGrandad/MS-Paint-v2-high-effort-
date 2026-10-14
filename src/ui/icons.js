@@ -43,13 +43,13 @@ const paths = {
   check: "m4 12 5 5L21 5",
 };
 const colored = {
-  pencil: '<path fill="#ffd85c" stroke="#98721c" d="M4 17 17 4l3 3L7 20l-4 1Z"/><path fill="#fa9f9a" stroke="#b27170" d="m17 4 2-2 3 3-2 2Z"/><path fill="#ffeac1" stroke="#9f875f" d="m4 17 3 3-4 1Z"/><path fill="#394252" d="m3 21 1-3 2 2Z"/>',
-  eraser: '<path fill="#f6acb3" stroke="#ad707d" d="m3 14 10-10q1-1 2 0l6 6q1 1 0 2l-9 9H9Z"/><path fill="#eef3f9" stroke="#899aaf" d="m3 14 5-5 8 8-4 4H9Z"/><path stroke="#fff" d="m9 7 5-2 5 5"/>',
-  fill: '<path fill="#edf3fa" stroke="#63778d" d="m3 12 8-8 10 10-9 8Z"/><path fill="#bcd5eb" stroke="#5b7d9e" d="m4 11 11-1 6 4-9 8Z"/><path fill="none" stroke="#63778d" d="M8 9V5q0-5 5-3 3 1 3 5v3"/><path fill="#2786e6" d="M21 15q-5 7 0 8 5-1 0-8Z"/>',
-  dropper: '<path fill="#e2edf9" stroke="#607d9d" d="m3 20 1-4 10-10 4 4-10 10Z"/><path fill="#5a85b8" stroke="#355d8c" d="m12 4 3-3 8 8-3 3Z"/><path stroke="#fff" d="m6 17 6-6"/><path fill="#6b9abf" d="m3 20 5-2-2 4H2Z"/>',
-  zoom: '<path stroke="#627c99" stroke-width="3.5" d="m16 17 6 6"/><circle cx="10" cy="10" r="7.5" fill="#dceffc" stroke="#6e94b5"/><path d="M5 11q-1-7 6-6" fill="none" stroke="#fff" stroke-width="2"/>',
-  text: '<path fill="#254b83" d="M10 2h4l8 20h-4l-2.4-6H8.4L6 22H2Zm-.5 11h5L12 6Z"/>',
-  brush: '<path fill="#2879cc" stroke="#245995" d="m14 10 6-8q1-1 3 1t1 3l-8 7Z"/><path fill="#d4e5f3" stroke="#879eaf" d="m10 13 4-4 4 4-4 4Z"/><path fill="#b7834e" stroke="#815836" d="M10 13q6 2 4 6-3 6-12 2 5-1 4-4 0-3 4-4Z"/><path stroke="#e6c593" d="M8 16q1 4-2 5m5-5q1 4-3 6"/>',
+  pencil: '<path fill="#edc357" stroke="#ac8130" d="m3 18 13-14 4 4L7 22l-5 1Z"/><path fill="#fff0a4" d="m4 17 12-12 1 1L5 19Z"/><path fill="#eb968c" stroke="#ad7167" d="m16 4 2-2 4 4-2 2Z"/><path fill="#fff0d3" d="m3 18 4 4-5 1Z"/><path fill="#3d3b38" d="m2 23 1-4 2 3Z"/>',
+  eraser: '<path fill="#e87770" stroke="#b76860" d="m3 14 10-11q1-1 2 0l7 7-10 12H9Z"/><path fill="#faada5" d="m5 13 9-9 5 5-10 10Z"/><path fill="#dededd" stroke="#8b8c8b" d="m3 14 4-4 10 9-5 3H9Z"/><path stroke="#fff" d="m4 14 7 7"/>',
+  fill: '<path fill="#ccd9e6" stroke="#6f839b" d="m3 11 8-8 10 11-9 8Z"/><path fill="#f9fcff" stroke="#889fb7" d="m3 11 10-3 8 6-9 8Z"/><path fill="#94b7d4" d="m6 12 8-2 5 5-7 5Z"/><path fill="none" stroke="#63758a" d="M8 8V4q0-4 4-2 4 2 4 7"/><path fill="#478aca" stroke="#3270ad" d="M21 15q-4 6 0 8 4-2 0-8Z"/><path stroke="#d7edff" d="m21 18-.8 2"/>',
+  dropper: '<path fill="#c0d4e6" stroke="#778696" d="m2 22 1-5 11-11 4 4-11 11Z"/><path fill="#f7fcff" d="m4 18 10-10 1 1L5 20Z"/><path fill="#6986ad" stroke="#455f80" d="m12 4 3-3q2-1 4 1l3 3q2 2 0 4l-2 3Z"/><path fill="#a9c3df" d="m15 3 2-1 4 4-1 2Z"/><path stroke="#4b627f" d="m10 5 10 10"/><path fill="#354658" d="m2 22 4-1-3-2Z"/>',
+  zoom: '<path stroke="#9f784a" stroke-width="4" d="m16 16 6 6"/><path stroke="#d4b082" stroke-width="1.2" d="m17 17 5 5"/><circle cx="10" cy="10" r="7.5" fill="#c5e3f7" stroke="#7c94a8"/><circle cx="10" cy="10" r="6" fill="#edf8ff" stroke="#b2d3ec"/><path d="M5 10q0-5 5-5" fill="none" stroke="#fff" stroke-width="2"/>',
+  text: '<path fill="#35495e" d="M10 2h4l8 20h-4l-2.4-6H8.4L6 22H2Zm-.5 11h5L12 6Z"/>',
+  brush: '<rect x="1" y="1" width="22" height="22" fill="#fbfcfe" stroke="#d1dce8"/><path fill="#499ce9" d="M15 12q-14-1-13 7 1 6 13 2 5-3 0-9Z"/><path fill="#b3dbff" d="M9 13q-6 0-6 5 1 4 7 2-5-1-4-4 1-2 3-3Z"/><path fill="#dec093" stroke="#ad895b" d="m12 14 8-12 3-1-1 4-8 11Z"/><path fill="#f3e0b9" d="m14 12 6-9 1-1-1 3-5 8Z"/><path fill="#c2ceda" stroke="#8692a0" d="m10 14 3-3 3 3-3 4Z"/><path fill="#68432d" stroke="#5a3c2c" d="M10 14q-5 1-5 6 6 2 8-3Z"/><path stroke="#b0875e" d="m10 16-3 4m4-3-2 3"/>',
   gear: '<g fill="#8798ae"><circle cx="12" cy="12" r="8"/><rect x="10" y="1" width="4" height="22" rx=".7"/><rect x="10" y="1" width="4" height="22" rx=".7" transform="rotate(45 12 12)"/><rect x="10" y="1" width="4" height="22" rx=".7" transform="rotate(90 12 12)"/><rect x="10" y="1" width="4" height="22" rx=".7" transform="rotate(135 12 12)"/></g><circle cx="12" cy="12" r="4" fill="#f6f8fb"/><circle cx="12" cy="12" r="6.7" fill="none" stroke="#b9c6d5" stroke-width=".6"/>',
   paste: '<path fill="#dbe5f1" stroke="#91a2b9" d="M4 4h16v18H4Z"/><path fill="#fafcff" stroke="#8599b6" d="M6 8h12v12H6Z"/><path fill="#cfdae8" stroke="#849ab6" d="M8 2h8v5H8Z"/><path stroke="#a5b7cd" d="M8 11h8m-8 3h8m-8 3h6"/>',
   save: '<path fill="#9261b7" stroke="#785097" d="M3 2h16l3 3v17H3Z"/><path fill="#eff2f6" stroke="#ddd" d="M7 2h10v8H7Zm0 12h11v10H7Z"/><path stroke="#8767a3" d="M14 3v5m-5 7h7m-7 3h7"/>',
@@ -57,6 +57,7 @@ const colored = {
   cut: '<path stroke="#8e9daf" d="m6 15 13-13M18 15 7 2"/><circle cx="5" cy="18" r="3" fill="#e4efff" stroke="#91a9c9"/><circle cx="19" cy="18" r="3" fill="#e4efff" stroke="#91a9c9"/>',
   duplicate: '<path fill="#fafcff" stroke="#8ba5c7" d="M8 2h13v16H8ZM3 7h13v16H3Z"/><path stroke="#acc0dd" d="M6 11h7m-7 3h7m-7 3h7"/>',
 };
+export const toolIconBody = name => colored[name] || '';
 export function icon(name, size = 20) {
   if (colored[name]) return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" stroke-width="1" stroke-linejoin="round" aria-hidden="true">${colored[name]}</svg>`;
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[name] || paths.image}"/></svg>`;

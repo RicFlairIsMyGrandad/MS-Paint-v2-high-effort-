@@ -61,12 +61,19 @@ export function textSource(object) {
   if (object.bubble) {
     const outline = Math.max(1, Math.min(32, Number(object.bubbleWidth) || 3)), inset = outline / 2 + 1;
     const mask = canvas(source.width,source.height), ctx = mask.getContext('2d');
-    ctx.beginPath();speechBubblePath(ctx,inset,inset,source.width-inset*2,source.height-inset*2);
+    ctx.beginPath();speechBubblePath(ctx,inset,inset,layout.boxWidth-inset*2,layout.boxHeight-inset*2,true);
     ctx.fillStyle='#ffffff';ctx.fill();const filling=ctx.getImageData(0,0,source.width,source.height).data;
-    ctx.clearRect(0,0,source.width,source.height);ctx.beginPath();speechBubblePath(ctx,inset,inset,source.width-inset*2,source.height-inset*2);ctx.lineWidth=outline;ctx.strokeStyle='#ffffff';ctx.stroke();
+    ctx.clearRect(0,0,source.width,source.height);ctx.beginPath();speechBubblePath(ctx,inset,inset,layout.boxWidth-inset*2,layout.boxHeight-inset*2,true);ctx.lineWidth=outline;ctx.strokeStyle='#ffffff';ctx.stroke();
     const line=ctx.getImageData(0,0,source.width,source.height).data, pixels=context.createImageData(source.width,source.height);
     const rgb=color=>[1,3,5].map(index=>parseInt(color.slice(index,index+2),16)), stroke=rgb(object.bubbleColor||'#000000'), fill=rgb(object.background||'#ffffff');
+    const offset=source.width-layout.boxWidth;
     for(let index=0;index<pixels.data.length;index+=4) {
+      if(object.bubbleShadow && offset) {
+        const x=(index/4)%source.width-offset,y=Math.floor(index/4/source.width)-offset,behind=(y*source.width+x)*4;
+        if(x>=0&&y>=0&&(filling[behind+3]>=128||line[behind+3]>=128)&&filling[index+3]<128&&line[index+3]<128) {
+          pixels.data.set([128,128,128,255],index);
+        }
+      }
       if(line[index+3]>=128) {pixels.data.set(stroke,index);pixels.data[index+3]=255;}
       else if(object.opaque && filling[index+3]>=128){pixels.data.set(fill,index);pixels.data[index+3]=255;}
     }
@@ -74,6 +81,11 @@ export function textSource(object) {
   } else if (object.opaque) { context.fillStyle=object.background||'#ffffff';context.fillRect(0,0,source.width,source.height); }
   if(!object.hideText)paintRichText(context,layout);
   return source;
+}
+export function resizeTextBox(object, width, height) {
+  const offset=object.bubble&&object.bubbleShadow?Math.max(0,Math.min(100,Math.round(Number(object.shadowOffset)||0))):0;
+  object.textBoxWidth=Math.max(30,Math.round(width)-offset);object.minHeight=Math.max(1,Math.round(height)-offset);
+  refreshEditable(object);
 }
 export function refreshEditable(object) {
   if (object.type === 'shape') object.source = shapeSource(object);

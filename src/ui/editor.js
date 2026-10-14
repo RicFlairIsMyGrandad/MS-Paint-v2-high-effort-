@@ -4,18 +4,19 @@ import {
   localPoint,
   hitObject,
 } from "../core/document.js";
-import { paintSegment, replaceColorSegment, floodFill, colorAt, canvas, stampBounds, pixelSegment, softBrushCap } from "../core/raster.js";
+import { paintSegment, replaceColorSegment, floodFill, colorAt, canvas, stampBounds, pixelSegment, softBrushCap, polygonMask, maskBoundary } from "../core/raster.js";
 import { drawShape } from "../core/shapes.js";
+import { toolIconBody } from "./icons.js";
 import { zoomLevels, nearestZoom, stepZoom, fitZoom } from "../core/zoom.js";
-import { shapeProperties, shapeSource, refreshEditable } from "../core/editable.js";
+import { shapeProperties, shapeSource, refreshEditable, resizeTextBox } from "../core/editable.js";
 const cursorSVG = (body, x=2,y=22) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'>${body}</svg>`)}") ${x} ${y}, crosshair`;
 const cross = cursorSVG("<path d='M14 2v24M2 14h24' stroke='white' stroke-width='3'/><path d='M14 2v24M2 14h24' stroke='#333' stroke-width='1'/><circle cx='14' cy='14' r='4' fill='white' stroke='#777'/><path d='M14 11v6M11 14h6' stroke='#777'/>",14,14);
 export const cursors = {
   pencil: cursorSVG("<path d='m3 22 3-7L18 3l5 5L11 20Z' fill='#f7f7f7' stroke='#333'/><path d='m7 16 12-12M10 19 22 7' stroke='#999'/><path d='m3 22 2-5 3 3Z' fill='#333'/>",3,22),
   brush: cursorSVG("<path d='M14 3v7m0 8v7M3 14h7m8 0h7' stroke='white' stroke-width='3'/><path d='M14 3v7m0 8v7M3 14h7m8 0h7' stroke='#888'/>",14,14),
   eraser: 'none',
-  fill: cursorSVG("<path d='M9 4h7v5M8 7l10 9-7 7-9-8Z' fill='#f7f7f7' stroke='#333'/><path d='m4 13 8-3 7 7-8 6Z' fill='#d7d7d7' stroke='#777'/><path d='M21 16q-4 7 1 8 4-3-1-8Z' fill='#333'/>",3,22),
-  dropper: cursorSVG("<path d='m3 22 1-5 11-11 5 5L9 22Z' fill='#e6e6e6' stroke='#444'/><path d='m13 5 3-3 8 8-3 3Z' fill='#777' stroke='#333'/><path d='m4 21 10-10' stroke='white'/>",3,22),
+  fill: cursorSVG(`<g transform="translate(4 -1) scale(.9)">${toolIconBody('fill')}</g><path d="M3 21v6M0 24h6" stroke="white" stroke-width="3"/><path d="M3 21v6M0 24h6" stroke="#222"/>`,3,24),
+  dropper: cursorSVG(`<g transform="scale(1.16)">${toolIconBody('dropper')}</g>`,2,25),
   text: 'text', select: cross, free: cross, shape: cross, move: 'move',
   zoom: cursorSVG("<path d='m18 18 7 7' stroke='#555' stroke-width='4'/><circle cx='12' cy='12' r='8' fill='#fafafa' stroke='#555' stroke-width='2'/><path d='M7 12a5 5 0 0 1 5-5' fill='none' stroke='#bbb' stroke-width='2'/>",12,12),
 };
@@ -91,7 +92,7 @@ export class Editor {
     this.overlay.addEventListener("lostpointercapture", () => {
       if (this.drag) this.finishDrag();
     });
-    this.overlay.addEventListener("contextmenu", (e) => e.preventDefault());
+    this.overlay.addEventListener("contextmenu", (e) => this.contextMenu(e));
     this.overlay.addEventListener("pointerleave", () => {
       this.pointerInside = false;
       document.querySelector("#brush-cursor").style.display = "none";
@@ -129,6 +130,7 @@ export class Editor {
   get doc() {
     return this.app.doc;
   }
+  localTextPoint(object, point) { return localPoint(object, point.x, point.y); }
   point(e) {
     const r = this.display.getBoundingClientRect();
     return {
@@ -202,15 +204,12 @@ export class Editor {
       over.setLineDash([5 / z, 3 / z]);
       over.beginPath();
       if (this.drag.free) {
-        this.drag.path.forEach((p, i) =>
-          i ? over.lineTo(p.x, p.y) : over.moveTo(p.x, p.y),
-        );
+        this.drawFreePreview(over,this.drag);
       } else {
         const r = this.rect(this.drag.start, this.drag.end);
         over.rect(r.x, r.y, r.width, r.height);
       }
-      over.stroke();
-      over.fill();
+      if(!this.drag.free){over.stroke();over.fill();}
       over.restore();
     }
     const selected = d.selectedObjects;
@@ -244,6 +243,27 @@ export class Editor {
       if(this.preview?.key!==key) {const properties=shapeProperties(name,start,end,options);this.doc.assertAllocation(properties.width*properties.height*12);this.preview={key,object:{...properties,source:shapeSource(properties),angle:0,flipH:false,flipV:false}};}
       drawObject(context,this.preview.object);
     } catch(error) { if(this.previewError!==error.message){this.previewError=error.message;this.app.toast(error.message);} }
+  }
+  contextMenu(event) {
+    event.preventDefault();
+    if(this.doc.selectedObjects.length && this.handleAt(this.point(event)))this.app.selectionMenu(event.clientX,event.clientY);
+  }
+  drawFreePreview(context,drag) {
+    if(drag.path.length<3)return;
+    const points=drag.path,x=Math.max(0,Math.floor(Math.min(...points.map(point=>point.x)))),y=Math.max(0,Math.floor(Math.min(...points.map(point=>point.y)))),
+      width=Math.max(1,Math.min(this.doc.width-x,Math.ceil(Math.max(...points.map(point=>point.x)))-x)),height=Math.max(1,Math.min(this.doc.height-y,Math.ceil(Math.max(...points.map(point=>point.y)))-y));
+    try {
+      if(drag.pixelPreview?.count!==points.length) {
+        this.doc.assertAllocation(width*height*6);
+        const mask=polygonMask(width,height,points,x,y),source=canvas(width,height),ctx=source.getContext('2d'),pixels=ctx.createImageData(width,height);
+        for(let index=0;index<mask.length;index++)if(mask[index])pixels.data.set([0,108,227,24],index*4);
+        ctx.putImageData(pixels,0,0);drag.pixelPreview={count:points.length,source,mask,x,y,width,height,edges:maskBoundary(mask,width,height,x,y)};
+      }
+      const preview=drag.pixelPreview;context.save();context.imageSmoothingEnabled=false;context.drawImage(preview.source,preview.x,preview.y);context.setLineDash([]);context.fillStyle='#006ce3';
+      const thickness=1/this.app.zoom;
+      for(const[x1,y1,x2,y2]of preview.edges)context.fillRect(x1,y1,Math.max(thickness,x2-x1),Math.max(thickness,y2-y1));
+      context.restore();
+    } catch(error) {if(drag.previewError!==error.message){drag.previewError=error.message;this.app.toast(error.message);}}
   }
   zoomArea(point) {
     const target=nearestZoom(this.app.zoom*2),ratio=target/this.app.zoom,width=Math.min(this.doc.width,this.viewport.clientWidth/this.app.zoom)/ratio,height=Math.min(this.doc.height,this.viewport.clientHeight/this.app.zoom)/ratio;
@@ -282,8 +302,7 @@ export class Editor {
       ctx.fillRect(x - s / 2, y - s / 2, s, s);
       ctx.strokeRect(x - s / 2, y - s / 2, s, s);
     }
-    const top = worldPoint(o, o.width / 2, 0),
-      rotate = worldPoint(o, o.width / 2, -25 / z);
+    const {anchor:top,point:rotate}=this.rotationHandle(o);
     ctx.strokeStyle = "#0078ff";
     ctx.beginPath();
     ctx.moveTo(top.x, top.y);
@@ -303,19 +322,29 @@ export class Editor {
   handleAt(p) {
     const bounds = selectionBounds(this.doc.selectedObjects);
     if (!bounds) return null;
-    const rotation = worldPoint(bounds, bounds.width / 2, -25 / this.app.zoom);
+    const rotation = this.rotationHandle(bounds).point;
     if (Math.hypot(p.x - rotation.x, p.y - rotation.y) < 10 / this.app.zoom)
       return { type: "rotate", bounds };
     const hs = handlePoints(bounds);
     for (let i = 0; i < hs.length; i++)
       if (Math.hypot(p.x - hs[i].x, p.y - hs[i].y) < 8 / this.app.zoom)
         return { type: "resize", index: i, bounds };
-    if (hitObject(bounds, p.x, p.y)) return { type: "move", bounds };
+    const local=localPoint(bounds,p.x,p.y),pad=4/this.app.zoom;
+    if(local.x>=-pad&&local.y>=-pad&&local.x<=bounds.width+pad&&local.y<=bounds.height+pad)return {type:"move",bounds};
     return null;
+  }
+  rotationHandle(bounds) {
+    const margin=7/this.app.zoom,gap=25/this.app.zoom;
+    for(const[ax,ay,rx,ry]of [[bounds.width/2,0,bounds.width/2,-gap],[bounds.width/2,bounds.height,bounds.width/2,bounds.height+gap],[bounds.width,bounds.height/2,bounds.width+gap,bounds.height/2],[0,bounds.height/2,-gap,bounds.height/2]]) {
+      const point=worldPoint(bounds,rx,ry);
+      if(point.x>=margin&&point.y>=margin&&point.x<=this.doc.width-margin&&point.y<=this.doc.height-margin)return{point,anchor:worldPoint(bounds,ax,ay)};
+    }
+    const point=worldPoint(bounds,bounds.width/2,-gap),inset=14/this.app.zoom;
+    return{anchor:worldPoint(bounds,bounds.width/2,0),point:{x:Math.max(inset,Math.min(this.doc.width-inset,point.x)),y:Math.max(inset,Math.min(this.doc.height-inset,point.y))}};
   }
   updateCursor(p) {
     let cursor = cursors[this.app.tool] || "crosshair";
-    if (p && ["select", "free", "move", "shape", "text"].includes(this.app.tool)) {
+    if (p && (this.doc.selectedObjects.length || ["select", "free", "move", "shape", "text"].includes(this.app.tool))) {
       const h = this.handleAt(p);
       if (h) {
         cursor =
@@ -353,6 +382,8 @@ export class Editor {
   }
   pointerDown(e) {
     if ((e.button !== 0 && e.button !== 2) || this.app.busy) return;
+    const pressed=this.point(e);
+    if(e.button===2 && this.doc.selectedObjects.length && this.handleAt(pressed))return;
     e.preventDefault();
     this.overlay.focus({ preventScroll: true });
     this.overlay.setPointerCapture(e.pointerId);
@@ -377,10 +408,10 @@ export class Editor {
         return;
       }
       a.layerFocused = false;
-      if (a.textEditor?.active) a.textEditor.finish();
       const existingHandle = this.handleAt(p);
-      if (d.selectedObjects.some(o => o.type === 'selection' || o.draft) && !existingHandle && !e.ctrlKey && a.prefs.selectionMode === 'paint') a.finishSelection();
-      if (["select", "free", "move", "crop"].includes(a.tool) || (existingHandle && ['shape', 'text'].includes(a.tool))) {
+      if(d.selectedObjects.length&&!existingHandle&&!e.ctrlKey&&a.prefs.selectionMode==='paint'){a.finishSelection();return;}
+      if(a.textEditor?.active&&!existingHandle)a.textEditor.finish();
+      if (["select", "free", "move", "crop"].includes(a.tool) || existingHandle) {
         let handle = this.handleAt(p);
         const hit = d.hit(p.x, p.y);
         if (hit && !handle) {
@@ -434,7 +465,7 @@ export class Editor {
           type: "selection",
           start: p,
           end: p,
-          path: [p],
+          path: [{x:Math.floor(p.x),y:Math.floor(p.y)}],
           free: a.tool === "free",
         };
       } else if (["pencil", "brush", "eraser"].includes(a.tool)) {
@@ -452,6 +483,7 @@ export class Editor {
           initialWidth: a.width, brush: a.brush, tool: a.tool,
         };
         this.stroke(p, p);
+        if(a.tool==='brush'&&a.brush==='round')softBrushCap(d.activeLayer.canvas.getContext('2d'),p,a.width,color);
       } else if (a.tool === "fill") {
         const edit = d.beginRaster();
         edit.capture(0, 0, d.width, d.height);
@@ -504,7 +536,7 @@ export class Editor {
     const ctx = layer.canvas.getContext("2d");
     if (app.tool === "eraser" && drag.right) {
       replaceColorSegment(ctx, a, b, app.color1, app.color2, app.width);
-    } else if (app.tool === 'eraser' && this.doc.layers.indexOf(layer) === 0) {
+    } else if (app.tool === 'eraser') {
       ctx.save();ctx.fillStyle=app.color2;pixelSegment(ctx,a,b,app.width);ctx.restore();
     }
     else
@@ -562,7 +594,7 @@ export class Editor {
       drag.end = p;
     } else if (drag.type === "selection") {
       drag.end = p;
-      if (drag.free) drag.path.push(p);
+      if(drag.free){const point={x:Math.floor(p.x),y:Math.floor(p.y)},last=drag.path.at(-1);if(point.x!==last.x||point.y!==last.y)drag.path.push(point);}
     } else if (drag.type === "move") {
       const dx = Math.round(p.x - drag.start.x), dy = Math.round(p.y - drag.start.y);
       if (e.shiftKey) this.trail(drag, dx, dy);
@@ -633,8 +665,8 @@ export class Editor {
     if (d.originals.length === 1) {
       const o = this.doc.objects.find((o) => o.id === d.originals[0].id);
       const candidate = { ...o, x: Math.round(nx), y: Math.round(ny), width: Math.round(nw), height: Math.round(nh) };
-      if (o.type === 'text') candidate.minHeight = Math.round(nh);
-      if (['shape', 'text'].includes(o.type)) {
+      if (o.type === 'text') {resizeTextBox(candidate,nw,nh);}
+      if (o.type === 'shape') {
         this.doc.assertAllocation(Math.ceil(nw) * Math.ceil(nh) * 12);
         refreshEditable(candidate);
       }
@@ -652,7 +684,7 @@ export class Editor {
     if (!this.drag) return;
     const drag=this.drag, clickText=drag.type==='move' && Math.hypot(drag.start.x-this.point(e).x,drag.start.y-this.point(e).y)<1 ? this.doc.selectedObjects.find(object=>object.type==='text') : null;
     this.finishDrag();
-    if(clickText)this.app.editText(clickText);
+    if(clickText&&!this.app.textEditor.active)this.app.editText(clickText);
     if (this.overlay.hasPointerCapture(e.pointerId))
       this.overlay.releasePointerCapture(e.pointerId);
   }
@@ -663,7 +695,7 @@ export class Editor {
     const d = this.doc;
     try {
       if (drag.type === "paint") {
-        if(drag.tool==='brush' && drag.brush==='round') {const ctx=d.activeLayer.canvas.getContext('2d');softBrushCap(ctx,drag.start,drag.initialWidth,drag.color);softBrushCap(ctx,drag.last,this.app.width,drag.color);}
+        if(drag.tool==='brush' && drag.brush==='round') {const ctx=d.activeLayer.canvas.getContext('2d');softBrushCap(ctx,drag.last,this.app.width,drag.color);}
         drag.edit.commit(
           this.app.tool === "eraser"
             ? "Erase"

@@ -1,6 +1,13 @@
 import { canvas } from './raster.js';
+import { bubbleGeometry } from './shapes.js';
 export const runStyleKeys = ['font','fontSize','fontUnit','bold','italic','underline','strikeout','textColor'];
 export const pointsToPixels = value => value * 96 / 72;
+export const shadowOffset = object => object.bubble && object.bubbleShadow ? Math.max(0, Math.min(100, Math.round(Number(object.shadowOffset) || 0))) : 0;
+export function underlineThickness(run) {
+  const points = run.fontUnit === 'pt' ? Number(run.fontSize) || 12 : (Number(run.fontSize) || 20) * 72 / 96;
+  return Math.max(1, Math.floor(points / 8));
+}
+const underlineY = (run, baseline) => baseline + Math.max(1, Math.round(run.pixels * .1));
 export function runStyle(object) {
   return Object.fromEntries(runStyleKeys.map(key => [key, object[key]]));
 }
@@ -38,8 +45,8 @@ export function formatRuns(runs, start, end, patch) {
   return coalesceRuns(result);
 }
 export function richLayout(object) {
-  const width = Math.max(30,Math.round(object.width || 260)), padding = object.bubble ? Math.max(0,Math.min(100,Number(object.padding)||0)) + (Number(object.bubbleWidth)||3) + 2 : 0;
-  const available = Math.max(1,width-padding*2), context=canvas(1,1).getContext('2d'), base=runStyle(object), runs=textRuns(object), characters=[];
+  const boxWidth = Math.max(object.bubble ? 80 : 30,Math.round(object.textBoxWidth || object.width || 260)), padding = object.bubble ? Math.max(0,Math.min(100,Number(object.padding)||0)) + (Number(object.bubbleWidth)||3) + 2 : 0;
+  const available = Math.max(1,boxWidth-padding*2), context=canvas(1,1).getContext('2d'), base=runStyle(object), runs=textRuns(object), characters=[];
   for(const run of runs) for(const character of Array.from(run.text.replace(/\r\n?/g,'\n'))) characters.push({character,style:run});
   const groups = chars => coalesceRuns(chars.map(item=>({...item.style,text:item.character})));
   const measure = chars => groups(chars).reduce((sum,run)=>{context.font=fontCSS(run);return sum+context.measureText(run.text).width;},0);
@@ -72,25 +79,42 @@ export function richLayout(object) {
     baseline=rows.length?baseline+Math.max(1,previousDescent+ascent+(previousLeading+leading)/2+gap):padding+ascent;
     const row={segments,baseline:Math.round(baseline),ascent,descent,text:chars.map(item=>item.character).join('')};
     rows.push(row);bottom=Math.max(bottom,row.baseline+actualDescent);
-    for(const segment of segments)if(segment.underline)bottom=Math.max(bottom,row.baseline+Math.max(1,Math.round(segment.pixels*.1))+Math.max(1,Math.round(segment.pixels/24)));
+    for(const segment of segments)if(segment.underline)bottom=Math.max(bottom,underlineY(segment,row.baseline)+underlineThickness(segment));
     previousDescent=descent;previousLeading=leading;
   }
   const bodyHeight=Math.max(1,Math.ceil(bottom+padding+1));
-  const height=Math.ceil(Math.max(object.minHeight||1,object.bubble?(bodyHeight+2)/.76:bodyHeight));
+  const boxHeight=Math.ceil(Math.max(object.minHeight||1,object.bubble?Math.max(18,bodyHeight)+bubbleGeometry.tailHeight+2:bodyHeight)), offset=shadowOffset(object);
   const pixels=base.fontUnit==='pt'?pointsToPixels(Number(base.fontSize)||12):Number(base.fontSize)||20;
-  return {width,height,padding,rows,lines:rows.map(row=>row.text),font:fontCSS(base),fontSize:pixels,lineHeight:Math.max(1,pixels*1.15+(Number(object.lineGap)||0))};
+  return {width:boxWidth+offset,height:boxHeight+offset,boxWidth,boxHeight,bodyHeight:object.bubble?boxHeight-bubbleGeometry.tailHeight:boxHeight,padding,rows,lines:rows.map(row=>row.text),font:fontCSS(base),fontSize:pixels,lineHeight:Math.max(1,pixels*1.15+(Number(object.lineGap)||0))};
 }
 export function paintRichText(context,layout) {
-  context.textBaseline='alphabetic';
+  const ink=canvas(layout.width,layout.height),glyphs=ink.getContext('2d'),decorations=[];
+  glyphs.textBaseline='alphabetic';
   for(const row of layout.rows) {
     let x=layout.padding;
     for(const run of row.segments) {
-      context.font=run.font;context.fillStyle=run.textColor||'#000000';const left=Math.round(x);
-      context.fillText(run.text,left,row.baseline);
-      const thickness=Math.max(1,Math.round(run.pixels/24));
-      for(const y of [run.underline?row.baseline+Math.max(1,Math.round(run.pixels*.1)):null,run.strikeout?row.baseline-Math.round(run.pixels*.3):null])
-        if(y!==null) context.fillRect(left,Math.round(y),Math.max(1,Math.round(run.width)),thickness);
+      glyphs.font=run.font;glyphs.fillStyle=run.textColor||'#000000';const left=Math.round(x);
+      glyphs.fillText(run.text,left,row.baseline);
+      const thickness=underlineThickness(run),width=Math.max(1,Math.round(run.width));
+      if(run.underline)decorations.push({x:left,y:underlineY(run,row.baseline),width,thickness,color:run.textColor||'#000000'});
+      if(run.strikeout) {glyphs.fillRect(left,row.baseline-Math.round(run.pixels*.3),width,thickness);}
       x+=run.width;
     }
   }
+  if(decorations.length) {
+    const inkPixels=glyphs.getImageData(0,0,ink.width,ink.height).data;
+    for(const line of decorations) {
+      const pixels=context.createImageData(line.width,line.thickness),rgb=[1,3,5].map(index=>parseInt(line.color.slice(index,index+2),16));
+      for(let y=0;y<line.thickness;y++)for(let x=0;x<line.width;x++) {
+        let touches=false;
+        for(let dy=-1;dy<=1&&!touches;dy++)for(let dx=-1;dx<=1;dx++) {
+          const px=line.x+x+dx,py=line.y+y+dy;
+          if(px>=0&&py>=0&&px<ink.width&&py<ink.height&&inkPixels[(py*ink.width+px)*4+3]){touches=true;break;}
+        }
+        if(!touches){const index=(y*line.width+x)*4;pixels.data.set(rgb,index);pixels.data[index+3]=255;}
+      }
+      const strip=canvas(line.width,line.thickness);strip.getContext('2d').putImageData(pixels,0,0);context.drawImage(strip,line.x,line.y);
+    }
+  }
+  context.drawImage(ink,0,0);
 }
