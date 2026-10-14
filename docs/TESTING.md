@@ -1,6 +1,6 @@
 # Validation of PaintPlus 1.0.4
 
-84 Node tests and 87 Chromium workflows pass locally. New regressions cover
+84 Node tests and 88 Chromium workflows pass locally. New regressions cover
 visible brush caps, binary freeform previews, Color-2 layer removal, cut into
 new layer with undo, stable visibility clicks, universal handles, outside-click
 confirmation, text key handling, two-digit/fractional font sizes, dropdowns,

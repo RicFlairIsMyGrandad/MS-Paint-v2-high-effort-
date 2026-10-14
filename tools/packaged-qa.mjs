@@ -113,6 +113,8 @@ try {
     await page.waitForFunction(()=>innerWidth===1920);
   }
   await page.evaluate(()=>{paintplus.doc.dirty=false;return paintplus.demo();});
+  assert.deepEqual(await page.evaluate(()=>[paintplus.doc.width,paintplus.doc.height]),[1200,800]);
+  assert.equal(await page.evaluate(()=>paintplus.doc.layers.every(layer=>layer.canvas.width===paintplus.doc.width&&layer.canvas.height===paintplus.doc.height)),true);
   await page.evaluate(()=>{paintplus.editor.setZoom(1);paintplus.editor.viewport.scrollLeft=0;paintplus.editor.viewport.scrollTop=0;});
   await mkdir("docs/screenshots",{recursive:true});
   await page.screenshot({path:`docs/screenshots/packaged-${windows?"windows":"linux"}.png`});

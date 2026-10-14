@@ -1822,7 +1822,9 @@ body.fullscreen .titlebar {
 .font-size-options { position:fixed; z-index:1200; min-width:55px; width:55px; padding:2px; overflow-y:auto; border-radius:0; }
 .font-size-options button { display:block; width:100%; min-height:21px; padding:2px 4px; justify-content:flex-start; border-radius:0; font-size:12px; }
 .font-size-options button.selected { background:#d7e9ff; border-color:#8eb9f0; }
-.speech-options { min-width:310px; }
+.speech-options { width:350px; min-width:350px; }
+.speech-options > div:not(.group-label) { flex-wrap:nowrap; }
+.speech-options input[type=number] { width:40px; }
 .bubble-shadow-controls { display:flex; gap:14px; margin-top:4px; align-items:center; }
 .bubble-shadow-controls input[type=number] { width:44px; }
 .speech-options .group-label { bottom:2px; }

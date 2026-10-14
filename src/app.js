@@ -2396,7 +2396,7 @@ export class PaintPlus {
         new URL("demo/landscape.png", document.baseURI).href,
       );
       const c = await resample(landscape, 1200, 800);
-      this.doc = new PaintDocument(731, 411, () => this.changedUI());
+      this.doc = new PaintDocument(c.width, c.height, () => this.changedUI());
       this.doc.activeLayer.canvas = c;
       this.doc.activeLayer.locked = true;
       const hero = await this.library.insert("hero");
