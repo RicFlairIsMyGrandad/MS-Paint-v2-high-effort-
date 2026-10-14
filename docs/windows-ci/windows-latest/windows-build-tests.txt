@@ -1,39 +1,39 @@
 
-> paintplus@1.0.4 package:win
+> paintplus@1.0.5 package:win
 > npm run build && electron-builder --win nsis portable --x64 --publish never
 
 
-> paintplus@1.0.4 build
+> paintplus@1.0.5 build
 > vite build
 
 [36mvite v7.1.9 [32mbuilding for production...[36m[39m
 <script src="./startup.js"> in "/index.html" can't be bundled without type="module" attribute
 transforming...
-[32m✓[39m 19 modules transformed.
+[32m✓[39m 20 modules transformed.
 rendering chunks...
 computing gzip size...
 [2mdist/[22m[32mindex.html                          [39m[1m[2m  0.73 kB[22m[1m[22m[2m │ gzip:  0.46 kB[22m
 [2mdist/[22m[32massets/resample.worker-zC6kJlVe.js  [39m[1m[2m  1.42 kB[22m[1m[22m
 [2mdist/[22m[32massets/ai.worker-qR7vyCF8.js        [39m[1m[2m 48.95 kB[22m[1m[22m
-[2mdist/[22m[35massets/index-BXueIabR.css           [39m[1m[2m 31.63 kB[22m[1m[22m[2m │ gzip:  7.73 kB[22m
-[2mdist/[22m[36massets/index-DnjefF9_.js            [39m[1m[2m178.38 kB[22m[1m[22m[2m │ gzip: 54.22 kB[22m
-[32m✓ built in 741ms[39m
+[2mdist/[22m[35massets/index-9w9ZbO71.css           [39m[1m[2m 31.94 kB[22m[1m[22m[2m │ gzip:  7.79 kB[22m
+[2mdist/[22m[36massets/index-g0pSVCjK.js            [39m[1m[2m184.16 kB[22m[1m[22m[2m │ gzip: 56.14 kB[22m
+[32m✓ built in 1.02s[39m
   • electron-builder  version=26.0.12 os=10.0.26100
   • loaded configuration  file=package.json ("build" field)
   • skipped dependencies rebuild  reason=npmRebuild is set to false
   • packaging       platform=win32 arch=x64 electron=38.2.0 appOutDir=release\win-unpacked
   • downloading     url=https://github.com/electron/electron/releases/download/v38.2.0/electron-v38.2.0-win32-x64.zip size=126 MB parts=8
-  • downloaded      url=https://github.com/electron/electron/releases/download/v38.2.0/electron-v38.2.0-win32-x64.zip duration=591ms
-(node:3672) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+  • downloaded      url=https://github.com/electron/electron/releases/download/v38.2.0/electron-v38.2.0-win32-x64.zip duration=597ms
+(node:4768) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
 (Use `node --trace-deprecation ...` to show where the warning was created)
   • updating asar integrity executable resource  executablePath=release\win-unpacked\PaintPlus.exe
-  • building        target=nsis file=release\PaintPlus-Setup-1.0.4-x64.exe archs=x64 oneClick=false perMachine=false
+  • building        target=nsis file=release\PaintPlus-Setup-1.0.5-x64.exe archs=x64 oneClick=false perMachine=false
   • downloading     url=https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-3.0.4.1/nsis-3.0.4.1.7z size=1.3 MB parts=1
-  • downloaded      url=https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-3.0.4.1/nsis-3.0.4.1.7z duration=298ms
+  • downloaded      url=https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-3.0.4.1/nsis-3.0.4.1.7z duration=269ms
   • downloading     url=https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-resources-3.4.1/nsis-resources-3.4.1.7z size=731 kB parts=1
-  • downloaded      url=https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-resources-3.4.1/nsis-resources-3.4.1.7z duration=388ms
+  • downloaded      url=https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-resources-3.4.1/nsis-resources-3.4.1.7z duration=366ms
   • uninstaller is not signed by electron-builder  reason=custom NSIS script is used
-  • signing with signtool.exe  path=release\PaintPlus-Setup-1.0.4-x64.exe
-  • building block map  blockMapFile=release\PaintPlus-Setup-1.0.4-x64.exe.blockmap
-  • building        target=portable file=release\PaintPlus-Portable-1.0.4-x64.exe archs=x64
-  • signing with signtool.exe  path=release\PaintPlus-Portable-1.0.4-x64.exe
+  • signing with signtool.exe  path=release\PaintPlus-Setup-1.0.5-x64.exe
+  • building block map  blockMapFile=release\PaintPlus-Setup-1.0.5-x64.exe.blockmap
+  • building        target=portable file=release\PaintPlus-Portable-1.0.5-x64.exe archs=x64
+  • signing with signtool.exe  path=release\PaintPlus-Portable-1.0.5-x64.exe

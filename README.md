@@ -3,15 +3,15 @@
 A local Windows Paint-style editor with layers, assets, editable shapes and text,
 and offline background removal.
 
-**[Download PaintPlus 1.0.4 Setup for Windows](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Setup-1.0.4-x64.exe)**
+**[Download PaintPlus 1.0.5 Setup for Windows](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Setup-1.0.5-x64.exe)**
 
-[Portable EXE](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Portable-1.0.4-x64.exe) · [Complete source ZIP](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Source-1.0.4.zip) · [Full source as TXT](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Full-Source.txt)
+[Portable EXE](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Portable-1.0.5-x64.exe) · [Complete source ZIP](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Source-1.0.5.zip) · [Full source as TXT](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Full-Source.txt)
 
 ![Running PaintPlus editor](docs/screenshots/packaged-linux.png)
 
 ## Install
 
-1. Download **PaintPlus-Setup-1.0.4-x64.exe** and run it on a 64-bit Windows 10 or
+1. Download **PaintPlus-Setup-1.0.5-x64.exe** and run it on a 64-bit Windows 10 or
    Windows 11 computer. The installer can update an existing PaintPlus installation.
 2. Choose the installation folder and complete the wizard. Open PaintPlus from
    the desktop or Start menu shortcut. Node.js, Python and other developer tools
@@ -24,7 +24,7 @@ The portable EXE runs without installation. Both downloads include the AI model
 and runtime. There are no model downloads, online AI calls or telemetry. Uninstall
 preserves projects, source assets and user preferences.
 
-Version 1.0.4 includes the earlier blank-window startup fixes: software rendering
+Version 1.0.5 includes the earlier blank-window startup fixes: software rendering
 on Windows, ASAR-aware resource loading, correct script/WASM types, a visible
 startup error screen and diagnostics at `%APPDATA%\PaintPlus\startup.log`.
 Hosted Windows checks test the exact release downloads. Results are in
@@ -35,7 +35,7 @@ Home-edition laptop remains a separate hardware check.
 
 - Zoom uses only Paint's eleven fixed levels (12.5% through 800%). Image pixels
   stay sharp and selection handles keep a constant screen size.
-- New images start at 731 × 411 pixels.
+- New images start at 731 × 411 pixels. Brush tips stay inside the selected width; the eraser cursor previews Color 2.
 - Draw a shape, then move/resize/rotate it or change its outline/fill. Ctrl+Numpad
   Plus/Minus changes the current stroke width by one pixel. Each tool remembers
   its own size; width changes do not add undo steps. Enter commits the shape.
@@ -44,7 +44,7 @@ Home-edition laptop remains a separate hardware check.
   words to change their font, point size, colour and style independently; Ctrl+A
   in the box formats all text. Font favorites stay pinned. Six font families are
   bundled alongside the fonts installed on your computer. Finished
-  text can be resized and edited while selected. Fixed bubble corners/tails and
+  text can be resized and edited while selected. The Text ribbon opens after creating a box; outside confirmation keeps Text selected for the next drag. Bubble outlines retain their creation colour. Fixed bubble corners/tails and
   an optional grey shadow retain their size during resizing. Font size has a
   dropdown and supports typing custom values. Ctrl+Enter ends typing; Enter or
   clicking outside confirms the selection as raster pixels. Save a project
@@ -54,12 +54,14 @@ Home-edition laptop remains a separate hardware check.
   a pixel selection when you click outside; Settings also offers persistent mode.
   Every selection has resize/rotate handles; no separate Move tool is needed.
   Right-click offers Cut, Copy, Delete and Cut into new layer. The new layer
-  fills the full canvas with Color 2 and retains the cut content's position.
-  Erasing and deleting on any raster layer uses Color 2.
+  fills the full canvas with Color 2 and retains the cut content's position. Upper-layer Color-2 pixels reveal lower layers.
+  Erasing and deleting on any raster layer uses Color 2. Outside drags confirm the current selection and begin another using the same tool.
   Shift-drag or Shift-arrow stamps a trail; arrows move one pixel per press.
 - The Brush picture selects round or the last brush used. The lower arrow opens
   brush choices. Size shows the current width. Right-drag uses Color 2; right-click
   a palette swatch sets Color 2.
+- Photo resizing uses original-source Lanczos filtering in the preview and output. Nearest neighbour remains available for pixel art. A scrolled paste starts at the visible canvas corner.
+- Toggle asset layers directly below the Layers list. Right-click → Rename layer edits the name in place; double-click does not rename. Visibility is excluded from undo/redo, including when undoing another edit.
 - Ribbon Width/Height + Apply changes canvas boundaries without stretching.
   Larger pastes grow the canvas by default; Settings can retain its dimensions.
 - A layer's bin or Delete after clicking its row removes it immediately. Ctrl+Z
@@ -78,7 +80,7 @@ Home-edition laptop remains a separate hardware check.
   for applications such as MS Paint. Save **.paintplus** for editable layers,
   source images, text, shape geometry and groups.
 
-[Release notes and issue-by-issue results](docs/RELEASE-1.0.4.md) ·
+[Release notes and issue-by-issue results](docs/RELEASE-1.0.5.md) ·
 [Known limitations](docs/LIMITATIONS.md) · [Test evidence](docs/TESTING.md)
 
 The toolbar icons are original refined SVGs and the transparent easel logo is generated

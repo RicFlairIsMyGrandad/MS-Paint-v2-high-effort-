@@ -1,6 +1,6 @@
 {
   "isPackaged": true,
-  "appPath": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω L9gJEf\\installed app with spaces\\resources\\app.asar",
+  "appPath": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω 3n1QCz\\installed app with spaces\\resources\\app.asar",
   "platform": "win32",
   "gpuStatus": {
     "2d_canvas": "unavailable_software",
@@ -20,7 +20,7 @@
     "webgpu": "unavailable_software",
     "webnn": "unavailable_software"
   },
-  "version": "1.0.4",
+  "version": "1.0.5",
   "installationPathHasSpacesAndUnicode": true,
   "firstLaunchReady": true,
   "defaultCanvasDimensions": true,
@@ -45,23 +45,37 @@
   "clipboardOK": true,
   "aiInferenceOK": true,
   "first": {
-    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω L9gJEf\\images\\PaintPlus-smoke.png",
+    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω 3n1QCz\\images\\PaintPlus-smoke.png",
     "name": "PaintPlus-smoke.png"
   },
   "second": {
-    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω L9gJEf\\images\\PaintPlus-smoke (2).png",
+    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω 3n1QCz\\images\\PaintPlus-smoke (2).png",
     "name": "PaintPlus-smoke (2).png"
   },
   "collisionOK": true,
   "project": {
-    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω L9gJEf\\images\\PaintPlus-project-smoke.paintplus",
+    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω 3n1QCz\\images\\PaintPlus-project-smoke.paintplus",
     "name": "PaintPlus-project-smoke.paintplus"
   },
-  "projectBytes": 128368,
+  "projectBytes": 128387,
   "protocol": "paintplus:",
   "aiModel": true,
   "rendererErrors": [],
   "externalRequests": [],
   "fontCatalogSource": "GDI",
-  "fontCatalogCount": 144
+  "fontCatalogCount": 144,
+  "exactBrushTips": true,
+  "opaqueEraserCursor": true,
+  "layerAssetToggle": true,
+  "inlineLayerRename": true,
+  "layerVisibilityOutsideHistory": true,
+  "color2LayerTransparency": true,
+  "smoothOriginalResize": true,
+  "visiblePastePosition": true,
+  "bubbleOutlineColor": true,
+  "contextualTextTool": true,
+  "successiveTextCreation": true,
+  "successiveShapeCreation": true,
+  "hiddenMoveOutline": true,
+  "thinSelectionFrame": true
 }

@@ -24,3 +24,10 @@ diagnostics. Exact Microsoft cursor resources, every brush/GDI pixel and the
 user's laptop remain verification boundaries. Printing, skew, live folder
 watching and manual AI mask painting remain unavailable. See LIMITATIONS.md
 and TESTING.md for full details and final Windows validation evidence.
+
+Validation: 100 core tests and 107 UI workflows passed locally and on both hosted
+Windows runners. [Run 38624971626](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/actions/runs/38624971626) installed and launched
+the exact Setup download, checked the new editor features, fonts/clipboard/AI,
+launched Portable and verified uninstall while preserving a project. Both
+archives contain the same application and pass integrity checks. TESTING.md
+contains logs, hashes and the verification boundaries.
