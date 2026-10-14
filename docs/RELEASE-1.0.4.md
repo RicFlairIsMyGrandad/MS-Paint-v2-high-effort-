@@ -35,3 +35,10 @@ and validation boundaries are in LIMITATIONS.md and TESTING.md.
 Windows font discovery shares one cached native request, uses the system
 PowerShell executable, allows slower startup and falls back to machine/user
 font registrations if GDI enumeration fails. Catalog source/count are logged.
+
+Validation: 87 core tests and 89 UI workflows passed locally and on both hosted
+Windows runners. [Run 38602118193](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/actions/runs/38602118193) installed and launched
+the exact Setup download, checked the new editor features, fonts/clipboard/AI,
+launched Portable and verified uninstall while preserving a project. Both
+archives contain the same application and pass integrity checks. TESTING.md
+contains logs, hashes and the verification boundaries.

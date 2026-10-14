@@ -22,7 +22,10 @@ source bounds separately from wrapping width. Underlines scale by point size
 and skip glyph ink. All active selections share transformation handles.
 Default outside-click confirmation rasterizes selected objects. Layer UI rows
 are keyed by ID so refreshes retain visibility button identity.
-Installed font names are queried locally; bundled WOFF2 fonts work offline.
+Installed font names are queried locally and cached in one shared request.
+Windows uses GDI through the system PowerShell executable, with machine/user
+font registrations as a fallback; the catalog source and count are logged.
+Bundled WOFF2 fonts work offline.
 
 The image display remains at document pixel resolution with pixelated CSS scaling.
 A separate device-pixel-resolution overlay covers only the visible viewport.

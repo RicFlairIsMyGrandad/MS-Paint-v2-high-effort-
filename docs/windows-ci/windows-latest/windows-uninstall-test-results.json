@@ -1,6 +1,6 @@
 {
-  "shippedHelperRemoved": true,
   "userProjectPreserved": true,
-  "applicationRemoved": true,
-  "uninstallEntryRemoved": true
+  "uninstallEntryRemoved": true,
+  "shippedHelperRemoved": true,
+  "applicationRemoved": true
 }

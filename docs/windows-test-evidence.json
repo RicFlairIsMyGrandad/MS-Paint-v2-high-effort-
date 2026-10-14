@@ -1,36 +1,40 @@
 {
-  "run": "38457947297",
-  "source": "b46b0f1234bb8e2aa7ae680dacf5bdad30138bb4",
-  "url": "https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/actions/runs/38457947297",
-  "version": "1.0.3",
+  "run": "38602118193",
+  "source": "b80796d05f1be8d48dc09ce405e40ef9e9ce28f8",
+  "url": "https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/actions/runs/38602118193",
+  "version": "1.0.4",
   "exactExecutableChecksums": {
-    "PaintPlus-Setup-1.0.3-x64.exe": "8b0d95a68858ea3cfe6899b2edeae46b523033792643c3337473239bd1b37ced",
-    "PaintPlus-Portable-1.0.3-x64.exe": "c7a49bfe33ff67ddcf03689f6e8d1e1abe98f4cd8c01203005269e3656b2d64f"
+    "PaintPlus-Setup-1.0.4-x64.exe": "b8f59693bd20cc0b2cf706b2b18cc553b082283235a22e3bec98da2866d4dfff",
+    "PaintPlus-Portable-1.0.4-x64.exe": "f2fc6421366626dae6eee7b13157c4eac11e5532750a43c1f06d9b3a78cf4915"
   },
   "runners": [
     {
       "target": "windows-2022",
       "os": "Windows Server 2022 Datacenter",
       "release": "10.0.20348",
-      "corePassed": 64,
-      "uiPassed": 68,
+      "corePassed": 87,
+      "uiPassed": 89,
       "installedPackagedChecksPassed": true,
       "portablePassed": true,
+      "fontCatalogSource": "GDI",
+      "fontCatalogCount": 126,
       "shortcutsAndAssociationPassed": true,
       "uninstallPreservedProject": true,
-      "evidenceBranch": "windows-evidence-38457947297-windows-2022"
+      "evidenceBranch": "windows-evidence-38602118193-windows-2022"
     },
     {
       "target": "windows-latest",
       "os": "Windows Server 2025 Datacenter",
       "release": "10.0.26100",
-      "corePassed": 64,
-      "uiPassed": 68,
+      "corePassed": 87,
+      "uiPassed": 89,
       "installedPackagedChecksPassed": true,
       "portablePassed": true,
+      "fontCatalogSource": "GDI",
+      "fontCatalogCount": 144,
       "shortcutsAndAssociationPassed": true,
       "uninstallPreservedProject": true,
-      "evidenceBranch": "windows-evidence-38457947297-windows-latest"
+      "evidenceBranch": "windows-evidence-38602118193-windows-latest"
     }
   ]
 }

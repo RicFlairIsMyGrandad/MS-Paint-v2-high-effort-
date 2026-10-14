@@ -34,7 +34,10 @@ These are differences or unverified areas, rather than completed acceptance clai
   ignore exact Color-2 pixels.
 - **Text:** Mixed font/point-size/colour/style runs, favorites and re-editing are
   implemented. Font availability depends on the computer; six Latin font families
-  are bundled. Other characters use installed fallback fonts. Paragraph alignment,
+  are bundled. Other characters use installed fallback fonts. Install fonts
+  before launching PaintPlus; the catalog is cached for that session. If GDI
+  discovery fails, registry display names provide a fallback and custom font
+  aliases may differ from GDI family names. Paragraph alignment,
   per-character baseline offsets and complex RTL/advanced typesetting are not
   independently verified. Source pixels are retained in older projects until
   their text is edited, when the new renderer regenerates them. Font substitution
