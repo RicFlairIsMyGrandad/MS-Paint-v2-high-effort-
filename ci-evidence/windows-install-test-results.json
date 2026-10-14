@@ -1,0 +1,7 @@
+{
+  "startMenuShortcut": true,
+  "desktopShortcut": true,
+  "payloadPresent": true,
+  "projectAssociationCommand": true,
+  "setupExitCode": 0
+}
