@@ -208,6 +208,8 @@ export class PaintPlus {
     this.editor.requestRender();
     this.updateTools();
     this.updateTitle();
+    const list=document.querySelector('#layer-list'),ids=[...this.doc.layers].reverse().map(layer=>layer.id);
+    if(list&&(list.children.length!==ids.length||ids.some((id,index)=>list.children[index]?.dataset.id!==id)))this.updateLayers();
     if (!this.renderLayersPending) {
       this.renderLayersPending = true;
       setTimeout(() => {
