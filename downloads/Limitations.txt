@@ -1,4 +1,4 @@
-# Remaining limitations — 1.0.3
+# Remaining limitations — 1.0.4
 
 These are differences or unverified areas, rather than completed acceptance claims.
 
@@ -9,9 +9,8 @@ These are differences or unverified areas, rather than completed acceptance clai
   pixel-for-pixel clones of Microsoft's UI. The supplied reference screenshot
   was used for visual comparison. Text controls, layers, assets and AI necessarily
   add controls to that layout; narrow windows scroll the ribbon horizontally.
-- **Laptop-specific verification is outstanding.** The exact Setup and Portable EXEs passed on Windows Server 2022
-  (10.0.20348) and Server 2025 (10.0.26100), including the installed packaged app.
-  They do not prove operation on the user's Windows 10 Home or Windows 11 Home
+- **Laptop-specific verification is outstanding.** Native release checks and their exact hashes are recorded in TESTING.md.
+  Hosted Windows checks do not prove operation on the user's Windows 10 Home or Windows 11 Home
   laptop. High-DPI/multiple-display behavior, touch/stylus input and long sessions
   still need testing on that hardware. Software rendering and startup diagnostics
   are included to address the previous blank-window failure.
@@ -35,12 +34,18 @@ These are differences or unverified areas, rather than completed acceptance clai
   ignore exact Color-2 pixels.
 - **Text:** Mixed font/point-size/colour/style runs, favorites and re-editing are
   implemented. Font availability depends on the computer; six Latin font families
-  are bundled. Other characters use installed fallback fonts. Paragraph alignment,
+  are bundled. Other characters use installed fallback fonts. Install fonts
+  before launching PaintPlus; the catalog is cached for that session. If GDI
+  discovery fails, registry display names provide a fallback and custom font
+  aliases may differ from GDI family names. Paragraph alignment,
   per-character baseline offsets and complex RTL/advanced typesetting are not
   independently verified. Source pixels are retained in older projects until
   their text is edited, when the new renderer regenerates them. Font substitution
   can change edited text when an original font is unavailable. Editable text sits
-  above its layer's raster until explicitly committed.
+  above its layer's raster while selected. Default outside-click confirmation
+  converts it to pixels; save an editable project beforehand. Fixed bubble
+  corners/tails and shadows apply to text bubbles, while the generic callout
+  shape remains a proportional geometric shape.
 - **Library index:** It is a saved index, not a live filesystem watcher. New or
   moved source files need re-importing. Removing library entries or categories
   never deletes original files. Category renaming does not rename disk folders.
