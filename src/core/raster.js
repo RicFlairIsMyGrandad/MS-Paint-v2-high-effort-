@@ -156,6 +156,10 @@ export function paintSegment(ctx, a, b, opts) {
     background = "#ffffff",
   } = opts;
   ctx.save();
+  if(type==='brush'){
+    const start=stampBounds(a,width),end=stampBounds(b,width),left=Math.min(start.x,end.x),top=Math.min(start.y,end.y);
+    ctx.beginPath();ctx.rect(left,top,Math.max(start.x,end.x)+start.width-left,Math.max(start.y,end.y)+start.height-top);ctx.clip();
+  }
   ctx.strokeStyle = color;
   ctx.fillStyle = color;
   ctx.lineWidth = width;
@@ -273,9 +277,9 @@ export function pixelSegment(ctx, a, b, width, round = false) {
 }
 export function softBrushCap(ctx, point, width, color) {
   const radius = width / 2, x = Math.floor(point.x) + (width % 2 ? .5 : 0), y = Math.floor(point.y) + (width % 2 ? .5 : 0), rgb = hexRGB(color);
-  const gradient = ctx.createRadialGradient(x, y, Math.max(0, radius - .45), x, y, radius + 1.1);
+  const gradient = ctx.createRadialGradient(x, y, Math.max(0, radius - .6), x, y, radius);
   gradient.addColorStop(0, `rgba(${rgb.join(',')},1)`);gradient.addColorStop(1, `rgba(${rgb.join(',')},0)`);
-  ctx.save();ctx.fillStyle = gradient;ctx.beginPath();ctx.arc(x, y, radius + 1.1, 0, Math.PI * 2);ctx.fill();ctx.restore();
+  ctx.save();ctx.fillStyle = gradient;ctx.beginPath();ctx.arc(x, y, radius, 0, Math.PI * 2);ctx.fill();ctx.restore();
 }
 export function maskBoundary(mask, width, height, offsetX = 0, offsetY = 0) {
   const edges = [];

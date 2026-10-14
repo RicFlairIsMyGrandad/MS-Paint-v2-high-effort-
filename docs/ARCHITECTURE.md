@@ -21,7 +21,7 @@ Text bubbles regenerate fixed corners and tails; a fixed-grey shadow extends
 source bounds separately from wrapping width. Underlines scale by point size
 and skip glyph ink. All active selections share transformation handles.
 Default outside-click confirmation rasterizes selected objects. Layer UI rows
-are keyed by ID so refreshes retain visibility button identity.
+are keyed by ID so refreshes retain visibility button identity. Renaming uses a row input. Visibility overrides sit outside image history and are reapplied when metadata is restored. Upper rasters and objects key exact Color-2 matches before compositing. Original image sources feed cached Lanczos previews, retaining one size per source. Selection frames use five screen pixels of padding and four-pixel handles; movement hides their overlay.
 Installed font names are queried locally and cached in one shared request.
 Windows uses GDI through the system PowerShell executable, with machine/user
 font registrations as a fallback; the catalog source and count are logged.

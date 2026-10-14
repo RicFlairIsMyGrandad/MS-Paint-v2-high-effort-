@@ -10,9 +10,9 @@ setCanvasFactory(()=>createCanvas(1,1));
 const pixel=(source,x,y)=>[...source.getContext('2d').getImageData(x,y,1,1).data];
 const textProps={type:'text',text:'',font:'Arial',fontSize:12,fontUnit:'pt',bubble:true,bubbleWidth:3,bubbleColor:'#123456',width:220,padding:12,minHeight:130};
 test('new documents use the requested 731 by 411 dimensions',()=>{const doc=new PaintDocument();assert.deepEqual([doc.width,doc.height],[731,411]);});
-test('thin brush caps visibly bleed into neighbouring pixels while the body remains one opaque pixel wide',()=>{
+test('thin brush caps stay within the chosen width, matching the revised endpoint requirement',()=>{
  const source=canvas(80,30),ctx=source.getContext('2d');paintSegment(ctx,{x:15,y:15},{x:60,y:15},{type:'brush',width:1,color:'#000000'});softBrushCap(ctx,{x:15,y:15},1,'#000000');softBrushCap(ctx,{x:60,y:15},1,'#000000');
- assert.ok(pixel(source,61,15)[3]>0&&pixel(source,61,15)[3]<255);assert.equal(pixel(source,35,15)[3],255);assert.equal(pixel(source,35,14)[3],0);
+ assert.ok(pixel(source,60,15)[3]>0);assert.equal(pixel(source,61,15)[3],0);assert.equal(pixel(source,35,15)[3],255);assert.equal(pixel(source,35,14)[3],0);
 });
 test('freeform preview boundary follows the exact binary pixel mask, including concave edges',()=>{
  const points=[{x:1,y:1},{x:9,y:2},{x:5,y:5},{x:9,y:9},{x:2,y:8}],mask=polygonMask(12,12,points),edges=maskBoundary(mask,12,12);

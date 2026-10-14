@@ -1,5 +1,6 @@
 import { canvas, cloneCanvas, colorKey, polygonMask, hexRGB } from "./raster.js";
 import { History, RasterEdit } from "./history.js";
+import {resamplePixels} from './resample.worker.js';
 export const id = () =>
   globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
 export function createLayer(width, height, name = "Layer", background = null) {
@@ -44,7 +45,7 @@ export function hitObject(o, x, y) {
   const p = localPoint(o, x, y);
   return p.x >= 0 && p.y >= 0 && p.x <= o.width && p.y <= o.height;
 }
-export function drawObject(ctx, o, quality = true) {
+export function drawObject(ctx, o, quality = true, layerKey = null) {
   ctx.save();
   ctx.translate(o.x + o.width / 2, o.y + o.height / 2);
   ctx.rotate((o.angle * Math.PI) / 180);
@@ -52,20 +53,44 @@ export function drawObject(ctx, o, quality = true) {
   ctx.imageSmoothingEnabled =
     o.resampling !== "nearest" && o.smoothPreview !== false;
   ctx.imageSmoothingQuality = "high";
-  const src = o.transparentColor ? colorKeyCached(o) : o.source;
+  let src = o.transparentColor ? keyedSource(o.source,o.transparentColor) : o.source;
+  if(layerKey&&layerKey!==o.transparentColor)src=keyedSource(src,layerKey);
+  if(quality&&o.resampling!=='nearest'&&o.smoothPreview!==false)src=resizeForDrawing(src,o.width,o.height);
+  const transform=ctx.getTransform();
+  if(src.width===o.width&&src.height===o.height&&Math.abs(transform.a)===1&&Math.abs(transform.d)===1&&!transform.b&&!transform.c&&Number.isInteger(transform.e-transform.a*o.width/2)&&Number.isInteger(transform.f-transform.d*o.height/2))ctx.imageSmoothingEnabled=false;
   ctx.drawImage(src, -o.width / 2, -o.height / 2, o.width, o.height);
   ctx.restore();
 }
 const keyed = new WeakMap();
-function colorKeyCached(o) {
-  let map = keyed.get(o.source);
-  if (!map) {
-    map = new Map();
-    keyed.set(o.source, map);
+const resized = new WeakMap();
+const layerKeys = new WeakMap();
+export function resizeForDrawing(source,width,height){
+  const w=Math.max(1,Math.round(width)),h=Math.max(1,Math.round(height));
+  if(w===source.width&&h===source.height)return source;
+  const cached=resized.get(source);if(cached?.w===w&&cached.h===h)return cached.canvas;
+  // Avoid an unbounded family of previews while dragging; retain one size.
+  if(w*h*4+w*source.height*16+source.width*source.height*4>192*1024*1024)return source;
+  const pixels=source.getContext('2d').getImageData(0,0,source.width,source.height).data;
+  const output=canvas(w,h),context=output.getContext('2d'),image=context.createImageData(w,h);
+  image.data.set(resamplePixels(pixels,source.width,source.height,w,h,'lanczos'));context.putImageData(image,0,0);
+  resized.set(source,{w,h,canvas:output});return output;
+}
+function keyedSource(source,color){
+  const cached=keyed.get(source);if(cached?.color===color)return cached.canvas;
+  const result=colorKey(source,color);keyed.set(source,{color,canvas:result});return result;
+}
+export function drawLayer(context,layer,key=null,revision){
+  let source=layer.canvas;
+  if(key){
+    const cached=layerKeys.get(layer);
+    if(revision!==undefined&&cached?.source===source&&cached.key===key&&cached.revision===revision)source=cached.canvas;
+    else{const output=colorKey(source,key);if(revision!==undefined)layerKeys.set(layer,{source,key,revision,canvas:output});source=output;}
   }
-  if (!map.has(o.transparentColor))
-    map.set(o.transparentColor, colorKey(o.source, o.transparentColor));
-  return map.get(o.transparentColor);
+  context.drawImage(source,0,0);
+  for(const object of layer.objects)drawObject(context,object,true,key);
+}
+function colorKeyCached(o) {
+  return keyedSource(o.source,o.transparentColor);
 }
 export class PaintDocument {
   constructor(width = 731, height = 411, onChange = () => {}) {
@@ -78,6 +103,7 @@ export class PaintDocument {
     this.selected = [];
     this.onChange = onChange;
     this.dirty = false;
+    this.color2='#ffffff';this.renderRevision=0;this.visibilityOverrides=new Map();
     this.maxWorkingBytes = 512 * 1024 * 1024;
     this.history = new History(() => {
       this.dirty = true;
@@ -89,9 +115,9 @@ export class PaintDocument {
   }
   assertAllocation(extraBytes) {
     const live = this.resources().reduce((sum, c) => sum + c.width * c.height * 4, 0);
-    // Include the renderer's composite/display buffers as well as undo and the
-    // requested operation. Reject before allocating, preserving the document.
-    const estimate = live + this.history.bytes + this.width * this.height * 8 + extraBytes;
+    // Budget two derived key/resampling canvases per source, the renderer's
+    // buffers, undo and the requested operation before allocating.
+    const estimate = live * 3 + this.history.bytes + this.width * this.height * 8 + extraBytes;
     if (!Number.isFinite(estimate) || estimate > this.maxWorkingBytes)
       throw new Error("This operation needs too much image memory. Use smaller dimensions, fewer layers, or clear undo history first.");
   }
@@ -107,8 +133,16 @@ export class PaintDocument {
     return this.objects.filter((o) => this.selected.includes(o.id));
   }
   changed() {
+    this.invalidateLayers();
     this.dirty = true;
     this.onChange();
+  }
+  invalidateLayers(){this.renderRevision++;}
+  setLayerVisibility(layerId,visible){
+    const layer=this.layers.find(layer=>layer.id===layerId);if(!layer)return;
+    layer.visible=!!visible;this.visibilityOverrides.set(layerId,layer.visible);
+    if(!layer.visible)this.selected=this.selected.filter(id=>!layer.objects.some(object=>object.id===id));
+    this.changed();
   }
   metadata() {
     return {
@@ -129,8 +163,10 @@ export class PaintDocument {
     this.selected = [...state.selected];
     this.layers = state.layers.map((l) => ({
       ...l,
+      visible:this.visibilityOverrides.has(l.id)?this.visibilityOverrides.get(l.id):l.visible,
       objects: l.objects.map((o) => ({ ...o })),
     }));
+    this.selected=this.selected.filter(id=>this.layers.some(layer=>layer.visible&&layer.objects.some(object=>object.id===id)));
     this.changed();
   }
   action(label, fn, bytes = 0) {
@@ -226,11 +262,7 @@ export class PaintDocument {
       ctx.fillStyle = background;
       ctx.fillRect(0, 0, this.width, this.height);
     }
-    for (const l of this.layers)
-      if (l.visible) {
-        ctx.drawImage(l.canvas, 0, 0);
-        for (const o of l.objects) drawObject(ctx, o);
-      }
+    this.layers.forEach((layer,index)=>{if(layer.visible)drawLayer(ctx,layer,index?this.color2:null);});
     return out;
   }
   paintRemovedObjects(objects, background) {
@@ -239,7 +271,7 @@ export class PaintDocument {
     const replacement=[...hexRGB(background),255];
     for(const layer of layers) {
       const mask=canvas(this.width,this.height),context=mask.getContext('2d');
-      for(const object of layer.objects.filter(object=>objects.includes(object)))drawObject(context,object);
+      for(const object of layer.objects.filter(object=>objects.includes(object)))drawObject(context,object,true,this.layers.indexOf(layer)?this.color2:null);
       const covered=context.getImageData(0,0,this.width,this.height).data;
       const output=cloneCanvas(layer.canvas),pixels=output.getContext('2d').getImageData(0,0,this.width,this.height);
       for(let i=0;i<covered.length;i+=4)if(covered[i+3])pixels.data.set(replacement,i);
@@ -363,7 +395,7 @@ export class PaintDocument {
       angle: 0,
       flipH: false,
       flipV: false,
-      resampling: "nearest",
+      resampling: "lanczos",
       type: "selection",
       transparentColor,
     };
@@ -436,7 +468,8 @@ export class PaintDocument {
         throw new Error("Unlock selected layers first.");
     const resized = new Map();
     for (const o of targets) {
-      const src = o.transparentColor ? colorKeyCached(o) : o.source;
+      let src = o.transparentColor ? colorKeyCached(o) : o.source;
+      const layer=this.layers.find(layer=>layer.objects.includes(o));if(this.layers.indexOf(layer)>0&&o.transparentColor!==this.color2)src=keyedSource(src,this.color2);
       resized.set(
         o.id,
         await resample(
@@ -482,9 +515,8 @@ export class PaintDocument {
       () => {
         bottom.canvas = cloneCanvas(bottom.canvas);
         const ctx = bottom.canvas.getContext("2d");
-        for (const o of bottom.objects) drawObject(ctx, o);
-        ctx.drawImage(top.canvas, 0, 0);
-        for (const o of top.objects) drawObject(ctx, o);
+        for (const o of bottom.objects) drawObject(ctx, o,true,index>1?this.color2:null);
+        drawLayer(ctx,top,this.color2);
         bottom.objects = [];
         this.layers.splice(index, 1);
         this.activeLayerId = bottom.id;

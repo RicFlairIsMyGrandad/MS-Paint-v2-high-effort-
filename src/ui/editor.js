@@ -3,6 +3,7 @@ import {
   worldPoint,
   localPoint,
   hitObject,
+  drawLayer,
 } from "../core/document.js";
 import { paintSegment, replaceColorSegment, floodFill, colorAt, canvas, stampBounds, pixelSegment, softBrushCap, polygonMask, maskBoundary } from "../core/raster.js";
 import { drawShape } from "../core/shapes.js";
@@ -64,6 +65,7 @@ const handlePoints = (o) =>
     [0, o.height],
     [0, o.height / 2],
   ].map(([x, y]) => worldPoint(o, x, y));
+export function selectionFrame(object,zoom=1,width=Infinity,height=Infinity){const bounds=axisBounds([object]),pad=Math.max(0,Math.min(5/zoom,bounds.x,bounds.y,width-bounds.x-bounds.width,height-bounds.y-bounds.height));return {...object,x:object.x-pad,y:object.y-pad,width:object.width+2*pad,height:object.height+2*pad};}
 const constrain = (a, b) => {
   const angle =
       (Math.round(Math.atan2(b.y - a.y, b.x - a.x) / (Math.PI / 4)) * Math.PI) /
@@ -166,11 +168,8 @@ export class Editor {
     this.stage.style.height = d.height * z + "px";
     const ctx = this.display.getContext("2d");
     ctx.clearRect(0, 0, d.width, d.height);
-    for (const l of d.layers)
-      if (l.visible) {
-        ctx.drawImage(l.canvas, 0, 0);
-        for (const o of l.objects) drawObject(ctx, o);
-      }
+    d.color2=this.app.color2;
+    d.layers.forEach((layer,index)=>{if(layer.visible)drawLayer(ctx,layer,index?d.color2:null,d.renderRevision);});
     const over = this.overlay.getContext("2d");
     over.setTransform(1, 0, 0, 1, 0, 0);
     over.clearRect(0, 0, this.overlay.width, this.overlay.height);
@@ -214,7 +213,7 @@ export class Editor {
     }
     const selected = d.selectedObjects;
     const bounds = selectionBounds(selected);
-    if (bounds) {
+    if (bounds && this.drag?.type!=='move') {
       this.drawSelection(over, bounds);
       if (selected.length > 1)
         for (const o of selected) this.drawOutline(over, o, "#0078ed80");
@@ -269,11 +268,11 @@ export class Editor {
     const target=nearestZoom(this.app.zoom*2),ratio=target/this.app.zoom,width=Math.min(this.doc.width,this.viewport.clientWidth/this.app.zoom)/ratio,height=Math.min(this.doc.height,this.viewport.clientHeight/this.app.zoom)/ratio;
     return {x:Math.max(0,Math.min(this.doc.width-width,point.x-width/2)),y:Math.max(0,Math.min(this.doc.height-height,point.y-height/2)),width,height,target};
   }
-  drawOutline(ctx, o, color = "#006ce8") {
+  drawOutline(ctx, o, color = "#4081b8") {
     ctx.save();
     ctx.strokeStyle = color;
-    ctx.lineWidth = 1 / this.app.zoom;
-    ctx.setLineDash([6 / this.app.zoom, 3 / this.app.zoom]);
+    ctx.lineWidth = 1 / (this.app.zoom*(window.devicePixelRatio||1));
+    ctx.setLineDash([3 / this.app.zoom, 5 / this.app.zoom]);
     ctx.beginPath();
     [
       [0, 0],
@@ -290,22 +289,23 @@ export class Editor {
     ctx.restore();
   }
   drawSelection(ctx, o) {
+    o=selectionFrame(o,this.app.zoom,this.doc.width,this.doc.height);
     this.drawOutline(ctx, o);
     const z = this.app.zoom,
-      s = 7 / z;
+      s = 4 / z, factor=z*(window.devicePixelRatio||1),pixel=1/factor;
     ctx.save();
-    ctx.lineWidth = 1 / z;
-    ctx.strokeStyle = "#243b58";
+    ctx.lineWidth = pixel;
+    ctx.strokeStyle = "#56788f";
     ctx.fillStyle = "white";
     for (const p of handlePoints(o)) {
-      const x = (Math.round(p.x * z) + 0.5) / z, y = (Math.round(p.y * z) + 0.5) / z;
-      ctx.fillRect(x - s / 2, y - s / 2, s, s);
-      ctx.strokeRect(x - s / 2, y - s / 2, s, s);
+      const x = Math.round((p.x-s/2)*factor)/factor, y = Math.round((p.y-s/2)*factor)/factor;
+      ctx.fillRect(x,y,s,s);ctx.strokeRect(x+pixel/2,y+pixel/2,s-pixel,s-pixel);
     }
     const {anchor:top,point:rotate}=this.rotationHandle(o);
     ctx.strokeStyle = "#0078ff";
     ctx.beginPath();
-    ctx.moveTo(top.x, top.y);
+    const distance=Math.hypot(rotate.x-top.x,rotate.y-top.y)||1;
+    ctx.moveTo(top.x+(rotate.x-top.x)*s/2/distance,top.y+(rotate.y-top.y)*s/2/distance);
     ctx.lineTo(rotate.x, rotate.y);
     ctx.stroke();
     ctx.fillStyle = "#fff";
@@ -322,10 +322,10 @@ export class Editor {
   handleAt(p) {
     const bounds = selectionBounds(this.doc.selectedObjects);
     if (!bounds) return null;
-    const rotation = this.rotationHandle(bounds).point;
+    const frame=selectionFrame(bounds,this.app.zoom,this.doc.width,this.doc.height),rotation = this.rotationHandle(frame).point;
     if (Math.hypot(p.x - rotation.x, p.y - rotation.y) < 10 / this.app.zoom)
       return { type: "rotate", bounds };
-    const hs = handlePoints(bounds);
+    const hs = handlePoints(frame);
     for (let i = 0; i < hs.length; i++)
       if (Math.hypot(p.x - hs[i].x, p.y - hs[i].y) < 8 / this.app.zoom)
         return { type: "resize", index: i, bounds };
@@ -369,7 +369,8 @@ export class Editor {
     const ghost=document.querySelector('#brush-cursor');
     if(p && this.pointerInside && ['brush','pencil','eraser'].includes(this.app.tool) && !this.drag?.type?.includes('resize')) {
       const bounds=stampBounds(p,this.app.width),zoom=this.app.zoom;ghost.className=this.app.tool==='eraser'?'eraser-ghost':'round-ghost';
-      Object.assign(ghost.style,{display:'block',left:bounds.x*zoom+'px',top:bounds.y*zoom+'px',width:bounds.width*zoom+'px',height:bounds.height*zoom+'px','--ink':this.app.color1});
+      Object.assign(ghost.style,{display:'block',left:bounds.x*zoom+'px',top:bounds.y*zoom+'px',width:bounds.width*zoom+'px',height:bounds.height*zoom+'px'});
+      ghost.style.setProperty('--ink',this.app.tool==='eraser'?this.app.color2:this.app.color1);
     } else ghost.style.display='none';
   }
   rect(a, b) {
@@ -409,7 +410,8 @@ export class Editor {
       }
       a.layerFocused = false;
       const existingHandle = this.handleAt(p);
-      if(d.selectedObjects.length&&!existingHandle&&!e.ctrlKey&&a.prefs.selectionMode==='paint'){a.finishSelection();return;}
+      const replacingSelection=!!d.selectedObjects.length&&!existingHandle&&!e.ctrlKey&&a.prefs.selectionMode==='paint';
+      if(replacingSelection)a.finishSelection();
       if(a.textEditor?.active&&!existingHandle)a.textEditor.finish();
       if (["select", "free", "move", "crop"].includes(a.tool) || existingHandle) {
         let handle = this.handleAt(p);
@@ -452,6 +454,7 @@ export class Editor {
             before: d.metadata(),
             lastPosition: { x: 0, y: 0 }, trailLayers: new Set(),
           };
+          this.requestRender();
           return;
         }
         if (a.tool === "move") {
@@ -505,7 +508,7 @@ export class Editor {
         a.updateColors();
       } else if (a.tool === "text") {
         if (d.activeLayer.locked || !d.activeLayer.visible) throw new Error('Show and unlock the active layer before adding text.');
-        this.drag = { type: 'text-box', start: p, end: p };
+        this.drag = { type: 'text-box', start: p, end: p,replacingSelection };
       } else if (a.tool === "zoom") {
         const area=this.zoomArea(p);
         this.setZoom(nearestZoom(a.zoom * (e.button === 2 ? .5 : 2)), {
@@ -515,7 +518,7 @@ export class Editor {
         if(e.button===0){this.viewport.scrollLeft=area.x*this.app.zoom+7;this.viewport.scrollTop=area.y*this.app.zoom+7;this.requestRender();}
       } else if (a.tool === "shape") {
         if (d.activeLayer.locked) throw new Error("This layer is locked.");
-        this.drag = { type: "shape", start: p, end: p, color, background };
+        this.drag = { type: "shape", start: p, end: p, color, background,replacingSelection };
       }
       this.requestRender();
     } catch (err) {
@@ -523,6 +526,7 @@ export class Editor {
     }
   }
   stroke(a, b) {
+    this.doc.invalidateLayers();
     const drag = this.drag,
       app = this.app,
       layer = this.doc.activeLayer,
@@ -630,16 +634,17 @@ export class Editor {
     const d = this.drag,
       b = d.bounds,
       local = localPoint(b, p.x, p.y),
+      initial=localPoint(b,d.start.x,d.start.y),
       i = d.index,
       affectsX = i !== 1 && i !== 5,
       affectsY = i !== 3 && i !== 7,
       left = [0, 6, 7].includes(i),
       top = [0, 1, 2].includes(i);
     let nw = affectsX
-        ? Math.max(1, left ? b.width - local.x : local.x)
+        ? Math.max(1, b.width+(local.x-initial.x)*(left?-1:1))
         : b.width,
       nh = affectsY
-        ? Math.max(1, top ? b.height - local.y : local.y)
+        ? Math.max(1, b.height+(local.y-initial.y)*(top?-1:1))
         : b.height;
     if (this.app.prefs.aspectLock || shift) {
       const ratio = b.width / b.height;
@@ -693,6 +698,7 @@ export class Editor {
     if (!drag) return;
     this.drag = null;
     const d = this.doc;
+    if(drag.replacingSelection&&['text-box','shape'].includes(drag.type)&&Math.hypot(drag.end.x-drag.start.x,drag.end.y-drag.start.y)<2/this.app.zoom){this.app.changedUI();return;}
     try {
       if (drag.type === "paint") {
         if(drag.tool==='brush' && drag.brush==='round') {const ctx=d.activeLayer.canvas.getContext('2d');softBrushCap(ctx,drag.last,this.app.width,drag.color);}
@@ -824,6 +830,7 @@ export class Editor {
     this.app.changedUI();
   }
   trail(drag, dx, dy) {
+    this.doc.invalidateLayers();
     const targets = this.doc.layers.filter(l => l.objects.some(o => drag.originals.some(original => original.id === o.id)));
     for (const layer of targets) if (!drag.trailLayers.has(layer.id)) {
       this.doc.assertAllocation(this.doc.width * this.doc.height * 4);

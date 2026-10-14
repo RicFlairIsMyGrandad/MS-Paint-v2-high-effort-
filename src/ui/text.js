@@ -43,7 +43,7 @@ export class TextEditor {
     document.addEventListener('pointerdown',event=>{
       if(!event.target.closest('.font-size-combo,#text-size-options'))this.hideSizeMenu();
       if(!this.active||event.target.closest('#text-content,#text-ribbon,#text-size-options,.colors-group,#menu,#modal-root,.tabs'))return;
-      if(event.target.closest('#canvas-stage')&&this.app.editor.handleAt(this.app.editor.point(event)))return;
+      if(event.target.closest('#canvas-stage'))return;
       this.finish(this.app.prefs.selectionMode==='paint');
     },true);
     this.systemFonts=standard;this.populateFonts();
@@ -172,6 +172,6 @@ export class TextEditor {
       if(this.creationBefore&&previous?.sessionOpen&&previous.sessionKey===this.app.sessionKey()){previous.before=before;previous.label='New text box';this.app.updateSession(previous);}
       else this.app.recordTransform(before,this.creationBefore?'New text box':'Edit text');
     }
-    this.creationBefore=null;this.app.tool=this.app.selectionOrigin||'select';this.app.switchTab('home');this.app.changedUI();if(commit&&doc.selectedObjects.length)this.app.finishSelection();
+    this.creationBefore=null;this.app.tool='text';this.app.switchTab('home');this.app.changedUI();if(commit&&doc.selectedObjects.length)this.app.finishSelection();
   }
 }

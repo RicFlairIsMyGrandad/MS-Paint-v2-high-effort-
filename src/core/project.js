@@ -32,6 +32,7 @@ export function serialize(doc) {
     version: 1,
     width: doc.width,
     height: doc.height,
+    color2:doc.color2,
     activeLayerId: doc.activeLayerId,
     selected: doc.selected,
     sources,
@@ -50,6 +51,7 @@ export function serialize(doc) {
 }
 export async function deserialize(text, onChange = () => {}) {
   const p = JSON.parse(text);
+  if(p.color2!==undefined&&!/^#[0-9a-f]{6}$/i.test(p.color2))throw new Error('Invalid layer key colour.');
   if (p.format !== "PaintPlus" || p.version !== 1)
     throw new Error("This is not a supported PaintPlus project.");
   if (
@@ -108,6 +110,7 @@ export async function deserialize(text, onChange = () => {}) {
     }
   }
   const doc = new PaintDocument(p.width, p.height, onChange);
+  doc.color2=p.color2||'#ffffff';
   doc.layers = p.layers.map((l) => {
     if (
       !sources[l.raster] ||

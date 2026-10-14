@@ -11,6 +11,7 @@ Top-level fields:
 | `format` | Literal `PaintPlus` |
 | `version` | Integer `1` |
 | `width`, `height` | Canvas pixel dimensions |
+| `color2` | Optional exact upper-layer key colour; older files default to white |
 | `activeLayerId` | Selected raster layer |
 | `selected` | Floating object IDs that were selected |
 | `sources` | Array of base64 PNG data URLs, deduplicated by source reference |

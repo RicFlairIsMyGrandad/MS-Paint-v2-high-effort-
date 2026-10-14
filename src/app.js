@@ -1,7 +1,7 @@
 import "./ui/styles.css";
 import { layout, labels, tools, button } from "./ui/layout.js";
 import { icon } from "./ui/icons.js";
-import { PaintDocument, createLayer, drawObject, id } from "./core/document.js";
+import { PaintDocument, createLayer, drawObject, drawLayer, id } from "./core/document.js";
 import { canvas, cloneCanvas, bmpBytes, colorKey } from "./core/raster.js";
 import { serialize, deserialize, imageCanvas } from "./core/project.js";
 import { resample } from "./core/resample.js";
@@ -109,7 +109,7 @@ export class PaintPlus {
     this.changedUI();
     window.desktop?.onProject(async (text) => {
       try {
-        this.doc = await deserialize(text, () => this.changedUI());
+        this.doc = await deserialize(text, () => this.changedUI());this.color2=this.doc.color2;this.updateColors();
         this.changedUI();
         this.editor.fit();
       } catch (e) {
@@ -201,6 +201,8 @@ export class PaintPlus {
   }
   changedUI() {
     if (!this.editor) return;
+    this.doc.color2=this.color2;this.doc.invalidateLayers();
+    document.querySelector('#layer-own-assets').checked=this.prefs.assetOwnLayer;
     if (this.doc.history.droppedOperation) {
       this.doc.history.droppedOperation = null;
       this.toast("This operation was too large to keep in undo history.", 7000);
@@ -265,7 +267,7 @@ export class PaintPlus {
       const field = document.querySelector('#canvas-' + key);
       if (document.activeElement !== field) field.value = this.doc[key];
     }
-    document.querySelector('[data-tab=text]').classList.toggle('hidden', this.tool !== 'text' && !this.doc.selectedObjects.some(o => o.type === 'text'));
+    document.querySelector('[data-tab=text]').classList.toggle('hidden', !this.textEditor.active && !this.doc.selectedObjects.some(o => o.type === 'text'));
     document.querySelector('.line-sample').classList.toggle('round-sample', ['pencil','brush'].includes(this.tool));
     this.textEditor?.syncControls();
     this.updateColors();
@@ -297,6 +299,7 @@ export class PaintPlus {
     this.savePrefs();this.changedUI();
   }
   finishSelection() {
+    const tool=this.tool;
     this.textEditor?.finish();
     const previous = this.doc.history.undoStack.at(-1);
     const objects = [...this.doc.selectedObjects];
@@ -306,13 +309,13 @@ export class PaintPlus {
         const committing = layer.objects.filter(o => objects.includes(o));
         if (!committing.length) continue;
         layer.canvas = cloneCanvas(layer.canvas);
-        for (const object of committing) drawObject(layer.canvas.getContext('2d'), object);
+        for (const object of committing) drawObject(layer.canvas.getContext('2d'), object,true,this.doc.layers.indexOf(layer)?this.color2:null);
         layer.objects = layer.objects.filter(o => !committing.includes(o));
       }
       this.doc.selected = [];
     });
     this.coalesceCommit(previous);this.closeObjectSession();
-    this.doc.selected = [];this.tool = this.selectionOrigin || 'select';this.changedUI();
+    this.doc.selected = [];this.tool = tool==='move'?(this.selectionOrigin||'select'):tool;this.changedUI();
   }
   updateShapeStyle(patch = {}, history = true) {
     if (this.editor.pendingShape) this.editor.pendingShape.options = {...this.editor.pendingShape.options, ...patch};
@@ -332,7 +335,8 @@ export class PaintPlus {
   }
   colorChanged(slot = this.activeColor) {
     this.updateColors();this.updateShapeStyle(slot === 1 ? { color: this.color1 } : { background: this.color2 });
-    if (this.doc.selectedObjects.some(o => o.type === 'text')) this.textEditor.changeStyle(slot === 1 ? { textColor: this.color1, bubbleColor: this.color1 } : { background: this.color2 });
+    if(slot===2){this.doc.color2=this.color2;this.doc.changed();}
+    if (this.doc.selectedObjects.some(o => o.type === 'text')) this.textEditor.changeStyle(slot === 1 ? { textColor: this.color1 } : { background: this.color2 });
   }
   deleteLayer(layer = this.doc.activeLayer) {
     if (layer.locked) throw new Error('Unlock this layer before deleting it.');
@@ -358,7 +362,7 @@ export class PaintPlus {
       if(editable.length){this.doc.selected=editable;try{await this.runBusy('Committing floating content…',()=>this.doc.rasterize(resample));}catch(e){this.toast(e.message);}}
     }
     this.tool = tool;
-    if (tool === "text") this.switchTab("text");
+    if (tool === "text") this.switchTab(this.textEditor.active?'text':'home');
     else if (!document.querySelector("#text-ribbon").classList.contains("hidden")) this.switchTab("home");
     this.updateTools();
     this.editor.requestRender();
@@ -527,18 +531,17 @@ export class PaintPlus {
       }
     });
     const list = document.querySelector("#layer-list");
+    document.querySelector('#layer-own-assets').addEventListener('change',event=>{this.prefs.assetOwnLayer=event.target.checked;this.savePrefs();});
     list.addEventListener("click", (e) => {
+      if(e.target.closest('.layer-name-input'))return;
       const row = e.target.closest(".layer-row");
       if (!row) return;
       const layer = this.doc.layers.find((l) => l.id === row.dataset.id);
       this.layerFocused = true;if(!e.target.closest('button'))row.focus();
-      if(this.prefs.selectionMode==='paint'&&this.doc.selectedObjects.length&&e.target.closest('.visibility,.lock-layer'))this.finishSelection();
+      if(this.prefs.selectionMode==='paint'&&this.doc.selectedObjects.length&&e.target.closest('.lock-layer'))this.finishSelection();
       if (e.target.closest(".delete-layer-row")) { try { this.deleteLayer(layer); } catch (error) { this.toast(error.message); } }
       else if (e.target.closest(".visibility"))
-        this.doc.action(
-          "Toggle layer visibility",
-          () => {layer.visible = !layer.visible;if(!layer.visible)this.doc.selected=this.doc.selected.filter(id=>!layer.objects.some(o=>o.id===id));},
-        );
+        this.doc.setLayerVisibility(layer.id,!layer.visible);
       else if (e.target.closest(".lock-layer"))
         this.doc.action("Toggle layer lock", () => {
           layer.locked = !layer.locked;
@@ -558,13 +561,6 @@ export class PaintPlus {
       }
       this.updateLayers();
     });
-    list.addEventListener("dblclick", async (e) => {
-      const row = e.target.closest(".layer-row");
-      if (!row) return;
-      const layer = this.doc.layers.find((l) => l.id === row.dataset.id);
-      const name = await this.prompt("Rename layer", "Layer name", layer.name);
-      if (name) this.doc.action("Rename layer", () => (layer.name = name));
-    });
     list.addEventListener("contextmenu", (e) => {
       e.preventDefault();
       const row = e.target.closest(".layer-row");
@@ -575,8 +571,7 @@ export class PaintPlus {
         {
           label: "Rename layer…",
           icon: "pencil",
-          run: () =>
-            row.dispatchEvent(new MouseEvent("dblclick", { bubbles: true })),
+          run: () => this.renameLayer(row.dataset.id),
         },
         {
           label: "Duplicate layer",
@@ -659,7 +654,7 @@ export class PaintPlus {
       visibility.title=(layer.visible?'Hide':'Show')+' layer';visibility.setAttribute('aria-label',(layer.visible?'Hide ':'Show ')+layer.name);visibility.setAttribute('aria-pressed',String(layer.visible));
       lock.title=(layer.locked?'Unlock':'Lock')+' layer';lock.setAttribute('aria-label',(layer.locked?'Unlock ':'Lock ')+layer.name);
       remove.title='Delete layer';remove.setAttribute('aria-label','Delete '+layer.name);
-      row.querySelector('img').alt=layer.name+' thumbnail';row.querySelector('.layer-name').innerHTML=this.escape(layer.name)+(layer.objects.some(object=>object.group)?'<span class="group-badge">▧</span>':'');
+      row.querySelector('img').alt=layer.name+' thumbnail';if(!row.querySelector('.layer-name-input'))row.querySelector('.layer-name').innerHTML=this.escape(layer.name)+(layer.objects.some(object=>object.group)?'<span class="group-badge">▧</span>':'');
       if(list.children[index]!==row)list.insertBefore(row,list.children[index]||null);
       rows.delete(layer.id);
     });
@@ -676,10 +671,15 @@ export class PaintPlus {
         (42 - b.height * scale) / 2 - b.y * scale,
       );
       ctx.scale(scale, scale);
-      ctx.drawImage(l.canvas, 0, 0);
-      for (const o of l.objects) drawObject(ctx, o);
+      drawLayer(ctx,l,this.doc.layers.indexOf(l)?this.color2:null,this.doc.renderRevision);
       list.querySelector(`[data-id="${l.id}"] img`).src = thumb.toDataURL();
     }
+  }
+  renameLayer(layerId){
+    const layer=this.doc.layers.find(layer=>layer.id===layerId),row=document.querySelector(`#layer-list [data-id="${layerId}"]`);if(!layer||!row)return;
+    const name=row.querySelector('.layer-name'),field=document.createElement('input');field.className='layer-name-input';field.value=layer.name;field.setAttribute('aria-label','Layer name');field.maxLength=200;name.replaceChildren(field);row.draggable=false;
+    let done=false;const finish=save=>{if(done)return;done=true;const value=field.value.trim();field.remove();row.draggable=true;if(save&&value&&value!==layer.name)this.doc.action('Rename layer',()=>{const current=this.doc.layers.find(layer=>layer.id===layerId);if(current)current.name=value;});this.updateLayers();};
+    field.addEventListener('pointerdown',event=>event.stopPropagation());field.addEventListener('keydown',event=>{event.stopPropagation();if(event.key==='Enter'||event.key==='Escape'){event.preventDefault();finish(event.key==='Enter');}});field.addEventListener('blur',()=>finish(true));field.focus();field.select();
   }
   selectionMenu(x,y) {
     const editable=this.selectedEditable();
@@ -1542,7 +1542,7 @@ export class PaintPlus {
       )
         return;
       if (file.name.endsWith(".paintplus"))
-        this.doc = await deserialize(await file.text(), () => this.changedUI());
+        {this.doc = await deserialize(await file.text(), () => this.changedUI());this.color2=this.doc.color2;this.updateColors();}
       else await this.loadImage(await this.fileURL(file));
       this.currentFile = null;
       this.fileName = file.name.replace(/\.[^.]+$/, "");
@@ -1578,8 +1578,9 @@ export class PaintPlus {
       return;
     const file = await window.desktop.open();
     if (!file) return;
-    if (file.project)
-      this.doc = await deserialize(file.project, () => this.changedUI());
+    if (file.project){
+      this.doc = await deserialize(file.project, () => this.changedUI());this.color2=this.doc.color2;this.updateColors();
+    }
     else await this.loadImage(file.url);
     this.currentFile = file.path;
     this.fileName = file.path
@@ -1611,13 +1612,14 @@ export class PaintPlus {
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, out.width, out.height);
     }
-    for (const l of this.doc.layers)
+    for (const [index,l] of this.doc.layers.entries())
       if (l.visible) {
-        ctx.drawImage(l.canvas, 0, 0);
+        ctx.drawImage(index?colorKey(l.canvas,this.color2):l.canvas, 0, 0);
         for (const o of l.objects) {
-          const source = o.transparentColor
+          let source = o.transparentColor
             ? colorKey(o.source, o.transparentColor)
             : o.source;
+          if(index&&o.transparentColor!==this.color2)source=colorKey(source,this.color2);
           const resized = await resample(
             source,
             o.width,
@@ -1629,13 +1631,6 @@ export class PaintPlus {
             source: resized,
             transparentColor: null,
             smoothPreview: true,
-  selectionMode: "paint",
-  growCanvasOnPaste: true,
-  assetsWidth: 280,
-  categoriesHeight: 246,
-  textStyle: {},
-  toolWidths: {},
-  favoriteFonts: [],
           });
         }
       }
@@ -1830,9 +1825,10 @@ export class PaintPlus {
       return;
     }
     this.doc.transaction('Paste image', () => {
-      if (this.prefs.growCanvasOnPaste && (source.width > this.doc.width || source.height > this.doc.height))
-        this.doc.resizeCanvas(Math.max(source.width, this.doc.width), Math.max(source.height, this.doc.height), this.color2);
-      this.doc.insert(source, "Pasted image", this.prefs.assetOwnLayer, { transparentColor: this.prefs.transparentSelection ? this.color2 : null });
+      const x=Math.max(0,Math.ceil((this.editor.viewport.scrollLeft-7)/this.zoom)),y=Math.max(0,Math.ceil((this.editor.viewport.scrollTop-7)/this.zoom));
+      if (this.prefs.growCanvasOnPaste && (x+source.width > this.doc.width || y+source.height > this.doc.height))
+        this.doc.resizeCanvas(Math.max(x+source.width, this.doc.width), Math.max(y+source.height, this.doc.height), this.color2);
+      this.doc.insert(source, "Pasted image", this.prefs.assetOwnLayer, {x,y,transparentColor: this.prefs.transparentSelection ? this.color2 : null });
     });
     this.setTool("move");
     this.changedUI();
@@ -2096,10 +2092,10 @@ export class PaintPlus {
             await this.runBusy("Resizing image…", async () => {
               this.doc.assertAllocation(w * h * (this.doc.layers.length + 2) * 4 + sw * sh * 4 + w * sh * (quality === "nearest" ? 0 : 16) + w * h * 4);
               const layers = [];
-              for (const l of this.doc.layers)
+              for (const [index,l] of this.doc.layers.entries())
                 layers.push({
                   ...l,
-                  canvas: await resample(l.canvas, w, h, quality),
+                  canvas: await resample(index?colorKey(l.canvas,this.color2):l.canvas, w, h, quality),
                   objects: l.objects.map((o) => ({
                     ...o,
                     x: (o.x * w) / sw,

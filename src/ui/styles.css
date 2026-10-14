@@ -1792,7 +1792,7 @@ body.fullscreen .titlebar {
 .font-picker select { width:165px;height:26px;padding:2px 5px;border-radius:2px; }
 #text-font-favorite { width:26px;height:26px;padding:3px; }
 #text-font-favorite.selected svg { fill:#ffcf3e;stroke:#a57618; }
-.inline-text-editor { border:0;outline:1px dashed #087bea!important;resize:none;white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;color:transparent!important;background:transparent;cursor:text; }
+.inline-text-editor { border:0;outline:0!important;resize:none;white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;color:transparent!important;background:transparent;cursor:text; }
 .inline-text-editor span { color:transparent!important; }
 .inline-text-editor ::selection { color:transparent;background:#0080f040; }
 .inline-text-editor:empty:before { content:''; }
@@ -1806,7 +1806,7 @@ body.fullscreen .titlebar {
 .line-sample.round-sample i:first-child { width:var(--circle-size);height:var(--circle-size);border-radius:50%; }
 .line-sample.round-sample i:not(:first-child) { display:none; }
 #brush-cursor { transform:none;box-shadow:none;background:transparent;pointer-events:none;z-index:6;border:1px solid #222; }
-#brush-cursor.eraser-ghost { border-radius:0;box-shadow:0 0 0 1px #fff; }
+#brush-cursor.eraser-ghost { border-radius:0;border:0;outline:1px solid #222;box-shadow:0 0 0 2px #fff;background:var(--ink); }
 #brush-cursor.round-ghost { border-radius:50%;box-shadow:0 0 0 1px #fff8; background:color-mix(in srgb,var(--ink) 16%,transparent); }
 #brush-cursor.round-ghost:after { content:'';position:absolute;left:50%;top:50%;width:1px;height:1px;background:#111;box-shadow:0 0 0 1px #fff;transform:translate(-50%,-50%); }
 
@@ -1828,3 +1828,7 @@ body.fullscreen .titlebar {
 .bubble-shadow-controls { display:flex; gap:14px; margin-top:4px; align-items:center; }
 .bubble-shadow-controls input[type=number] { width:44px; }
 .speech-options .group-label { bottom:2px; }
+
+.layer-own-assets {display:flex;align-items:center;gap:6px;padding:10px 8px;font-size:11px;border-top:1px solid #d8e0ea;}
+.layer-own-assets input {accent-color:#087fff;}
+.layer-name-input {width:100%;min-width:0;padding:3px;font:inherit;border:1px solid #4a91df;background:white;}

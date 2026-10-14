@@ -15,12 +15,12 @@ test('zoom buttons, wheel and slider use only fixed Paint levels and pixelated i
   await expect(page.locator('#display')).toHaveCSS('image-rendering','pixelated');
   const r=await page.locator('#viewport').boundingBox();await page.mouse.move(r.x+80,r.y+80);await page.keyboard.down('Control');await page.mouse.wheel(0,-80);await page.keyboard.up('Control');await expect(page.locator('#zoom-percent')).toHaveText('800%');
 });
-test('screen overlay keeps seven-pixel handles at 100% and 400%, without huge allocations',async({page})=>{
+test('screen overlay keeps compact four-pixel handles at 100% and 400%, without huge allocations',async({page})=>{
   await reset(page);await selection(page);
   const samples=[];for(const zoom of [1,4]){await page.evaluate(z=>{paintplus.editor.setZoom(z);paintplus.editor.viewport.scrollLeft=0;paintplus.editor.viewport.scrollTop=0;paintplus.editor.render();},zoom);await expect(page.locator('#zoom-percent')).toHaveText(zoom*100+'%');
-    samples.push(await page.evaluate(()=>{const canvas=paintplus.editor.overlay,ctx=canvas.getContext('2d'),o=paintplus.doc.selectedObjects[0],z=paintplus.zoom;let n=0;for(let x=Math.round((o.x+o.width/2)*z)-10;x<Math.round((o.x+o.width/2)*z)+10;x++){const d=ctx.getImageData(x,Math.round(o.y*z),1,1).data;if(d[3]===255&&d[0]===255&&d[1]===255)n++;}return{n,width:canvas.width,css:canvas.clientWidth};}));
+    samples.push(await page.evaluate(async()=>{const {selectionFrame}=await import('/src/ui/editor.js');const canvas=paintplus.editor.overlay,ctx=canvas.getContext('2d'),o=paintplus.doc.selectedObjects[0],z=paintplus.zoom,frame=selectionFrame(o,z,paintplus.doc.width,paintplus.doc.height);let n=0;for(let x=Math.round((o.x+o.width/2)*z)-10;x<Math.round((o.x+o.width/2)*z)+10;x++){const d=ctx.getImageData(x,Math.round(frame.y*z),1,1).data;if(d[3]===255&&d[0]===255&&d[1]===255)n++;}return{n,width:canvas.width,css:canvas.clientWidth};}));
   }
-  expect(samples.map(s=>s.n)).toEqual([5,5]);expect(samples[1].width).toBe(samples[1].css);expect(samples[1].width).toBeLessThan(1600);
+  expect(samples.map(s=>s.n)).toEqual([2,2]);expect(samples[1].width).toBe(samples[1].css);expect(samples[1].width).toBeLessThan(1600);
 });
 test('brush main button selects default or last brush and only its arrow opens the menu',async({page})=>{
   await reset(page);await page.locator('.brush-button').click();expect(await page.evaluate(()=>paintplus.brush)).toBe('round');await expect(page.locator('#menu')).toBeHidden();
