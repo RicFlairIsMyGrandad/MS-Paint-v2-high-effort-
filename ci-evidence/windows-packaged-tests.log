@@ -1,0 +1,24 @@
+(node:5780) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+{"time":"2026-10-14T16:44:29.723Z","event":"process-start","version":"1.0.4","platform":"win32","electron":"38.2.0"}
+{"time":"2026-10-14T16:44:29.757Z","event":"resources","dist":"C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω nuAcTM\\installed app with spaces\\resources\\app.asar\\dist","packaged":true}
+{"time":"2026-10-14T16:44:30.695Z","event":"renderer-ready"}
+
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+  assert(availableFonts.length>6)
+
+    at file:///D:/a/MS-Paint-v2-high-effort-/MS-Paint-v2-high-effort-/tools/packaged-qa.mjs:64:65 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

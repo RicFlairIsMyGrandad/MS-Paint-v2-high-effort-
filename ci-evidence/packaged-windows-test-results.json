@@ -1,0 +1,5 @@
+{
+  "error": "The expression evaluated to a falsy value:\n\n  assert(availableFonts.length>6)\n",
+  "stack": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert(availableFonts.length>6)\n\n    at file:///D:/a/MS-Paint-v2-high-effort-/MS-Paint-v2-high-effort-/tools/packaged-qa.mjs:64:65",
+  "log": "{\"time\":\"2026-10-14T16:44:29.723Z\",\"event\":\"process-start\",\"version\":\"1.0.4\",\"platform\":\"win32\",\"electron\":\"38.2.0\"}\n{\"time\":\"2026-10-14T16:44:29.757Z\",\"event\":\"resources\",\"dist\":\"C:\\\\Users\\\\RUNNER~1\\\\AppData\\\\Local\\\\Temp\\\\PaintPlus packaged Ω nuAcTM\\\\installed app with spaces\\\\resources\\\\app.asar\\\\dist\",\"packaged\":true}\n{\"time\":\"2026-10-14T16:44:30.695Z\",\"event\":\"renderer-ready\"}\n"
+}
