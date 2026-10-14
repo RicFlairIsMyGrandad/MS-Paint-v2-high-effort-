@@ -129,7 +129,10 @@ try {
   if (!windows) await writeFile('docs/SpeechExample.paintplus',Buffer.from(await page.evaluate(async()=>[...await paintplus.exportBytes('paintplus')])));
   const log=await readFile(path.join(profile,"startup.log"),"utf8");
   assert(log.includes('"event":"renderer-ready"'));assert(!log.includes('"event":"resource-error"'));assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
+  const catalog=log.trim().split('\n').map(line=>JSON.parse(line)).find(event=>event.event==='font-catalog');
+  assert(catalog?.count>6);assert.equal(catalog.count,availableFonts.length);
   const result={...runtime,version,installationPathHasSpacesAndUnicode:true,firstLaunchReady:true,defaultCanvasDimensions:true,pointerDrawing:true,editableShapes:true,inlineSpeechText:true,richTextFormatting:true,typingPixelsUnchanged:true,fontSizeInputTwoDigits:true,bubbleShadow:true,outsideClickCommits:true,selectionContextMenu:true,color2CutLayer:true,layerVisibilityOneClick:true,bundledFonts:true,systemFontCatalog:true,brandedExecutableIcons:windows,externalCopyPreservesColor2:true,clipboardAlpha:true,savedPNGBytes:true,savedEditableProject:true,...smoke,rendererErrors:errors,externalRequests:external};
+  result.fontCatalogSource=catalog.source;result.fontCatalogCount=catalog.count;
   await writeFile(`docs/packaged-${windows?"windows":"linux"}-test-results.json`,JSON.stringify(result,null,2));
   console.log(JSON.stringify(result));
 } catch(error) {

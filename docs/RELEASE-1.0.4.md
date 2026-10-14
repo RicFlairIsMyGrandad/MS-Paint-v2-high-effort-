@@ -31,3 +31,7 @@ The icon/cursor artwork is an original recreation rather than extracted Microsof
 resources. Text uses Canvas glyph rendering; exact GDI pixels, every brush variant
 and laptop-specific behavior are not claimed identical. Full remaining limitations
 and validation boundaries are in LIMITATIONS.md and TESTING.md.
+
+Windows font discovery shares one cached native request, uses the system
+PowerShell executable, allows slower startup and falls back to machine/user
+font registrations if GDI enumeration fails. Catalog source/count are logged.
