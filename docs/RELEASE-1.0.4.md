@@ -12,7 +12,7 @@ diagnostics, Windows software rendering and bundled offline AI.
 | 6 | Startup, New image and the canvas dimension controls default to 731 × 411 pixels. The example scene retains its own 1200 × 800 dimensions. |
 | 7 | Selection lifting, user-facing erasing, Cut and Delete replace removed pixels with Color 2 on upper layers as well as the base layer. Imported PNG alpha and AI background removal still support transparency. |
 | 8a, 8b | Right-click a selected area to choose Cut, Copy, Delete or Cut into new layer. The last option fills a new full-canvas layer with Color 2 and keeps the cut content in its original position. The operation can be undone/redone. |
-| 9 | Layer-row buttons keep their DOM identity during refreshes. One click toggles visibility, including when a refresh happens between mouse-down and mouse-up. |
+| 9 | Layer-row buttons keep their DOM identity during refreshes. Document changes update layer IDs synchronously before a click can target a stale row. One click toggles visibility, including when a refresh happens between mouse-down and mouse-up. |
 | 10a | Underline thickness uses the supplied sizes: 8/12pt → 1px; 16/20pt → 2px; 24/28pt → 3px; 36pt → 4px; 48pt → 6px. Intermediate sizes scale by points. |
 | 10b | Underlines skip glyph ink with a one-pixel gap around descenders. Letter pixels remain intact. |
 | 10c, 13a | Font size has an editable box and dropdown with Paint's common sizes. Typing multiple digits or a decimal keeps focus in the box; digits never leak into the text. Text range/caret formatting survives returning from the controls. |
