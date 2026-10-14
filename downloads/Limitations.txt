@@ -1,4 +1,4 @@
-# Remaining limitations — 1.0.4
+# Remaining limitations — 1.0.5
 
 These are differences or unverified areas, rather than completed acceptance claims.
 
@@ -26,6 +26,8 @@ These are differences or unverified areas, rather than completed acceptance clai
   pixel-for-pixel comparison with mspaint.exe covers every brush or shape.
   Calligraphy, spray, oil, crayon, marker and watercolor remain approximations.
   Diagonal/curved brush edges and rounded stroke ends can be antialiased.
+- **Layer key colour:** Exact current Color-2 matches on upper rasters and objects reveal lower layers; the bottom canvas is exempt. This also hides intentionally painted matching colours. Choose another Color 2 or use the bottom layer to retain those colours. Changing Color 2 changes this appearance and is stored in projects.
+- **Photo resizing:** Lanczos improves smoothness but is not claimed pixel-identical to Microsoft Word. Previews needing over 192MB of estimated filter buffers fall back to the browser's high-quality sampling; exports still use the worker. Original source pixels remain available while the object is floating.
 - **Selection scope:** Pixel selections lift the active raster layer. They do not
   combine multiple raster layers into one selection. Image and text objects can
   be selected and grouped across layers. Groups do not have Photoshop effects,
