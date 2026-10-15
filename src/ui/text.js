@@ -1,6 +1,6 @@
 import { textSource, textLayout } from '../core/editable.js';
 import { runStyle, runStyleKeys, textRuns, coalesceRuns, formatRuns, fontCSS } from '../core/rich-text.js';
-const defaults = { font: 'Segoe UI', fontSize: 12, fontUnit: 'pt', bold: false, italic: false, underline: false, strikeout: false, opaque: false, bubble: false, bubbleWidth: 3, padding: 12, lineGap: 0, bubbleShadow: false, shadowOffset: 3, tailWidth:18, tailPosition:28, tailTipX:14, tailTipY:24 };
+const defaults = { font: 'Segoe UI', fontSize: 12, fontUnit: 'pt', bold: false, italic: false, underline: false, strikeout: false, opaque: false, bubble: false, bubbleWidth: 3, padding: 12, paddingX: 12, paddingY: 12, backgroundMode: 'color2', background: '#ffffff', lineGap: 0, bubbleShadow: false, shadowOffset: 3, tailWidth:18, tailPosition:28, tailTipX:14, tailTipY:24 };
 const bundled = ['Caveat','Inter','Lora','Merriweather','Pacifico','Roboto Mono'];
 const standard = ['Segoe UI','Arial','Calibri','Cambria','Candara','Consolas','Constantia','Corbel','Georgia','Times New Roman','Verdana','Tahoma','Trebuchet MS','Courier New','Comic Sans MS','Impact','Palatino Linotype','Book Antiqua','Century Gothic','Garamond','Lucida Console','Lucida Sans Unicode'];
 function tailPatch(object,patch) {
@@ -14,6 +14,7 @@ export class TextEditor {
     this.app = app;this.defaults = {...defaults};this.selection={start:0,end:0};
     const saved=app.prefs.textStyle;
     if(saved && typeof saved==='object')for(const key of Object.keys(defaults))if(typeof saved[key]===typeof defaults[key] && (typeof saved[key]!=='number'||Number.isFinite(saved[key])))this.defaults[key]=saved[key];
+    if(saved?.padding!==undefined){if(saved.paddingX===undefined)this.defaults.paddingX=saved.padding;if(saved.paddingY===undefined)this.defaults.paddingY=saved.padding;}
     if(saved?.fontSize && saved.fontUnit!=='pt')this.defaults.fontSize=Math.round(saved.fontSize*72/96*100)/100;
     this.defaults.fontUnit='pt';
     this.node=document.createElement('div');this.node.id='text-content';this.node.contentEditable='true';this.node.setAttribute('role','textbox');this.node.setAttribute('aria-label','Canvas text');this.node.setAttribute('aria-multiline','true');this.node.spellcheck=false;this.node.className='inline-text-editor hidden';app.editor.stage.append(this.node);
@@ -23,13 +24,19 @@ export class TextEditor {
     this.node.addEventListener('paste',event=>{event.preventDefault();this.insertPlainText(event.clipboardData.getData('text/plain'));});
     this.node.addEventListener('keydown',event=>{if(event.key==='Escape'||event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();event.stopPropagation();this.finish();}});
     document.addEventListener('selectionchange',()=>{if(this.active&&this.node.contains(window.getSelection()?.anchorNode)){this.captureSelection();this.syncControls();}});
-    for(const[id,property]of[['text-font','font'],['text-size','fontSize'],['text-bubble-width','bubbleWidth'],['text-padding','padding'],['text-line-gap','lineGap'],['text-shadow-offset','shadowOffset'],['text-tail-width','tailWidth'],['text-tail-position','tailPosition']])document.getElementById(id).addEventListener('input',event=>{
+    for(const[id,property]of[['text-font','font'],['text-size','fontSize'],['text-bubble-width','bubbleWidth'],['text-padding-x','paddingX'],['text-padding-y','paddingY'],['text-line-gap','lineGap'],['text-shadow-offset','shadowOffset'],['text-tail-width','tailWidth'],['text-tail-position','tailPosition']])document.getElementById(id).addEventListener('input',event=>{
       const value=property==='font'?event.target.value:Number(event.target.value);
       if(property!=='font'&&(!event.target.value.trim()||!Number.isFinite(value)))return;
       if(property==='fontSize')this.sizeNavigating=false;
       this.changeStyle({[property]:value});
     });
     for(const[id,property]of[['text-opaque','opaque'],['text-bubble','bubble'],['text-bubble-shadow','bubbleShadow']])document.getElementById(id).addEventListener('change',event=>this.changeStyle({[property]:event.target.checked}));
+    const chooseBackground=()=>this.app.colorDialog(this.properties.background||this.app.color2,value=>this.changeStyle({backgroundMode:'custom',background:value,opaque:true}));
+    document.getElementById('text-background-mode').addEventListener('change',event=>{
+      const mode=event.target.value;if(mode==='custom')chooseBackground();else this.changeStyle({backgroundMode:mode,background:mode==='offwhite'?'#feffff':this.app.color2,opaque:true});
+      this.syncControls();
+    });
+    document.getElementById('text-background-custom').addEventListener('click',chooseBackground);
     this.setupSizeMenu();
     this.node.addEventListener('contextmenu',event=>this.app.editor.contextMenu(event));
     this.node.addEventListener('pointerdown',event=>{
@@ -129,7 +136,7 @@ export class TextEditor {
     const doc=this.app.doc,layer=object?doc.layers.find(layer=>layer.objects.includes(object)):doc.activeLayer;
     if(!layer||layer.locked||!layer.visible){this.app.toast('Show and unlock this layer before editing text.');return;}
     doc.activeLayerId=layer.id;this.creationBefore=object?null:doc.metadata();this.creationDirty=doc.dirty;
-    if(!object){const props={...this.defaults,type:'text',text:'',textRuns:[],x:Math.round(rect.x),y:Math.round(rect.y),width:Math.round(rect.width),textBoxWidth:Math.round(rect.width),minHeight:this.defaults.bubble?1:Math.round(rect.height),textColor:this.app.color1,background:this.app.color2,bubbleColor:this.app.color1,resampling:'nearest'};
+    if(!object){const props={...this.defaults,type:'text',text:'',textRuns:[],x:Math.round(rect.x),y:Math.round(rect.y),width:Math.round(rect.width),textBoxWidth:Math.round(rect.width),minHeight:this.defaults.bubble?1:Math.round(rect.height),textColor:this.app.color1,background:this.defaults.backgroundMode==='offwhite'?'#feffff':this.defaults.backgroundMode==='custom'?this.defaults.background:this.app.color2,bubbleColor:this.app.color1,resampling:'nearest'};
       doc.assertAllocation(rect.width*rect.height*24);const source=textSource(props);props.height=source.height;doc.inTransaction=true;try{object=doc.insert(source,'Text',false,props);}finally{doc.inTransaction=false;}}
     doc.selected=[object.id];this.before=doc.metadata();this.objectId=object.id;this.modified=false;this.app.tool='text';this.node.classList.remove('hidden');this.selection={start:object.text?.length||0,end:object.text?.length||0};
     this.rebuild();this.app.switchTab('text');this.syncControls();this.app.changedUI();this.node.focus();this.restoreSelection(this.selection);
@@ -144,6 +151,7 @@ export class TextEditor {
     if('tailWidth'in patch)patch.tailWidth=Math.max(2,Math.min(160,Math.round(patch.tailWidth||18)));
     if('tailPosition'in patch)patch.tailPosition=Math.max(9,Math.min(16384,Math.round(patch.tailPosition||28)));
     if('shadowOffset'in patch)patch.shadowOffset=Math.max(0,Math.min(100,Math.round(patch.shadowOffset||0)));
+    for(const key of ['paddingX','paddingY'])if(key in patch)patch[key]=Math.max(0,Math.min(100,Math.round(patch[key]||0)));
     if('padding'in patch)patch.padding=Math.max(0,Math.min(100,patch.padding||0));if('lineGap'in patch)patch.lineGap=Math.max(-100,Math.min(200,patch.lineGap||0));if('bubbleWidth'in patch)patch.bubbleWidth=Math.max(1,Math.min(32,patch.bubbleWidth||3));
     Object.assign(this.defaults,tailPatch(this.defaults,patch));this.app.prefs.textStyle={...this.defaults};this.app.savePrefs();
     const inline=Object.keys(patch).some(key=>runStyleKeys.includes(key));
@@ -166,7 +174,8 @@ export class TextEditor {
   }
   syncControls(){const props=this.typingStyle&&this.active&&this.selection.start===this.selection.end?{...this.properties,...this.typingStyle}:this.properties;
     const layout=textLayout(props);
-    for(const[id,key]of[['text-font','font'],['text-size','fontSize'],['text-bubble-width','bubbleWidth'],['text-padding','padding'],['text-line-gap','lineGap'],['text-shadow-offset','shadowOffset'],['text-tail-width','tailWidth'],['text-tail-position','tailPosition']]){const field=document.getElementById(id);if(document.activeElement!==field)field.value=key==='tailWidth'?layout.tail.width:key==='tailPosition'?layout.tail.left:props[key]??defaults[key];}
+    for(const[id,key]of[['text-font','font'],['text-size','fontSize'],['text-bubble-width','bubbleWidth'],['text-padding-x','paddingX'],['text-padding-y','paddingY'],['text-line-gap','lineGap'],['text-shadow-offset','shadowOffset'],['text-tail-width','tailWidth'],['text-tail-position','tailPosition']]){const field=document.getElementById(id);if(document.activeElement!==field)field.value=key==='tailWidth'?layout.tail.width:key==='tailPosition'?layout.tail.left:(key==='paddingX'||key==='paddingY'?props[key]??props.padding??defaults[key]:props[key]??defaults[key]);}
+    document.getElementById('text-background-mode').value=props.backgroundMode||'color2';document.querySelector('#text-background-custom i').style.background=props.background||this.app.color2;
     const tailWidth=document.getElementById('text-tail-width'),tailPosition=document.getElementById('text-tail-position');
     const object=this.object||this.app.doc.selectedObjects.find(object=>object.type==='text'),boxWidth=object?layout.boxWidth:500;
     tailWidth.max=Math.max(2,Math.min(160,boxWidth-20));tailPosition.max=Math.max(9,boxWidth-9-Number(tailWidth.value));
@@ -176,7 +185,7 @@ export class TextEditor {
     const favorite=this.app.prefs.favoriteFonts.includes(props.font),button=document.getElementById('text-font-favorite');button.classList.toggle('selected',favorite);button.setAttribute('aria-pressed',String(favorite));button.title=favorite?'Unpin font':'Pin font to Favorites';
   }
   position(){const object=this.object;if(!object)return;const layout=textLayout(object),zoom=this.app.zoom,angle=(object.angle||0)*Math.PI/180,dx=(layout.bodyX||0)-object.width/2,dy=-object.height/2,x=object.x+object.width/2+dx*Math.cos(angle)-dy*Math.sin(angle),y=object.y+object.height/2+dx*Math.sin(angle)+dy*Math.cos(angle);
-    Object.assign(this.node.style,{left:x*zoom+'px',top:y*zoom+'px',width:layout.boxWidth+'px',height:layout.bodyHeight+'px',padding:layout.padding+'px',font:layout.font,lineHeight:`calc(1.15em + ${Number(object.lineGap)||0}px)`,color:'transparent',caretColor:this.properties.textColor||'#000000',transform:`rotate(${object.angle||0}deg) scale(${zoom})`,transformOrigin:'0 0'});
+    Object.assign(this.node.style,{left:x*zoom+'px',top:y*zoom+'px',width:layout.boxWidth+'px',height:layout.bodyHeight+'px',padding:layout.paddingY+'px '+layout.paddingX+'px',font:layout.font,lineHeight:`calc(1.15em + ${Number(object.lineGap)||0}px)`,color:'transparent',caretColor:this.properties.textColor||'#000000',transform:`rotate(${object.angle||0}deg) scale(${zoom})`,transformOrigin:'0 0'});
   }
   finish(commit=false){if(!this.active)return;this.hideSizeMenu();const doc=this.app.doc,object=this.object;this.objectId=null;this.typingStyle=null;this.typingAnchor=null;this.node.classList.add('hidden');this.node.blur();if(!object)return;
     if(!(object.text||'').trim()){if(this.creationBefore){doc.restore(this.creationBefore);doc.dirty=this.creationDirty;}else{doc.restore(this.before);doc.selected=[object.id];doc.deleteSelected();}}

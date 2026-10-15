@@ -151,8 +151,10 @@ export async function deserialize(text, onChange = () => {}) {
             if (typeof run.text !== 'string' || (run.font !== undefined && (typeof run.font !== 'string' || run.font.length > 100)) || (run.fontSize !== undefined && (!Number.isFinite(run.fontSize) || run.fontSize < 1 || run.fontSize > 512)) || (run.textColor !== undefined && !/^#[0-9a-f]{6}$/i.test(run.textColor))) throw new Error('Invalid rich text style.');
           }
           if(o.tailTipX!==undefined&&(!Number.isFinite(o.tailTipX)||Math.abs(o.tailTipX)>17408))throw new Error('Invalid speech bubble tip.');
+          if(o.backgroundMode!==undefined&&!['color2','offwhite','custom'].includes(o.backgroundMode))throw new Error('Invalid text background mode.');
+          if(o.background!==undefined&&(typeof o.background!=='string'||!/^#[0-9a-f]{6}$/i.test(o.background)))throw new Error('Invalid text background color.');
           if(o.bubbleShadow!==undefined&&typeof o.bubbleShadow!=='boolean')throw new Error('Invalid bubble shadow.');
-          for (const [key, limit] of [['padding',100],['lineGap',200],['bubbleWidth',32],['minHeight',16384],['textBoxWidth',16384],['shadowOffset',100],['tailWidth',160],['tailPosition',16384],['tailTipY',1024]])
+          for (const [key, limit] of [['paddingX',100],['paddingY',100],['padding',100],['lineGap',200],['bubbleWidth',32],['minHeight',16384],['textBoxWidth',16384],['shadowOffset',100],['tailWidth',160],['tailPosition',16384],['tailTipY',1024]])
             if (o[key] !== undefined && (!Number.isFinite(o[key]) || o[key] < (key === 'lineGap' ? -100 : 0) || o[key] > limit)) throw new Error('Invalid text layout.');
         }
         return { ...o, source: sources[o.source] };

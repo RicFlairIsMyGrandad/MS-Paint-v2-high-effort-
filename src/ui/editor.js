@@ -416,15 +416,18 @@ export class Editor {
         return;
       }
       a.layerFocused = false;
-      const existingHandle = this.handleAt(p);
+      const groupRegion=!!this.groupRegionArmed&&['select','free'].includes(a.tool);
+      if(groupRegion){a.finishSelection();d.selected=[];this.groupRegionArmed=false;}
+      const existingHandle = groupRegion?null:this.handleAt(p);
       const replacingSelection=!!d.selectedObjects.length&&!existingHandle&&!e.ctrlKey&&a.prefs.selectionMode==='paint';
       if(replacingSelection)a.finishSelection();
       if(a.textEditor?.active&&!existingHandle)a.textEditor.finish();
       if (["select", "free", "move", "crop"].includes(a.tool) || existingHandle) {
-        let handle = this.handleAt(p);
-        const hit = d.hit(p.x, p.y);
+        let handle = groupRegion?null:this.handleAt(p);
+        const hit = groupRegion?null:d.hit(p.x, p.y);
         if (hit && !handle) {
           d.activeLayerId = hit.layer.id;
+          if(!hit.layer.group)d.editGroupId=null;
           const group = hit.object.group;
           if(hit.layer.group&&!e.ctrlKey&&!e.shiftKey){d.selectLayers(d.layers.filter(layer=>layer.group===hit.layer.group).map(layer=>layer.id));}
           else if (e.ctrlKey || e.shiftKey) {
@@ -487,7 +490,7 @@ export class Editor {
           type: "paint",
           start: p,
           last: p,
-          edit: d.beginRaster(),
+          edit: d.beginLinkedRaster(),
           color,
           background,
           right: e.button === 2,
@@ -496,18 +499,9 @@ export class Editor {
         this.stroke(p, p);
 
       } else if (a.tool === "fill") {
-        const edit = d.beginRaster();
-        edit.capture(0, 0, d.width, d.height);
-        if (
-          floodFill(
-            d.activeLayer.canvas,
-            p.x,
-            p.y,
-            color,
-            a.prefs.fillTolerance,
-          )
-        )
-          edit.commit("Fill");
+        const edit=d.beginLinkedRaster();let changed=false;
+        for(const raster of edit.edits){raster.capture(0,0,d.width,d.height);changed=floodFill(raster.layer.canvas,p.x,p.y,color,a.prefs.fillTolerance)||changed;}
+        if(changed)edit.commit('Fill');
       } else if (a.tool === "dropper") {
         const c = d.composite(a.color2);
         const picked = colorAt(c, p.x, p.y);
@@ -535,33 +529,18 @@ export class Editor {
   }
   stroke(a, b) {
     this.doc.invalidateLayers();
-    const drag = this.drag,
-      app = this.app,
-      layer = this.doc.activeLayer,
-      r = app.width / 2 + 3;
-    drag.edit.capture(
-      Math.min(a.x, b.x) - r,
-      Math.min(a.y, b.y) - r,
-      Math.abs(a.x - b.x) + 2 * r,
-      Math.abs(a.y - b.y) + 2 * r,
-    );
-    const ctx = layer.canvas.getContext("2d");
-    if(app.tool==='brush'&&app.brush==='round'){
-      drag.points||=[a];drag.points.push(b);drag.edit.restoreBefore();paintRoundPath(ctx,drag.points,app.width,drag.color);
-    } else if (app.tool === "eraser" && drag.right) {
-      replaceColorSegment(ctx, a, b, app.color1, app.color2, app.width);
-    } else if (app.tool === 'eraser') {
-      ctx.save();ctx.fillStyle=app.color2;pixelSegment(ctx,a,b,app.width);ctx.restore();
+    const drag=this.drag,app=this.app,r=app.width/2+3;
+    if(app.tool==='brush'&&app.brush==='round'){drag.points||=[a];drag.points.push(b);}
+    for(const edit of drag.edit.edits){
+      edit.capture(Math.min(a.x,b.x)-r,Math.min(a.y,b.y)-r,Math.abs(a.x-b.x)+2*r,Math.abs(a.y-b.y)+2*r);
+      const ctx=edit.layer.canvas.getContext('2d');
+      if(app.tool==='brush'&&app.brush==='round'){edit.restoreBefore();paintRoundPath(ctx,drag.points,app.width,drag.color);}
+      else if(app.tool==='eraser'&&drag.right)replaceColorSegment(ctx,a,b,app.color1,app.color2,app.width);
+      else if(app.tool==='eraser'){ctx.save();ctx.fillStyle=app.color2;pixelSegment(ctx,a,b,app.width);ctx.restore();}
+      else paintSegment(ctx,a,b,{type:app.tool,brush:app.brush,color:drag.color,background:drag.background,width:app.width});
     }
-    else
-      paintSegment(ctx, a, b, {
-        type: app.tool,
-        brush: app.brush,
-        color: drag.color,
-        background: drag.background,
-        width: app.width,
-      });
   }
+
   pointerMove(e) {
     const p = this.point(e);
     this.hover = p;

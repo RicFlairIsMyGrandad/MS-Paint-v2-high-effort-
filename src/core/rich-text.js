@@ -45,8 +45,11 @@ export function formatRuns(runs, start, end, patch) {
   return coalesceRuns(result);
 }
 export function richLayout(object) {
-  const boxWidth = Math.max(object.bubble ? 80 : 30,Math.round(object.textBoxWidth || object.width || 260)), padding = object.bubble ? Math.max(0,Math.min(100,Number(object.padding)||0)) + (Number(object.bubbleWidth)||3) + 2 : 0;
-  const available = Math.max(1,boxWidth-padding*2), context=canvas(1,1).getContext('2d'), base=runStyle(object), runs=textRuns(object), characters=[];
+  const boxWidth = Math.max(object.bubble ? 80 : 30,Math.round(object.textBoxWidth || object.width || 260));
+  const inset=object.bubble?(Number(object.bubbleWidth)||3)+2:0;
+  const pad=key=>object.bubble?Math.max(0,Math.min(100,Number(object[key]??object.padding)||0))+inset:0;
+  const paddingX=pad('paddingX'),paddingY=pad('paddingY'),padding=paddingX;
+  const available = Math.max(1,boxWidth-paddingX*2), context=canvas(1,1).getContext('2d'), base=runStyle(object), runs=textRuns(object), characters=[];
   for(const run of runs) for(const character of Array.from(run.text.replace(/\r\n?/g,'\n'))) characters.push({character,style:run});
   const groups = chars => coalesceRuns(chars.map(item=>({...item.style,text:item.character})));
   const measure = chars => groups(chars).reduce((sum,run)=>{context.font=fontCSS(run);return sum+context.measureText(run.text).width;},0);
@@ -76,24 +79,24 @@ export function richLayout(object) {
       actualDescent=Math.max(actualDescent,actual.actualBoundingBoxDescent||0);pixels=Math.max(pixels,segment.pixels);
     }
     const leading=Math.max(0,pixels*1.15-ascent-descent), gap=Math.max(-100,Math.min(200,Number(object.lineGap)||0));
-    baseline=rows.length?baseline+Math.max(1,previousDescent+ascent+(previousLeading+leading)/2+gap):padding+ascent;
+    baseline=rows.length?baseline+Math.max(1,previousDescent+ascent+(previousLeading+leading)/2+gap):paddingY+ascent;
     const row={segments,baseline:Math.round(baseline),ascent,descent,text:chars.map(item=>item.character).join('')};
     rows.push(row);bottom=Math.max(bottom,row.baseline+actualDescent);
     for(const segment of segments)if(segment.underline)bottom=Math.max(bottom,underlineY(segment,row.baseline)+underlineThickness(segment));
     previousDescent=descent;previousLeading=leading;
   }
-  const bodyHeight=Math.max(1,Math.ceil(bottom+padding+1));
+  const bodyHeight=Math.max(1,Math.ceil(bottom+paddingY+1));
   const tail=tailGeometry(object,boxWidth),tailHeight=tail.tipY;
   const boxHeight=Math.ceil(Math.max(object.minHeight||1,object.bubble?Math.max(18,bodyHeight)+tailHeight+2:bodyHeight)), offset=shadowOffset(object);
   const bodyX=object.bubble?Math.max(0,Math.ceil(-tail.tipX+2)):0,extraRight=object.bubble?Math.max(0,Math.ceil(tail.tipX-boxWidth+2)):0;
   const pixels=base.fontUnit==='pt'?pointsToPixels(Number(base.fontSize)||12):Number(base.fontSize)||20;
-  return {width:boxWidth+bodyX+extraRight+offset,height:boxHeight+offset,boxWidth,boxHeight,bodyX,tail,bodyHeight:object.bubble?boxHeight-tailHeight:boxHeight,padding,rows,lines:rows.map(row=>row.text),font:fontCSS(base),fontSize:pixels,lineHeight:Math.max(1,pixels*1.15+(Number(object.lineGap)||0))};
+  return {width:boxWidth+bodyX+extraRight+offset,height:boxHeight+offset,boxWidth,boxHeight,bodyX,tail,bodyHeight:object.bubble?boxHeight-tailHeight:boxHeight,padding,paddingX,paddingY,rows,lines:rows.map(row=>row.text),font:fontCSS(base),fontSize:pixels,lineHeight:Math.max(1,pixels*1.15+(Number(object.lineGap)||0))};
 }
 export function paintRichText(context,layout) {
   const ink=canvas(layout.width,layout.height),glyphs=ink.getContext('2d'),decorations=[];
   glyphs.textBaseline='alphabetic';
   for(const row of layout.rows) {
-    let x=layout.padding+(layout.bodyX||0);
+    let x=layout.paddingX+(layout.bodyX||0);
     for(const run of row.segments) {
       glyphs.font=run.font;glyphs.fillStyle=run.textColor||'#000000';const left=Math.round(x);
       glyphs.fillText(run.text,left,row.baseline);

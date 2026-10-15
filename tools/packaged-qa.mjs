@@ -5,6 +5,7 @@ import os from "node:os";
 import assert from "node:assert/strict";
 import {paletteChecks} from './palette-packaged-qa.mjs';
 import {precisionChecks} from './precision-packaged-qa.mjs';
+import {linkedChecks} from './linked-packaged-qa.mjs';
 const windows = process.platform === "win32";
 const version=JSON.parse(await readFile('package.json','utf8')).version;
 const original = path.resolve(process.env.PAINTPLUS_TEST_EXECUTABLE || (windows ? "release/win-unpacked/PaintPlus.exe" : "release/linux-unpacked/paintplus"));
@@ -34,7 +35,7 @@ try {
   const box=await page.locator("#overlay").boundingBox();
   await page.mouse.move(box.x+30,box.y+30);await page.mouse.down();await page.mouse.move(box.x+80,box.y+30);await page.mouse.up();
   assert.deepEqual(await page.evaluate(()=>[...paintplus.doc.activeLayer.canvas.getContext("2d").getImageData(50,30,1,1).data]),[24,71,241,255]);
-  const palette=await paletteChecks(page),precision=await precisionChecks(page);
+  const palette=await paletteChecks(page),precision=await precisionChecks(page),linked=await linkedChecks(page);
   // Exercise the revised editor in the installed ASAR, including the native
   // external clipboard path rather than the browser's in-app copy fallback.
   await page.evaluate(()=>{paintplus.width=3;paintplus.editor.createShape('rectangle',{x:140,y:60},{x:240,y:120},{width:3,color:'#000000',background:'#ffffff',outline:'solid',fill:'none'});});
@@ -45,6 +46,9 @@ try {
   await page.locator('#text-content').fill('Editable speech bubble\nInstalled Windows test');
   await page.locator('#text-bubble').check();
   await page.locator('#text-line-gap').fill('5');
+  await page.locator('#text-background-mode').selectOption('offwhite');
+  await page.locator('#text-padding-x').fill('18');await page.locator('#text-padding-y').fill('8');
+  await page.screenshot({path:`docs/screenshots/packaged-${windows?"windows":"linux"}-text.png`});
   await page.locator('[data-action=finish-text]').click();
   assert.deepEqual(await page.evaluate(()=>{const o=paintplus.doc.selectedObjects[0];return[o.type,o.bubble,o.lineGap,o.text];}),['text',true,5,'Editable speech bubble\nInstalled Windows test']);
   await page.evaluate(()=>paintplus.editText(paintplus.doc.selectedObjects[0]));
@@ -130,16 +134,22 @@ try {
   await page.screenshot({path:`docs/screenshots/packaged-${windows?"windows":"linux"}-text.png`});
   await page.locator('[data-action=finish-text]').click();
   if (!windows) await writeFile('docs/SpeechExample.paintplus',Buffer.from(await page.evaluate(async()=>[...await paintplus.exportBytes('paintplus')])));
+  await page.evaluate(()=>paintplus.colorDialog('#ffffff'));
+  await page.screenshot({path:`docs/screenshots/packaged-${windows?"windows":"linux"}-colors.png`});
+  await page.evaluate(()=>paintplus.closeDialog());
   const log=await readFile(path.join(profile,"startup.log"),"utf8");
   assert(log.includes('"event":"renderer-ready"'));assert(!log.includes('"event":"resource-error"'));assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
   const catalog=log.trim().split('\n').map(line=>JSON.parse(line)).find(event=>event.event==='font-catalog');
   assert(catalog?.count>6);assert.equal(catalog.count,availableFonts.length);
   const result={...runtime,version,installationPathHasSpacesAndUnicode:true,firstLaunchReady:true,defaultCanvasDimensions:true,pointerDrawing:true,editableShapes:true,inlineSpeechText:true,richTextFormatting:true,typingPixelsUnchanged:true,fontSizeInputTwoDigits:true,bubbleShadow:true,outsideClickCommits:true,selectionContextMenu:true,color2CutLayer:true,layerVisibilityOneClick:true,bundledFonts:true,systemFontCatalog:true,brandedExecutableIcons:windows,externalCopyPreservesColor2:true,clipboardAlpha:true,savedPNGBytes:true,savedEditableProject:true,...smoke,rendererErrors:errors,externalRequests:external};
   result.fontCatalogSource=catalog.source;result.fontCatalogCount=catalog.count;
-  Object.assign(result,palette,precision);
+  Object.assign(result,palette,precision,linked);
   await writeFile(`docs/packaged-${windows?"windows":"linux"}-test-results.json`,JSON.stringify(result,null,2));
   console.log(JSON.stringify(result));
 } catch(error) {
+  await page.evaluate(()=>paintplus.colorDialog('#ffffff'));
+  await page.screenshot({path:`docs/screenshots/packaged-${windows?"windows":"linux"}-colors.png`});
+  await page.evaluate(()=>paintplus.closeDialog());
   const log=await readFile(path.join(profile,"startup.log"),"utf8").catch(()=>"No startup log.");
   console.error(log);
   await writeFile(`docs/packaged-${windows?"windows":"linux"}-test-results.json`,JSON.stringify({error:error.message,stack:error.stack,log},null,2));

@@ -119,7 +119,7 @@ export class PaintDocument {
     this.onChange = onChange;
     this.dirty = false;
     this.color2='#ffffff';this.renderRevision=0;this.visibilityOverrides=new Map();
-    this.transientSelection=null;this.selectedLayers=[];
+    this.transientSelection=null;this.selectedLayers=[];this.editGroupId=null;
     this.maxWorkingBytes = 512 * 1024 * 1024;
     this.history = new History(() => {
       this.dirty = true;
@@ -148,6 +148,23 @@ export class PaintDocument {
   }
   get selectedObjects() {
     return this.objects.filter((o) => this.selected.includes(o.id));
+  }
+  get editingLayers() {
+    const group=this.layers.some(layer=>layer.group===this.editGroupId)?this.editGroupId:null;
+    return group?this.layers.filter(layer=>layer.group===group&&layer.visible&&!layer.locked):[this.activeLayer];
+  }
+  beginLinkedRaster() {
+    const layers=this.editingLayers;
+    if(layers.some(layer=>layer.locked||!layer.visible))throw new Error('Show and unlock the layer before painting.');
+    // Capture all layers before touching any of them, and retain tile-based undo.
+    this.assertAllocation(layers.length*this.width*this.height*8);
+    const edits=layers.map(layer=>new RasterEdit(layer,this.history,()=>this.changed(),()=>this.layers.find(item=>item.id===layer.id)));
+    return {edits,commit:label=>{
+      const commands=edits.map(edit=>edit.commit(label,false)).filter(Boolean);
+      if(!commands.length)return;
+      this.history.push({label,bytes:commands.reduce((sum,command)=>sum+command.bytes,0),undo:()=>{for(const command of commands)command.undo();},redo:()=>{for(const command of commands)command.redo();}});
+      this.changed();
+    }};
   }
   changed() {
     this.invalidateLayers();
@@ -185,6 +202,7 @@ export class PaintDocument {
       visible:this.visibilityOverrides.has(l.id)?this.visibilityOverrides.get(l.id):l.visible,
       objects: l.objects.map((o) => ({ ...o })),
     }));
+    if(!this.layers.some(layer=>layer.group===this.editGroupId))this.editGroupId=null;
     this.selected=this.selected.filter(id=>this.layers.some(layer=>layer.visible&&layer.objects.some(object=>object.id===id)));
     this.changed();
   }
@@ -231,6 +249,7 @@ export class PaintDocument {
     this.action("New layer", () => {
       layer = createLayer(this.width, this.height, name);
       this.layers.push(layer);
+      this.editGroupId=null;
       this.activeLayerId = layer.id;
     });
     return layer;
@@ -245,6 +264,7 @@ export class PaintDocument {
       if (ownLayer) {
         const l = createLayer(this.width, this.height, name);
         this.layers.push(l);
+        this.editGroupId=null;
         this.activeLayerId = l.id;
       }
       obj = {
@@ -372,45 +392,30 @@ export class PaintDocument {
       h = Math.min(this.height - y, Math.ceil(rect.y + rect.height) - y);
     if (w < 1 || h < 1) return null;
     this.cancelTransientSelection();
-    const l = this.activeLayer;
-    if (l.locked) throw new Error("This layer is locked.");
-    this.assertAllocation(w*h*32+this.width*this.height*4);
+    const targets=this.editingLayers;
+    if(targets.some(layer=>layer.locked||!layer.visible))throw new Error('Show and unlock selected layers before selecting pixels.');
+    this.assertAllocation(targets.length*(w*h*32+this.width*this.height*8));
     const selectionBefore=this.metadata(),selectionDirty=this.dirty;
-    l.canvas=cloneCanvas(l.canvas);
-    const src = canvas(w, h),
-      ctx = src.getContext("2d");
-    const mask = path ? polygonMask(w, h, path, x, y) : null;
-    const before = l.canvas.getContext("2d").getImageData(x, y, w, h), lifted = new Uint8ClampedArray(before.data), erased = new Uint8ClampedArray(before.data);
-    const replacement = [...hexRGB(paintBackground), 255];
-    for (let pixel = 0; pixel < w * h; pixel++) {
-      if (!mask || mask[pixel]) erased.set(replacement, pixel * 4);
-      else lifted[pixel * 4 + 3] = 0;
+    const mask=path?polygonMask(w,h,path,x,y):null,objects=[];
+    for(const l of targets){
+      const flattened=canvas(this.width,this.height);
+      if(this.editGroupId){drawLayer(flattened.getContext('2d'),l,this.layers.indexOf(l)?this.color2:null);l.objects=[];}
+      else flattened.getContext('2d').drawImage(l.canvas,0,0);
+      l.canvas=flattened;
+      const src=canvas(w,h),ctx=src.getContext('2d'),raster=l.canvas.getContext('2d');
+      const before=raster.getImageData(x,y,w,h),lifted=new Uint8ClampedArray(before.data),erased=new Uint8ClampedArray(before.data);
+      const replacement=[...hexRGB(paintBackground),255];
+      for(let pixel=0;pixel<w*h;pixel++)if(!mask||mask[pixel])erased.set(replacement,pixel*4);else lifted[pixel*4+3]=0;
+      const sourceImage=ctx.createImageData(w,h);sourceImage.data.set(lifted);ctx.putImageData(sourceImage,0,0);
+      const erasedImage=raster.createImageData(w,h);erasedImage.data.set(erased);raster.putImageData(erasedImage,x,y);
+      const object={id:id(),name:targets.length>1?l.name+' selection':'Selection',source:src,x,y,width:w,height:h,angle:0,flipH:false,flipV:false,resampling:'lanczos',type:'selection',transparentColor};
+      l.objects.push(object);objects.push(object);
     }
-    const sourceImage = ctx.createImageData(w,h);sourceImage.data.set(lifted);ctx.putImageData(sourceImage,0,0);
-    const erasedImage = l.canvas.getContext('2d').createImageData(w,h);erasedImage.data.set(erased);
-    const erase = () => l.canvas.getContext('2d').putImageData(erasedImage,x,y);
-    let obj;
-    erase();
-    obj = {
-      id: id(),
-      name: "Selection",
-      source: src,
-      x,
-      y,
-      width: w,
-      height: h,
-      angle: 0,
-      flipH: false,
-      flipV: false,
-      resampling: "lanczos",
-      type: "selection",
-      transparentColor,
-    };
-    l.objects.push(obj);
-    this.selected = [obj.id];
+    this.selected=objects.map(object=>object.id);
+    this.selectedLayers=targets.map(layer=>layer.id);
     this.transientSelection={before:selectionBefore,dirty:selectionDirty,ids:[...this.selected],initial:JSON.stringify(this.selectedObjects.map(selectionIdentity))};
     this.invalidateLayers();this.onChange();
-    return obj;
+    return objects[0];
   }
   consumeSelectionBefore(fallback) {
     const pending=this.transientSelection;this.transientSelection=null;
@@ -426,6 +431,8 @@ export class PaintDocument {
   selectLayers(ids) {
     this.cancelTransientSelection();
     const targets=this.layers.filter(layer=>ids.includes(layer.id)&&layer.visible&&!layer.locked);
+    const members=this.layers.filter(layer=>ids.includes(layer.id));
+    this.editGroupId=members.length>1&&members[0].group&&members.every(layer=>layer.group===members[0].group)?members[0].group:null;
     const before=this.metadata(),dirty=this.dirty;
     this.assertAllocation(targets.length*this.width*this.height*8);
     for(const layer of targets) {

@@ -10,6 +10,7 @@ import { Library } from "./ui/library.js";
 import { TextEditor } from "./ui/text.js";
 import { nearestZoom, stepZoom, zoomLevels } from "./core/zoom.js";
 import { refreshEditable } from "./core/editable.js";
+import { editColors } from "./ui/colors.js";
 import { foregroundPixels } from "./core/alpha.js";
 const defaultPrefs = {
   assetsOpen: true,
@@ -45,6 +46,7 @@ const defaultPrefs = {
   textStyle: {},
   toolWidths: {},
   favoriteFonts: [],
+  customColors: [],
 };
 export class PaintPlus {
   constructor() {
@@ -97,6 +99,7 @@ export class PaintPlus {
         ? this.prefs.shortcuts
         : [...defaultPrefs.shortcuts];
     this.prefs.favoriteFonts = Array.isArray(settings.preferences?.favoriteFonts) ? settings.preferences.favoriteFonts.filter(font => typeof font === 'string' && font.length < 100).slice(0,200) : [];
+    this.prefs.customColors = Array.isArray(settings.preferences?.customColors) ? settings.preferences.customColors.filter(color => typeof color === 'string' && /^#[0-9a-f]{6}$/i.test(color)).slice(0,16) : [];
     this.toolWidths = Object.fromEntries(Object.entries(this.prefs.toolWidths || {}).filter(([key,value]) => typeof key === 'string' && Number.isInteger(value) && value >= 1 && value <= 256));
     this.zoom = nearestZoom(this.prefs.zoom);
     document.querySelector("#app").innerHTML = layout();
@@ -346,7 +349,7 @@ export class PaintPlus {
   colorChanged(slot = this.activeColor) {
     this.updateColors();this.updateShapeStyle(slot === 1 ? { color: this.color1 } : { background: this.color2 });
     if(slot===2){this.doc.color2=this.color2;this.doc.changed();}
-    if (this.doc.selectedObjects.some(o => o.type === 'text')) this.textEditor.changeStyle(slot === 1 ? { textColor: this.color1 } : { background: this.color2 });
+    if (this.doc.selectedObjects.some(o => o.type === 'text') && (slot===1 || ['color2',undefined].includes(this.textEditor.properties.backgroundMode))) this.textEditor.changeStyle(slot === 1 ? { textColor: this.color1 } : { background: this.color2 });
   }
   deleteLayer(layer = this.doc.activeLayer) {
     if (layer.locked) throw new Error('Unlock this layer before deleting it.');
@@ -362,7 +365,7 @@ export class PaintPlus {
     if(tool==='move')tool=this.selectionOrigin||'select';
     if (tool === 'transparent') { this.toggleTransparency();return; }
     if (tool !== 'text') this.textEditor?.finish();
-    if (tool === 'select' || tool === 'free') this.selectionOrigin = tool;
+    if (tool === 'select' || tool === 'free') {this.selectionOrigin = tool;if(this.doc.editGroupId){this.finishSelection();this.doc.selected=[];this.editor.groupRegionArmed=true;}}
     this.editor.finishPending();
     if(this.doc.transientSelection&&['brush','pencil','eraser','fill','shape'].includes(tool))this.finishSelection();
     if (this.doc.selectedObjects.some(object => object.draft) && ['brush','pencil','eraser','fill','shape'].includes(tool)) this.finishSelection();
@@ -547,7 +550,7 @@ export class PaintPlus {
     list.addEventListener("click", (e) => {
       if(e.target.closest('.layer-name-input'))return;
       const header=e.target.closest('[data-layer-group]');
-      if(header){this.textEditor.finish();this.doc.selectLayers(this.doc.layers.filter(layer=>layer.group===header.dataset.layerGroup).map(layer=>layer.id));this.tool='select';this.updateLayers();return;}
+      if(header){this.layerFocused=false;this.editor.groupRegionArmed=false;this.textEditor.finish();this.doc.selectLayers(this.doc.layers.filter(layer=>layer.group===header.dataset.layerGroup).map(layer=>layer.id));this.tool='select';this.updateLayers();return;}
       const row = e.target.closest(".layer-row");
       if (!row) return;
       const layer = this.doc.layers.find((l) => l.id === row.dataset.id);
@@ -565,7 +568,7 @@ export class PaintPlus {
             );
         });
       else {
-        this.textEditor.finish();
+        this.editor.groupRegionArmed=false;this.textEditor.finish();
         let ids=[layer.id];
         if(e.shiftKey&&this.layerAnchor){const a=this.doc.layers.findIndex(item=>item.id===this.layerAnchor),b=this.doc.layers.indexOf(layer);ids=this.doc.layers.slice(Math.min(a,b),Math.max(a,b)+1).map(item=>item.id);}
         else if(e.ctrlKey)ids=this.doc.selectedLayers.includes(layer.id)?this.doc.selectedLayers.filter(id=>id!==layer.id):[...this.doc.selectedLayers,layer.id];
@@ -658,6 +661,7 @@ export class PaintPlus {
     const list = document.querySelector("#layer-list");
     if (!list) return;
     const rows=new Map([...list.querySelectorAll('.layer-row')].map(row=>[row.dataset.id,row]));
+    document.querySelector('#layer-group-hint').classList.toggle('hidden',!this.doc.editGroupId);
     const headers=new Map([...list.querySelectorAll('.layer-group-header')].map(header=>[header.dataset.layerGroup,header])),ordered=[],groups=new Set();
     [...this.doc.layers].reverse().forEach((layer,index)=>{
       let row=rows.get(layer.id);
@@ -666,7 +670,7 @@ export class PaintPlus {
         row.innerHTML=`<button class="visibility" draggable="false">${icon("eye",16)}</button><img><span class="layer-name"></span><button class="lock-layer" draggable="false">${icon("lock",15)}</button><button class="delete-layer-row" draggable="false">${icon("trash",15)}</button>`;
       }
       if(layer.group&&!groups.has(layer.group)){
-        groups.add(layer.group);let header=headers.get(layer.group);if(!header){header=document.createElement('button');header.className='layer-group-header';header.dataset.layerGroup=layer.group;header.innerHTML=icon('group',15)+'<span></span>';header.title='Select all layers in this group';}const name=layer.groupName||'Group';if(header.querySelector('span').textContent!==name)header.querySelector('span').textContent=name;header.setAttribute('aria-label','Select '+name);ordered.push(header);headers.delete(layer.group);
+        groups.add(layer.group);let header=headers.get(layer.group);if(!header){header=document.createElement('button');header.className='layer-group-header';header.dataset.layerGroup=layer.group;header.innerHTML=icon('group',15)+'<span></span>';header.title='Edit all group members together · choose Select to select an area across the group';}const name=layer.groupName||'Group';if(header.querySelector('span').textContent!==name)header.querySelector('span').textContent=name;header.setAttribute('aria-label','Select '+name);header.setAttribute('aria-pressed',String(this.doc.editGroupId===layer.group));ordered.push(header);headers.delete(layer.group);
       }
       row.className=`layer-row ${layer.id===this.doc.activeLayerId?'active':''} ${this.doc.selectedLayers.includes(layer.id)?'multi-selected':''} ${layer.group?'grouped-layer':''} ${layer.locked?'locked':''} ${!layer.visible?'hidden-layer':''}`;
       row.setAttribute('aria-selected',String(this.doc.selectedLayers.includes(layer.id)));
@@ -1396,55 +1400,9 @@ export class PaintPlus {
       }
     });
   }
-  colorDialog() {
-    this.dialog(
-      "Edit colors",
-      `<div class="form-row"><label>Color</label><input id="custom-picker" type="color" value="${this.activeColor === 1 ? this.color1 : this.color2}"><input id="custom-hex" value="${this.activeColor === 1 ? this.color1 : this.color2}" maxlength="7" style="width:120px"></div><p>Signature blue is RGB 24, 71, 241 — the last palette color.</p>`,
-      [
-        { label: "Cancel", run: () => this.closeDialog() },
-        {
-          label: "Add color",
-          primary: true,
-          run: () => {
-            const value = document.querySelector("#custom-hex").value;
-            if (!/^#[0-9a-f]{6}$/i.test(value))
-              throw new Error("Enter a hex color such as #1847F1.");
-            if (this.activeColor === 1) this.color1 = value;
-            else this.color2 = value;
-            this.prefs.customColors = [
-              ...new Set([...(this.prefs.customColors || []), value]),
-            ].slice(-16);
-            this.savePrefs();
-            this.updateColors();
-            this.closeDialog();
-          },
-        },
-      ],
-    );
-    document.querySelector("#custom-picker").oninput = (e) =>
-      (document.querySelector("#custom-hex").value = e.target.value);
-    document.querySelector("#custom-hex").oninput = (e) => {
-      if (/^#[0-9a-f]{6}$/i.test(e.target.value))
-        document.querySelector("#custom-picker").value = e.target.value;
-    };
-    if (this.prefs.customColors?.length) {
-      const el = document.createElement("div");
-      el.style.display = "flex";
-      el.innerHTML = this.prefs.customColors
-        .map(
-          (c) =>
-            `<button class="color-chip" data-value="${c}" style="--chip:${c}" title="${c}"></button>`,
-        )
-        .join("");
-      el.onclick = (e) => {
-        const c = e.target.closest("[data-value]");
-        if (c) {
-          document.querySelector("#custom-picker").value = c.dataset.value;
-          document.querySelector("#custom-hex").value = c.dataset.value;
-        }
-      };
-      document.querySelector(".dialog-body").append(el);
-    }
+  colorDialog(initial = this.activeColor === 1 ? this.color1 : this.color2, apply = null) {
+    const slot=this.activeColor;
+    return editColors(this,initial,apply || (value=>{if(slot===1)this.color1=value;else this.color2=value;this.colorChanged(slot);}));
   }
   settingsDialog() {
     const previousTransparency = this.prefs.transparentSelection;
@@ -1800,7 +1758,7 @@ export class PaintPlus {
       );
       const ctx = source.getContext("2d");
       ctx.translate(-b.x, -b.y);
-      for (const o of this.doc.selectedObjects) drawObject(ctx, { ...o, transparentColor: null });
+      for (const layer of this.doc.layers)for(const o of layer.objects)if(this.doc.selected.includes(o.id))drawObject(ctx,o,true,this.doc.layers.indexOf(layer)?this.color2:null);
     } else {
       source = this.doc.composite();
     }

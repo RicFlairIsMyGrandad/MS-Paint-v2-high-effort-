@@ -1,6 +1,6 @@
 {
   "isPackaged": true,
-  "appPath": "/tmp/PaintPlus packaged Ω XkUKwF/installed app with spaces/resources/app.asar",
+  "appPath": "/tmp/PaintPlus packaged Ω f7aGIk/installed app with spaces/resources/app.asar",
   "platform": "linux",
   "gpuStatus": {
     "2d_canvas": "unavailable_software",
@@ -20,7 +20,7 @@
     "webgpu": "disabled_off",
     "webnn": "unavailable_software"
   },
-  "version": "1.0.6",
+  "version": "1.0.7",
   "installationPathHasSpacesAndUnicode": true,
   "firstLaunchReady": true,
   "defaultCanvasDimensions": true,
@@ -45,19 +45,19 @@
   "clipboardOK": true,
   "aiInferenceOK": true,
   "first": {
-    "path": "/tmp/PaintPlus packaged Ω XkUKwF/images/PaintPlus-smoke.png",
+    "path": "/tmp/PaintPlus packaged Ω f7aGIk/images/PaintPlus-smoke.png",
     "name": "PaintPlus-smoke.png"
   },
   "second": {
-    "path": "/tmp/PaintPlus packaged Ω XkUKwF/images/PaintPlus-smoke (2).png",
+    "path": "/tmp/PaintPlus packaged Ω f7aGIk/images/PaintPlus-smoke (2).png",
     "name": "PaintPlus-smoke (2).png"
   },
   "collisionOK": true,
   "project": {
-    "path": "/tmp/PaintPlus packaged Ω XkUKwF/images/PaintPlus-project-smoke.paintplus",
+    "path": "/tmp/PaintPlus packaged Ω f7aGIk/images/PaintPlus-project-smoke.paintplus",
     "name": "PaintPlus-project-smoke.paintplus"
   },
-  "projectBytes": 131091,
+  "projectBytes": 131295,
   "protocol": "paintplus:",
   "aiModel": true,
   "rendererErrors": [],
@@ -86,10 +86,19 @@
   "pixelSnappedRectangles": true,
   "safeMovedSelectionDelete": true,
   "selectionOutsideHistory": true,
-  "blackEraserWithoutHalo": true,
+  "secondaryEraserThinBorder": true,
   "adjustableBubbleTails": true,
   "pointingHandLine": true,
   "pointingHandCurve": true,
   "singleSelectionPaste": true,
-  "crispQuarterTurns": true
+  "crispQuarterTurns": true,
+  "groupDeleteLinked": true,
+  "groupRegionSelection": true,
+  "groupRegionSafeDelete": true,
+  "linkedGroupPaintUndo": true,
+  "separateBubbleBackground": true,
+  "independentBubblePadding": true,
+  "classicEditColors": true,
+  "persistentCustomColorSlots": true,
+  "customBubbleBackground": true
 }

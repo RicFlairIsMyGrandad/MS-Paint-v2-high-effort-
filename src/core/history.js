@@ -93,7 +93,7 @@ export class RasterEdit {
     const context=this.layer.canvas.getContext('2d');
     for(const tile of this.tiles.values())context.putImageData(tile.before,tile.x,tile.y);
   }
-  commit(label = "Draw") {
+  commit(label = "Draw", record = true) {
     const ctx = this.layer.canvas.getContext("2d"),
       tiles = [...this.tiles.values()].map((t) => ({
         ...t,
@@ -110,12 +110,13 @@ export class RasterEdit {
         layer.canvas.getContext("2d").putImageData(t[key], t.x, t.y);
       onChange();
     };
-    this.history.push({
+    const command = {
       label,
       bytes: tiles.reduce((n, t) => n + t.before.data.byteLength * 2, 0),
       undo: () => apply("before"),
       redo: () => apply("after"),
-    });
-    this.onChange();
+    };
+    if(record){this.history.push(command);this.onChange();}
+    return command;
   }
 }

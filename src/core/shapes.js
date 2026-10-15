@@ -217,5 +217,10 @@ export function drawPointingLine(context,name,a,b,options) {
   if(Math.hypot(tangent.x,tangent.y)<.001){const near=sample(.98);tangent={x:b.x-near.x,y:b.y-near.y};}
   context.translate(b.x,b.y);context.rotate(Math.atan2(tangent.y,tangent.x));
   const scale=Math.max(.65,Math.min(5,options.width/3));context.scale(scale,scale);context.fillStyle='#000000';
-  context.beginPath();context.moveTo(1,-1);context.quadraticCurveTo(2,-3,-.5,-3);context.lineTo(-6,-3);context.quadraticCurveTo(-9,-4,-10,-1);context.quadraticCurveTo(-13,3,-9,4);context.quadraticCurveTo(-5,5,-4,1);context.lineTo(0,1);context.quadraticCurveTo(2,1,1,-1);context.closePath();context.fill();context.restore();
+  // The finger lies along the shaft; the small rounded palm hangs below it.
+  context.beginPath();context.moveTo(-9,-1.5);context.lineTo(1,-1.5);
+  context.quadraticCurveTo(2.5,-1.5,2.5,0);context.quadraticCurveTo(2.5,1.5,1,1.5);
+  context.lineTo(-5,1.5);context.quadraticCurveTo(-5,5,-8,5);
+  context.quadraticCurveTo(-12,5,-12,2);context.quadraticCurveTo(-12,-1,-9,-1.5);
+  context.closePath();context.fill();context.restore();
 }
