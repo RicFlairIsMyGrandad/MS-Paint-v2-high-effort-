@@ -821,13 +821,12 @@ export class PaintPlus {
     };
     this.modalCleanup = options.cleanup || null;
     this.modalCancel = close;
-    setTimeout(
-      () =>
-        root
-          .querySelector("input:not([type=checkbox]),textarea,select")
-          ?.focus(),
-      30,
-    );
+    setTimeout(() => {
+      // Initial focus must not override a field or slider the user already chose,
+      // nor reach into a different dialog opened before this timer completes.
+      if (el.isConnected && !el.contains(document.activeElement))
+        el.querySelector("input:not([type=checkbox]),textarea,select")?.focus();
+    }, 30);
     return el;
   }
   closeDialog() {
