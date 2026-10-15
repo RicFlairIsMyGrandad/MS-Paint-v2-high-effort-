@@ -1,0 +1,5 @@
+{
+  "error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ '#c85659'\n- '#c8784d'\n      ^\n",
+  "stack": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ '#c85659'\n- '#c8784d'\n      ^\n\n    at alphaChecks (file:///D:/a/MS-Paint-v2-high-effort-/MS-Paint-v2-high-effort-/tools/alpha-packaged-qa.mjs:11:136)\n    at async file:///D:/a/MS-Paint-v2-high-effort-/MS-Paint-v2-high-effort-/tools/packaged-qa.mjs:39:119",
+  "log": "{\"time\":\"2026-10-15T20:06:09.133Z\",\"event\":\"process-start\",\"version\":\"1.0.8\",\"platform\":\"win32\",\"electron\":\"38.2.0\"}\n{\"time\":\"2026-10-15T20:06:09.166Z\",\"event\":\"resources\",\"dist\":\"C:\\\\Users\\\\RUNNER~1\\\\AppData\\\\Local\\\\Temp\\\\PaintPlus packaged Ω BSaLIv\\\\installed app with spaces\\\\resources\\\\app.asar\\\\dist\",\"packaged\":true}\n{\"time\":\"2026-10-15T20:06:09.811Z\",\"event\":\"renderer-ready\"}\n"
+}
