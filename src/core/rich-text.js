@@ -1,5 +1,5 @@
 import { canvas } from './raster.js';
-import { bubbleGeometry } from './shapes.js';
+import { bubbleGeometry, tailGeometry } from './shapes.js';
 export const runStyleKeys = ['font','fontSize','fontUnit','bold','italic','underline','strikeout','textColor'];
 export const pointsToPixels = value => value * 96 / 72;
 export const shadowOffset = object => object.bubble && object.bubbleShadow ? Math.max(0, Math.min(100, Math.round(Number(object.shadowOffset) || 0))) : 0;
@@ -83,15 +83,17 @@ export function richLayout(object) {
     previousDescent=descent;previousLeading=leading;
   }
   const bodyHeight=Math.max(1,Math.ceil(bottom+padding+1));
-  const boxHeight=Math.ceil(Math.max(object.minHeight||1,object.bubble?Math.max(18,bodyHeight)+bubbleGeometry.tailHeight+2:bodyHeight)), offset=shadowOffset(object);
+  const tail=tailGeometry(object,boxWidth),tailHeight=tail.tipY;
+  const boxHeight=Math.ceil(Math.max(object.minHeight||1,object.bubble?Math.max(18,bodyHeight)+tailHeight+2:bodyHeight)), offset=shadowOffset(object);
+  const bodyX=object.bubble?Math.max(0,Math.ceil(-tail.tipX+2)):0,extraRight=object.bubble?Math.max(0,Math.ceil(tail.tipX-boxWidth+2)):0;
   const pixels=base.fontUnit==='pt'?pointsToPixels(Number(base.fontSize)||12):Number(base.fontSize)||20;
-  return {width:boxWidth+offset,height:boxHeight+offset,boxWidth,boxHeight,bodyHeight:object.bubble?boxHeight-bubbleGeometry.tailHeight:boxHeight,padding,rows,lines:rows.map(row=>row.text),font:fontCSS(base),fontSize:pixels,lineHeight:Math.max(1,pixels*1.15+(Number(object.lineGap)||0))};
+  return {width:boxWidth+bodyX+extraRight+offset,height:boxHeight+offset,boxWidth,boxHeight,bodyX,tail,bodyHeight:object.bubble?boxHeight-tailHeight:boxHeight,padding,rows,lines:rows.map(row=>row.text),font:fontCSS(base),fontSize:pixels,lineHeight:Math.max(1,pixels*1.15+(Number(object.lineGap)||0))};
 }
 export function paintRichText(context,layout) {
   const ink=canvas(layout.width,layout.height),glyphs=ink.getContext('2d'),decorations=[];
   glyphs.textBaseline='alphabetic';
   for(const row of layout.rows) {
-    let x=layout.padding;
+    let x=layout.padding+(layout.bodyX||0);
     for(const run of row.segments) {
       glyphs.font=run.font;glyphs.fillStyle=run.textColor||'#000000';const left=Math.round(x);
       glyphs.fillText(run.text,left,row.baseline);

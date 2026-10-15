@@ -32,6 +32,7 @@ export class History {
     this.onChange();
   }
   undo() {
+    this.beforeNavigate?.();
     const c = this.undoStack.pop();
     if (!c) return false;
     c.undo();
@@ -41,6 +42,7 @@ export class History {
     return true;
   }
   redo() {
+    this.beforeNavigate?.();
     const c = this.redoStack.pop();
     if (!c) return false;
     c.redo();
@@ -86,6 +88,10 @@ export class RasterEdit {
             ),
           });
       }
+  }
+  restoreBefore() {
+    const context=this.layer.canvas.getContext('2d');
+    for(const tile of this.tiles.values())context.putImageData(tile.before,tile.x,tile.y);
   }
   commit(label = "Draw") {
     const ctx = this.layer.canvas.getContext("2d"),

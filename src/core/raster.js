@@ -310,3 +310,13 @@ export function polygonMask(width, height, points, offsetX = 0, offsetY = 0) {
   }
   return mask;
 }
+
+export function paintRoundPath(context,points,width,color) {
+  if(!points.length)return;
+  const size=Math.max(1,Math.round(width)),align=value=>Math.floor(value)+(size%2?.5:0),path=[];
+  for(const point of points){const next={x:align(point.x),y:align(point.y)},last=path.at(-1);if(last&&last.x===next.x&&last.y===next.y)continue;const previous=path.at(-2);if(previous&&(last.x-previous.x)*(next.y-last.y)===(last.y-previous.y)*(next.x-last.x)&&(last.x-previous.x)*(next.x-last.x)+(last.y-previous.y)*(next.y-last.y)>=0)path.pop();path.push(next);}
+  context.save();context.strokeStyle=color;context.fillStyle=color;context.lineWidth=size;context.lineCap='round';context.lineJoin='round';
+  context.beginPath();context.moveTo(path[0].x,path[0].y);for(const point of path.slice(1))context.lineTo(point.x,point.y);
+  if(path.every(point=>point.x===path[0].x&&point.y===path[0].y)){context.arc(path[0].x,path[0].y,size/2,0,Math.PI*2);context.fill();}else context.stroke();
+  context.restore();
+}

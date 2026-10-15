@@ -4,12 +4,13 @@ import {
   localPoint,
   hitObject,
   drawLayer,
+  snapQuarterTurn,
 } from "../core/document.js";
-import { paintSegment, replaceColorSegment, floodFill, colorAt, canvas, stampBounds, pixelSegment, softBrushCap, polygonMask, maskBoundary } from "../core/raster.js";
+import { paintSegment, replaceColorSegment, floodFill, colorAt, canvas, stampBounds, pixelSegment, softBrushCap, paintRoundPath, polygonMask, maskBoundary } from "../core/raster.js";
 import { drawShape } from "../core/shapes.js";
 import { toolIconBody } from "./icons.js";
 import { zoomLevels, nearestZoom, stepZoom, fitZoom } from "../core/zoom.js";
-import { shapeProperties, shapeSource, refreshEditable, resizeTextBox } from "../core/editable.js";
+import { shapeProperties, shapeSource, refreshEditable, resizeTextBox, textLayout } from "../core/editable.js";
 const cursorSVG = (body, x=2,y=22) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'>${body}</svg>`)}") ${x} ${y}, crosshair`;
 const cross = cursorSVG("<path d='M14 2v24M2 14h24' stroke='white' stroke-width='3'/><path d='M14 2v24M2 14h24' stroke='#333' stroke-width='1'/><circle cx='14' cy='14' r='4' fill='white' stroke='#777'/><path d='M14 11v6M11 14h6' stroke='#777'/>",14,14);
 export const cursors = {
@@ -190,7 +191,7 @@ export class Editor {
       over.stroke();
       over.restore();
     }
-    if (this.drag?.type === 'shape') this.drawShapePreview(over,this.app.shape,this.drag.start,this.drag.end,{width:this.app.width,color:this.drag.color,background:this.drag.background,outline:this.app.outline,fill:this.app.shapeFill});
+    if (this.drag?.type === 'shape') this.drawShapePreview(over,this.app.shape,this.drag.start,this.drag.end,{width:this.app.width,color:this.drag.color,background:this.drag.background,outline:this.app.outline,fill:this.app.shapeFill,handWobble:this.app.prefs.handWobble});
     if (this.pendingShape) { const shape=this.pendingShape;this.drawShapePreview(over,shape.name,shape.start,shape.end,{...shape.options,controls:shape.controls,points:shape.points}); }
     if (this.app.tool==='zoom' && this.hover) {
       const area=this.zoomArea(this.hover);over.save();over.lineWidth=1/z;over.strokeStyle='#fff';over.strokeRect(area.x,area.y,area.width,area.height);over.strokeStyle='#29394c';over.setLineDash([5/z,3/z]);over.strokeRect(area.x,area.y,area.width,area.height);over.restore();
@@ -215,6 +216,9 @@ export class Editor {
     const bounds = selectionBounds(selected);
     if (bounds && this.drag?.type!=='move') {
       this.drawSelection(over, bounds);
+      if(selected.length===1&&selected[0].type==='text'&&selected[0].bubble){
+        const tip=this.tailPoint(selected[0]),s=4/z;over.save();over.translate(tip.x,tip.y);over.rotate(Math.PI/4);over.fillStyle='#fff';over.strokeStyle='#0078ff';over.lineWidth=1/z;over.fillRect(-s,-s,2*s,2*s);over.strokeRect(-s,-s,2*s,2*s);over.restore();
+      }
       if (selected.length > 1)
         for (const o of selected) this.drawOutline(over, o, "#0078ed80");
     }
@@ -319,7 +323,10 @@ export class Editor {
     ctx.fill();
     ctx.restore();
   }
+  tailPoint(object) {const layout=textLayout(object);return worldPoint(object,layout.bodyX+layout.tail.tipX,layout.bodyHeight+layout.tail.tipY-((Number(object.bubbleWidth)||3)/2+1));}
   handleAt(p) {
+    const selected=this.doc.selectedObjects;
+    if(selected.length===1&&selected[0].type==='text'&&selected[0].bubble){const tip=this.tailPoint(selected[0]);if(Math.hypot(p.x-tip.x,p.y-tip.y)<8/this.app.zoom)return {type:'tail',bounds:selected[0]};}
     const bounds = selectionBounds(this.doc.selectedObjects);
     if (!bounds) return null;
     const frame=selectionFrame(bounds,this.app.zoom,this.doc.width,this.doc.height),rotation = this.rotationHandle(frame).point;
@@ -348,7 +355,7 @@ export class Editor {
       const h = this.handleAt(p);
       if (h) {
         cursor =
-          h.type === "rotate"
+          h.type === 'tail' ? 'crosshair' : h.type === "rotate"
             ? "grab"
             : h.type === "move"
               ? "move"
@@ -397,7 +404,7 @@ export class Editor {
     try {
       if (a.tool === "shape" && this.pendingShape) {
         const s = this.pendingShape;
-        if (s.name === "curve") {
+        if (['curve','handCurve'].includes(s.name)) {
           s.controls[s.phase] = p;
           this.drag = { type: "curve-bend", start: p, end: p };
         } else {
@@ -419,7 +426,8 @@ export class Editor {
         if (hit && !handle) {
           d.activeLayerId = hit.layer.id;
           const group = hit.object.group;
-          if (e.ctrlKey || e.shiftKey) {
+          if(hit.layer.group&&!e.ctrlKey&&!e.shiftKey){d.selectLayers(d.layers.filter(layer=>layer.group===hit.layer.group).map(layer=>layer.id));}
+          else if (e.ctrlKey || e.shiftKey) {
             d.selected = d.selected.includes(hit.object.id)
               ? d.selected.filter((id) => id !== hit.object.id)
               : [...d.selected, hit.object.id];
@@ -466,8 +474,8 @@ export class Editor {
         this.selectionRect = null;
         this.drag = {
           type: "selection",
-          start: p,
-          end: p,
+          start: {x:Math.round(p.x),y:Math.round(p.y)},
+          end: {x:Math.round(p.x),y:Math.round(p.y)},
           path: [{x:Math.floor(p.x),y:Math.floor(p.y)}],
           free: a.tool === "free",
         };
@@ -486,7 +494,7 @@ export class Editor {
           initialWidth: a.width, brush: a.brush, tool: a.tool,
         };
         this.stroke(p, p);
-        if(a.tool==='brush'&&a.brush==='round')softBrushCap(d.activeLayer.canvas.getContext('2d'),p,a.width,color);
+
       } else if (a.tool === "fill") {
         const edit = d.beginRaster();
         edit.capture(0, 0, d.width, d.height);
@@ -538,7 +546,9 @@ export class Editor {
       Math.abs(a.y - b.y) + 2 * r,
     );
     const ctx = layer.canvas.getContext("2d");
-    if (app.tool === "eraser" && drag.right) {
+    if(app.tool==='brush'&&app.brush==='round'){
+      drag.points||=[a];drag.points.push(b);drag.edit.restoreBefore();paintRoundPath(ctx,drag.points,app.width,drag.color);
+    } else if (app.tool === "eraser" && drag.right) {
       replaceColorSegment(ctx, a, b, app.color1, app.color2, app.width);
     } else if (app.tool === 'eraser') {
       ctx.save();ctx.fillStyle=app.color2;pixelSegment(ctx,a,b,app.width);ctx.restore();
@@ -580,7 +590,7 @@ export class Editor {
     } else if (drag.type === "shape") {
       let end = p;
       if (e.shiftKey) {
-        if (["line", "curve"].includes(this.app.shape))
+        if (["line", "curve", "handLine", "handCurve"].includes(this.app.shape))
           end = constrain(drag.start, p);
         else {
           const s = Math.max(
@@ -597,8 +607,15 @@ export class Editor {
     } else if (drag.type === 'text-box') {
       drag.end = p;
     } else if (drag.type === "selection") {
-      drag.end = p;
+      drag.end = drag.free?p:{x:Math.round(p.x),y:Math.round(p.y)};
       if(drag.free){const point={x:Math.floor(p.x),y:Math.floor(p.y)},last=drag.path.at(-1);if(point.x!==last.x||point.y!==last.y)drag.path.push(point);}
+    } else if(drag.type==='tail') {
+      const original=drag.originals[0],object=this.doc.objects.find(object=>object.id===original.id),layout=textLayout(original),local=localPoint(original,p.x,p.y),anchor=worldPoint(original,layout.bodyX,0);
+      const candidate={...original,tailWidth:original.tailWidth??30,tailPosition:original.tailPosition??40,tailTipX:Math.max(-1024,Math.min(layout.boxWidth+1024,Math.round(local.x-layout.bodyX))),tailTipY:Math.max(4,Math.min(1024,Math.round(local.y-layout.bodyHeight+((Number(original.bubbleWidth)||3)/2+1))))};
+      refreshEditable(candidate);this.doc.assertAllocation(candidate.width*candidate.height*24);
+      const next=textLayout(candidate),angle=(candidate.angle||0)*Math.PI/180,dx=next.bodyX-candidate.width/2,dy=-candidate.height/2;
+      candidate.x=anchor.x-candidate.width/2-dx*Math.cos(angle)+dy*Math.sin(angle);candidate.y=anchor.y-candidate.height/2-dx*Math.sin(angle)-dy*Math.cos(angle);
+      Object.assign(object,candidate);if(this.app.textEditor.active)this.app.textEditor.modified=true;
     } else if (drag.type === "move") {
       const dx = Math.round(p.x - drag.start.x), dy = Math.round(p.y - drag.start.y);
       if (e.shiftKey) this.trail(drag, dx, dy);
@@ -669,7 +686,7 @@ export class Editor {
       ny = newCy - nh / 2;
     if (d.originals.length === 1) {
       const o = this.doc.objects.find((o) => o.id === d.originals[0].id);
-      const candidate = { ...o, x: Math.round(nx), y: Math.round(ny), width: Math.round(nw), height: Math.round(nh) };
+      const candidate = { ...o, x: Math.round(nx), y: Math.round(ny), width: Math.round(nw), height: Math.round(nh),pixelSnapX:0,pixelSnapY:0 };
       if (o.type === 'text') {resizeTextBox(candidate,nw,nh);}
       if (o.type === 'shape') {
         this.doc.assertAllocation(Math.ceil(nw) * Math.ceil(nh) * 12);
@@ -701,7 +718,7 @@ export class Editor {
     if(drag.replacingSelection&&['text-box','shape'].includes(drag.type)&&Math.hypot(drag.end.x-drag.start.x,drag.end.y-drag.start.y)<2/this.app.zoom){this.app.changedUI();return;}
     try {
       if (drag.type === "paint") {
-        if(drag.tool==='brush' && drag.brush==='round') {const ctx=d.activeLayer.canvas.getContext('2d');softBrushCap(ctx,drag.last,this.app.width,drag.color);}
+
         drag.edit.commit(
           this.app.tool === "eraser"
             ? "Erase"
@@ -715,7 +732,7 @@ export class Editor {
         if (this.pendingShape.phase >= 2) this.finishPending();
       } else if (
         drag.type === "shape" &&
-        ["curve", "polygon"].includes(this.app.shape)
+        ["curve", "handCurve", "polygon"].includes(this.app.shape)
       ) {
         this.pendingShape = {
           ...drag,
@@ -728,9 +745,10 @@ export class Editor {
             background: drag.background,
             outline: this.app.outline,
             fill: this.app.shapeFill,
+            handWobble:this.app.prefs.handWobble,
           },
         };
-        if (this.app.shape === "curve") {
+        if (["curve","handCurve"].includes(this.app.shape)) {
           this.pendingShape.controls = [
             {
               x: drag.start.x + (drag.end.x - drag.start.x) / 3,
@@ -754,7 +772,7 @@ export class Editor {
         const rect = this.rect(drag.start, drag.end);
         this.app.textEditor.begin(null, { x: rect.x, y: rect.y, width: Math.max(120, rect.width), height: Math.max(50, rect.height) });
       } else if (drag.type === "shape") {
-        this.createShape(this.app.shape, drag.start, drag.end, { width: this.app.width, color: drag.color, background: drag.background, outline: this.app.outline, fill: this.app.shapeFill });
+        this.createShape(this.app.shape, drag.start, drag.end, { width: this.app.width, color: drag.color, background: drag.background, outline: this.app.outline, fill: this.app.shapeFill,handWobble:this.app.prefs.handWobble });
       } else if (drag.type === "selection") {
         let rect = this.rect(drag.start, drag.end);
         if (drag.free) {
@@ -767,7 +785,7 @@ export class Editor {
             height: Math.max(...ys) - Math.min(...ys),
           };
         }
-        if (rect.width > 1 && rect.height > 1) {
+        if (rect.width >= 1 && rect.height >= 1) {
           if (this.app.tool === "crop") {
             this.selectionRect = rect;
           } else {
@@ -782,7 +800,10 @@ export class Editor {
             this.app.updateTools();
           }
         }
+      } else if (drag.type==='tail') {
+        if(this.doc.selectedObjects[0]?.source!==drag.originals[0].source)this.app.recordTransform(drag.before,'Aim speech bubble tail');
       } else if (["move", "resize", "rotate"].includes(drag.type)) {
+        if(drag.type==='rotate')for(const object of d.selectedObjects)snapQuarterTurn(object);
         const after = d.metadata();
         if (drag.trailLayers?.size ||
           JSON.stringify(
@@ -923,51 +944,23 @@ export class Editor {
     this.viewport.scrollTop = 0;
   }
   drawRulers() {
-    const z = this.app.zoom,
-      v = this.viewport;
-    for (const [id, vertical] of [
-      ["ruler-x", false],
-      ["ruler-y", true],
-    ]) {
-      const c = document.getElementById(id),
-        len = vertical ? v.clientHeight : v.clientWidth;
-      if (!len) continue;
-      if (c.width !== (vertical ? 24 : len)) c.width = vertical ? 24 : len;
-      if (c.height !== (vertical ? len : 24)) c.height = vertical ? len : 24;
-      const ctx = c.getContext("2d");
-      ctx.fillStyle = "#f9fafc";
-      ctx.fillRect(0, 0, c.width, c.height);
-      ctx.font = "11px Segoe UI, Arial";
-      ctx.fillStyle = "#365b87";
-      ctx.strokeStyle = "#a4b4c9";
-      ctx.lineWidth = 1;
-      const offset = (vertical ? v.scrollTop : v.scrollLeft) - 7,
-        major = z < 0.3 ? 500 : z < 0.7 ? 200 : z < 1.5 ? 100 : z < 3 ? 50 : 20,
-        step = major / 10,
-        start = Math.floor(offset / z / step) * step;
-      for (let n = start; n * z - offset < len; n += step) {
-        const p = Math.round(n * z - offset) + 0.5;
-        if (p < 0) continue;
-        const big = Math.abs(n % major) < 0.001,
-          medium = Math.abs(n % (major / 2)) < 0.001;
-        ctx.beginPath();
-        if (vertical) {
-          ctx.moveTo(24 - (big ? 10 : medium ? 6 : 3), p);
-          ctx.lineTo(24, p);
-        } else {
-          ctx.moveTo(p, 24 - (big ? 10 : medium ? 6 : 3));
-          ctx.lineTo(p, 24);
-        }
-        ctx.stroke();
-        if (big && n >= 0) {
-          ctx.save();
-          if (vertical) {
-            ctx.translate(10, p + 3);
-            ctx.rotate(-Math.PI / 2);
-            ctx.fillText(n, 0, 0);
-          } else ctx.fillText(n, p + 2, 12);
-          ctx.restore();
-        }
+    const zoom=this.app.zoom,ratio=window.devicePixelRatio||1,display=this.display.getBoundingClientRect();
+    for(const [id,vertical]of [['ruler-x',false],['ruler-y',true]]) {
+      const canvas=document.getElementById(id),length=vertical?this.viewport.clientHeight:this.viewport.clientWidth;
+      if(!length)continue;
+      const width=vertical?24:length,height=vertical?length:24;
+      canvas.style.width=width+'px';canvas.style.height=height+'px';
+      canvas.width=Math.round(width*ratio);canvas.height=Math.round(height*ratio);
+      const context=canvas.getContext('2d'),bounds=canvas.getBoundingClientRect(),origin=vertical?display.top-bounds.top:display.left-bounds.left;
+      context.setTransform(ratio,0,0,ratio,0,0);context.fillStyle='#f9fafc';context.fillRect(0,0,width,height);
+      context.font='11px Segoe UI, Arial';context.fillStyle='#365b87';context.strokeStyle='#a4b4c9';context.lineWidth=1/ratio;
+      const major=zoom<.3?500:zoom<.7?200:zoom<1.5?100:zoom<3?50:20,step=major/10,start=Math.max(0,Math.floor(-origin/zoom/step)*step);
+      for(let value=start;value*zoom+origin<length;value+=step) {
+        const position=(Math.round((value*zoom+origin)*ratio)+.5)/ratio;
+        if(position<0)continue;
+        const big=value%major===0,medium=value%(major/2)===0,depth=big?10:medium?6:3;
+        context.beginPath();if(vertical){context.moveTo(24-depth,position);context.lineTo(24,position);}else{context.moveTo(position,24-depth);context.lineTo(position,24);}context.stroke();
+        if(big){context.save();if(vertical){context.translate(10,position+3);context.rotate(-Math.PI/2);context.fillText(value,0,0);}else context.fillText(value,position+2,12);context.restore();}
       }
     }
   }

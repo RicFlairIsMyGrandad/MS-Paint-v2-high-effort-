@@ -197,7 +197,7 @@ export class Library {
     ]
       .map(
         (c) =>
-          `<div class="category ${this.current === c.id ? "active" : ""}" data-category="${c.id}">${icon(c.icon)}<span class="category-name">${this.app.escape(c.name)}</span>${this.categories.some((cat) => cat.id === c.id) ? '<button title="Manage category" aria-label="Manage ' + this.app.escape(c.name) + '">' + icon("gear", 15) + "</button>" : ""}</div>`,
+          `<div class="category ${this.current === c.id ? "active" : ""}" data-category="${c.id}">${icon(c.icon)}<span class="category-name">${this.app.escape(c.name)}</span></div>`,
       )
       .join("");
     const q = document.querySelector("#asset-search").value.toLowerCase();

@@ -19,6 +19,20 @@ export function createLayer(width, height, name = "Layer", background = null) {
     objects: [],
   };
 }
+export function quarterTurn(angle) {
+  const turns=Math.round(angle/90);return Math.abs(angle-turns*90)<1e-8?((turns%4)+4)%4:null;
+}
+export function snapQuarterTurn(object) {
+  const q=quarterTurn(object.angle||0);
+  if(q===null){delete object.pixelSnapX;delete object.pixelSnapY;return object;}
+  // Undo the previous half-pixel correction before calculating the next one.
+  // This keeps mixed odd/even dimensions crisp without drifting after four turns.
+  object.x-=object.pixelSnapX||0;object.y-=object.pixelSnapY||0;
+  const w=q%2?object.height:object.width,h=q%2?object.width:object.height;
+  object.pixelSnapX=Math.round(object.x+object.width/2-w/2)-(object.x+object.width/2-w/2);
+  object.pixelSnapY=Math.round(object.y+object.height/2-h/2)-(object.y+object.height/2-h/2);
+  object.x+=object.pixelSnapX;object.y+=object.pixelSnapY;return object;
+}
 export function objectMatrix(o) {
   const angle = (o.angle * Math.PI) / 180,
     cos = Math.cos(angle),
@@ -47,8 +61,10 @@ export function hitObject(o, x, y) {
 }
 export function drawObject(ctx, o, quality = true, layerKey = null) {
   ctx.save();
-  ctx.translate(o.x + o.width / 2, o.y + o.height / 2);
-  ctx.rotate((o.angle * Math.PI) / 180);
+  const q=quarterTurn(o.angle||0),position=q===null?o:snapQuarterTurn({...o});
+  ctx.translate(position.x + o.width / 2, position.y + o.height / 2);
+  if(q===null)ctx.rotate((o.angle * Math.PI) / 180);
+  else ctx.transform(...[[1,0,0,1,0,0],[0,1,-1,0,0,0],[-1,0,0,-1,0,0],[0,-1,1,0,0,0]][q]);
   ctx.scale(o.flipH ? -1 : 1, o.flipV ? -1 : 1);
   ctx.imageSmoothingEnabled =
     o.resampling !== "nearest" && o.smoothPreview !== false;
@@ -56,8 +72,7 @@ export function drawObject(ctx, o, quality = true, layerKey = null) {
   let src = o.transparentColor ? keyedSource(o.source,o.transparentColor) : o.source;
   if(layerKey&&layerKey!==o.transparentColor)src=keyedSource(src,layerKey);
   if(quality&&o.resampling!=='nearest'&&o.smoothPreview!==false)src=resizeForDrawing(src,o.width,o.height);
-  const transform=ctx.getTransform();
-  if(src.width===o.width&&src.height===o.height&&Math.abs(transform.a)===1&&Math.abs(transform.d)===1&&!transform.b&&!transform.c&&Number.isInteger(transform.e-transform.a*o.width/2)&&Number.isInteger(transform.f-transform.d*o.height/2))ctx.imageSmoothingEnabled=false;
+  if(src.width===o.width&&src.height===o.height&&q!==null)ctx.imageSmoothingEnabled=false;
   ctx.drawImage(src, -o.width / 2, -o.height / 2, o.width, o.height);
   ctx.restore();
 }
@@ -104,14 +119,16 @@ export class PaintDocument {
     this.onChange = onChange;
     this.dirty = false;
     this.color2='#ffffff';this.renderRevision=0;this.visibilityOverrides=new Map();
+    this.transientSelection=null;this.selectedLayers=[];
     this.maxWorkingBytes = 512 * 1024 * 1024;
     this.history = new History(() => {
       this.dirty = true;
       this.onChange();
     }, 128 * 1024 * 1024, () => this.resources());
+    this.history.beforeNavigate=()=>this.cancelTransientSelection();
   }
   resources(state = this) {
-    return [...new Set(state.layers.flatMap(l => [l.canvas, ...l.objects.map(o => o.source)]))];
+    return [...new Set([...state.layers.flatMap(l => [l.canvas, ...l.objects.map(o => o.source)]),...(state===this&&this.transientSelection?this.resources(this.transientSelection.before):[])])];
   }
   assertAllocation(extraBytes) {
     const live = this.resources().reduce((sum, c) => sum + c.width * c.height * 4, 0);
@@ -135,6 +152,7 @@ export class PaintDocument {
   changed() {
     this.invalidateLayers();
     this.dirty = true;
+    if(this.transientSelection)this.transientSelection.dirty=true;
     this.onChange();
   }
   invalidateLayers(){this.renderRevision++;}
@@ -157,6 +175,7 @@ export class PaintDocument {
     };
   }
   restore(state) {
+    this.transientSelection=null;this.selectedLayers=[];
     this.width = state.width;
     this.height = state.height;
     this.activeLayerId = state.activeLayerId;
@@ -170,7 +189,7 @@ export class PaintDocument {
     this.changed();
   }
   action(label, fn, bytes = 0) {
-    const before = this.metadata();
+    const before = this.consumeSelectionBefore(this.metadata());
     const dirty = this.dirty;
     try { fn(); }
     catch (error) { this.restore(before);this.dirty = dirty;throw error; }
@@ -185,7 +204,7 @@ export class PaintDocument {
   }
   transaction(label, fn) {
     if (this.inTransaction) return fn();
-    const before = this.metadata(), dirty = this.dirty;
+    const before = this.consumeSelectionBefore(this.metadata()), dirty = this.dirty;
     this.inTransaction = true;
     try {
       const result = fn(), after = this.metadata();
@@ -265,26 +284,12 @@ export class PaintDocument {
     this.layers.forEach((layer,index)=>{if(layer.visible)drawLayer(ctx,layer,index?this.color2:null);});
     return out;
   }
-  paintRemovedObjects(objects, background) {
-    const layers=this.layers.filter(layer=>layer.objects.some(object=>objects.includes(object)));
-    this.assertAllocation(this.width*this.height*layers.length*12);
-    const replacement=[...hexRGB(background),255];
-    for(const layer of layers) {
-      const mask=canvas(this.width,this.height),context=mask.getContext('2d');
-      for(const object of layer.objects.filter(object=>objects.includes(object)))drawObject(context,object,true,this.layers.indexOf(layer)?this.color2:null);
-      const covered=context.getImageData(0,0,this.width,this.height).data;
-      const output=cloneCanvas(layer.canvas),pixels=output.getContext('2d').getImageData(0,0,this.width,this.height);
-      for(let i=0;i<covered.length;i+=4)if(covered[i+3])pixels.data.set(replacement,i);
-      output.getContext('2d').putImageData(pixels,0,0);layer.canvas=output;
-    }
-  }
   cutIntoLayer(background = '#ffffff') {
     const objects=this.selectedObjects;
     if(!objects.length)return;
     if(this.layers.some(layer=>layer.locked&&layer.objects.some(object=>objects.includes(object))))throw new Error('Unlock selected layers first.');
     this.assertAllocation(this.width*this.height*(this.layers.length+4)*4);
     this.action('Cut into new layer',()=>{
-      this.paintRemovedObjects(objects,background);
       for(const layer of this.layers)layer.objects=layer.objects.filter(object=>!objects.includes(object));
       const layer=createLayer(this.width,this.height,'Cut selection',background);layer.objects=objects;
       this.layers.push(layer);this.activeLayerId=layer.id;
@@ -297,7 +302,6 @@ export class PaintDocument {
     );
     if (locked) throw new Error("Unlock selected layers first.");
     this.action("Delete objects", () => {
-      if(background)this.paintRemovedObjects(this.selectedObjects,background);
       for (const l of this.layers)
         l.objects = l.objects.filter((o) => !this.selected.includes(o.id));
       this.selected = [];
@@ -367,9 +371,12 @@ export class PaintDocument {
       w = Math.min(this.width - x, Math.ceil(rect.x + rect.width) - x),
       h = Math.min(this.height - y, Math.ceil(rect.y + rect.height) - y);
     if (w < 1 || h < 1) return null;
+    this.cancelTransientSelection();
     const l = this.activeLayer;
     if (l.locked) throw new Error("This layer is locked.");
-    this.assertAllocation(w * h * 32);
+    this.assertAllocation(w*h*32+this.width*this.height*4);
+    const selectionBefore=this.metadata(),selectionDirty=this.dirty;
+    l.canvas=cloneCanvas(l.canvas);
     const src = canvas(w, h),
       ctx = src.getContext("2d");
     const mask = path ? polygonMask(w, h, path, x, y) : null;
@@ -399,30 +406,62 @@ export class PaintDocument {
       type: "selection",
       transparentColor,
     };
-    // One command includes both lifting pixels and creation of the floating object.
-    const after = l.canvas.getContext("2d").getImageData(x, y, w, h);
     l.objects.push(obj);
     this.selected = [obj.id];
-    this.history.push({
-      label: "Select pixels",
-      bytes: w * h * 8,
-      undo: () => {
-        const layer = this.layers.find((layer) => layer.id === l.id);
-        layer.canvas.getContext("2d").putImageData(before, x, y);
-        layer.objects = layer.objects.filter((o) => o.id !== obj.id);
-        this.selected = [];
-        this.changed();
-      },
-      redo: () => {
-        const layer = this.layers.find((layer) => layer.id === l.id);
-        layer.canvas.getContext("2d").putImageData(after, x, y);
-        layer.objects.push({ ...obj });
-        this.selected = [obj.id];
-        this.changed();
-      },
-    });
-    this.changed();
+    this.transientSelection={before:selectionBefore,dirty:selectionDirty,ids:[...this.selected],initial:JSON.stringify(this.selectedObjects.map(selectionIdentity))};
+    this.invalidateLayers();this.onChange();
     return obj;
+  }
+  consumeSelectionBefore(fallback) {
+    const pending=this.transientSelection;this.transientSelection=null;
+    return pending?.before||fallback;
+  }
+  cancelTransientSelection() {
+    const pending=this.transientSelection;if(!pending)return false;
+    this.restore(pending.before);this.dirty=pending.dirty;this.onChange();return true;
+  }
+  selectionUnchanged() {
+    return !!this.transientSelection&&this.transientSelection.initial===JSON.stringify(this.objects.filter(object=>this.transientSelection.ids.includes(object.id)).map(selectionIdentity));
+  }
+  selectLayers(ids) {
+    this.cancelTransientSelection();
+    const targets=this.layers.filter(layer=>ids.includes(layer.id)&&layer.visible&&!layer.locked);
+    const before=this.metadata(),dirty=this.dirty;
+    this.assertAllocation(targets.length*this.width*this.height*8);
+    for(const layer of targets) {
+      // Key-colour pixels are the empty paper; retain the paper on the base layer.
+      const source=colorKey(layer.canvas,this.color2),ctx=source.getContext('2d'),data=ctx.getImageData(0,0,this.width,this.height).data;
+      let left=this.width,top=this.height,right=-1,bottom=-1;
+      for(let y=0;y<this.height;y++)for(let x=0;x<this.width;x++)if(data[(y*this.width+x)*4+3]){left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y);}
+      if(right>=left) {
+        const image=canvas(right-left+1,bottom-top+1);image.getContext('2d').drawImage(source,-left,-top);
+        layer.canvas=canvas(this.width,this.height);
+        if(layer===this.layers[0]){
+          const original=before.layers.find(item=>item.id===layer.id).canvas.getContext('2d').getImageData(0,0,this.width,this.height),paper=layer.canvas.getContext('2d'),rgb=hexRGB(this.color2);
+          for(let i=0;i<data.length;i+=4)if(data[i+3]){if(original.data[i+3]===255)original.data.set([...rgb,255],i);else original.data[i+3]=0;}
+          paper.putImageData(original,0,0);
+        }
+        layer.objects.unshift({id:id(),name:layer.name+' pixels',type:'image',source:image,x:left,y:top,width:image.width,height:image.height,angle:0,flipH:false,flipV:false,resampling:'lanczos'});
+      }
+    }
+    this.selectedLayers=targets.map(layer=>layer.id);
+    this.selected=targets.flatMap(layer=>layer.objects.map(object=>object.id));
+    if(targets.length)this.activeLayerId=targets.at(-1).id;
+    if(this.selected.length)this.transientSelection={before,dirty,ids:[...this.selected],initial:JSON.stringify(this.selectedObjects.map(selectionIdentity))};
+    this.invalidateLayers();this.onChange();
+  }
+  groupLayers(ids=this.selectedLayers) {
+    const targets=this.layers.filter(layer=>ids.includes(layer.id));
+    if(targets.length<2)throw new Error('Shift-click two or more layers, then choose Group.');
+    if(targets.some(layer=>layer.locked))throw new Error('Unlock selected layers before grouping.');
+    this.cancelTransientSelection();const group=id(),name='Group '+(new Set(this.layers.map(layer=>layer.group).filter(Boolean)).size+1);
+    this.action('Group layers',()=>{for(const layer of this.layers)if(ids.includes(layer.id)){layer.group=group;layer.groupName=name;}});
+    this.selectLayers(ids);return group;
+  }
+  ungroupLayers(ids=this.selectedLayers) {
+    const groups=new Set(this.layers.filter(layer=>ids.includes(layer.id)).map(layer=>layer.group).filter(Boolean));
+    this.cancelTransientSelection();
+    this.action('Ungroup layers',()=>{for(const layer of this.layers)if(groups.has(layer.group)){delete layer.group;delete layer.groupName;}});
   }
   duplicateSelected() {
     const selected = this.selectedObjects;
@@ -447,6 +486,7 @@ export class PaintDocument {
     });
   }
   groupSelected() {
+    if(this.selectedLayers.length>1)return this.groupLayers([...this.selectedLayers]);
     if (this.selectedObjects.length < 2) return;
     const group = id();
     this.action("Group objects", () => {
@@ -454,6 +494,7 @@ export class PaintDocument {
     });
   }
   ungroupSelected() {
+    if(this.selectedLayers.some(id=>this.layers.find(layer=>layer.id===id)?.group))return this.ungroupLayers([...this.selectedLayers]);
     this.action("Ungroup objects", () => {
       for (const o of this.selectedObjects) delete o.group;
     });
@@ -526,3 +567,5 @@ export class PaintDocument {
     );
   }
 }
+
+const selectionIdentity=object=>[object.id,object.x,object.y,object.width,object.height,object.angle,object.flipH,object.flipV,object.transparentColor];

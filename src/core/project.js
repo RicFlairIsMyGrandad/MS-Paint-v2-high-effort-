@@ -41,6 +41,7 @@ export function serialize(doc) {
       name: l.name,
       visible: l.visible,
       locked: l.locked,
+      ...(l.group?{group:l.group,groupName:l.groupName||'Group'}:{}),
       raster: ref(l.canvas),
       objects: l.objects.map((o) => {
         const { source, ...rest } = o;
@@ -94,6 +95,8 @@ export async function deserialize(text, onChange = () => {}) {
       !validId(l.id) ||
       seenIds.has(l.id) ||
       typeof l.name !== "string" ||
+      (l.group!==undefined&&!validId(l.group)) ||
+      (l.groupName!==undefined&&(typeof l.groupName!=='string'||l.groupName.length>200)) ||
       !Array.isArray(l.objects)
     )
       throw new Error("Invalid layer metadata.");
@@ -132,9 +135,11 @@ export async function deserialize(text, onChange = () => {}) {
           o.width * o.height > 64000000
         )
           throw new Error("Invalid object transform.");
+        for(const key of ['pixelSnapX','pixelSnapY'])if(o[key]!==undefined&&(!Number.isFinite(o[key])||Math.abs(o[key])>1))throw new Error('Invalid pixel alignment.');
         if (o.type === 'shape') {
           const style = o.shapeStyle, geometry = o.shapeGeometry;
           const point = value => value && Number.isFinite(value.x) && Number.isFinite(value.y) && Math.abs(value.x) <= 100 && Math.abs(value.y) <= 100;
+          if (style?.handWobble!==undefined&&typeof style.handWobble!=='boolean')throw new Error('Invalid pointing line style.');
           if (!shapeNames.includes(o.shapeName) || !style || !Number.isInteger(style.width) || style.width < 1 || style.width > 256 || ![style.color, style.background].every(color => typeof color === 'string' && /^#[0-9a-f]{6}$/i.test(color)) || !['none','solid'].includes(style.outline) || !['none','solid'].includes(style.fill) || !geometry || !point(geometry.a) || !point(geometry.b) || (geometry.controls && (!Array.isArray(geometry.controls) || geometry.controls.length > 2 || !geometry.controls.every(point))) || (geometry.points && (!Array.isArray(geometry.points) || geometry.points.length > 10000 || !geometry.points.every(point))))
             throw new Error('Invalid editable shape.');
         }
@@ -145,8 +150,9 @@ export async function deserialize(text, onChange = () => {}) {
           for (const run of o.textRuns || []) {
             if (typeof run.text !== 'string' || (run.font !== undefined && (typeof run.font !== 'string' || run.font.length > 100)) || (run.fontSize !== undefined && (!Number.isFinite(run.fontSize) || run.fontSize < 1 || run.fontSize > 512)) || (run.textColor !== undefined && !/^#[0-9a-f]{6}$/i.test(run.textColor))) throw new Error('Invalid rich text style.');
           }
+          if(o.tailTipX!==undefined&&(!Number.isFinite(o.tailTipX)||Math.abs(o.tailTipX)>17408))throw new Error('Invalid speech bubble tip.');
           if(o.bubbleShadow!==undefined&&typeof o.bubbleShadow!=='boolean')throw new Error('Invalid bubble shadow.');
-          for (const [key, limit] of [['padding',100],['lineGap',200],['bubbleWidth',32],['minHeight',16384],['textBoxWidth',16384],['shadowOffset',100]])
+          for (const [key, limit] of [['padding',100],['lineGap',200],['bubbleWidth',32],['minHeight',16384],['textBoxWidth',16384],['shadowOffset',100],['tailWidth',160],['tailPosition',16384],['tailTipY',1024]])
             if (o[key] !== undefined && (!Number.isFinite(o[key]) || o[key] < (key === 'lineGap' ? -100 : 0) || o[key] > limit)) throw new Error('Invalid text layout.');
         }
         return { ...o, source: sources[o.source] };

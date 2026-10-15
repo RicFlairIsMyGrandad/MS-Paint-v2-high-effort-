@@ -84,9 +84,13 @@ export const shapeNames = [
   "heart",
   "cloud",
   "callout",
+  "handLine",
+  "handCurve",
 ];
 export function shapeIcon(name) {
   const shapes = {
+    handLine: "M2 17 17 7m-4 0h8m-4-2h4m-6 2-2 4 3 1 2-4",
+    handCurve: "M2 17Q8 1 17 8m-4 0h8m-4-2h4m-6 2-2 4 3 1 2-4",
     line: "M2 3 22 21",
     curve: "M2 20C4-15 20 40 22 4",
     ellipse: "M22 12a10 8 0 1 1-20 0 10 8 0 0 1 20 0Z",

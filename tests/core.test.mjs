@@ -200,7 +200,6 @@ test("selection lifting fills Color 2 on upper layers and undo restores original
   assert.deepEqual(pixel(d.activeLayer.canvas, 20, 10), [255,255,255,255]);
   d.action("Move", () => (d.objects[0].x = 20));
   d.history.undo();
-  d.history.undo();
   assert.equal(d.objects.length, 0);
   assert.deepEqual(pixel(d.activeLayer.canvas, 20, 10), [24, 71, 241, 255]);
   d.history.redo();

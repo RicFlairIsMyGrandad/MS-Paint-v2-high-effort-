@@ -1,6 +1,6 @@
 {
   "isPackaged": true,
-  "appPath": "/tmp/PaintPlus packaged Ω hteHHl/installed app with spaces/resources/app.asar",
+  "appPath": "/tmp/PaintPlus packaged Ω gTMnFb/installed app with spaces/resources/app.asar",
   "platform": "linux",
   "gpuStatus": {
     "2d_canvas": "unavailable_software",
@@ -20,7 +20,7 @@
     "webgpu": "disabled_off",
     "webnn": "unavailable_software"
   },
-  "version": "1.0.5",
+  "version": "1.0.6",
   "installationPathHasSpacesAndUnicode": true,
   "firstLaunchReady": true,
   "defaultCanvasDimensions": true,
@@ -45,19 +45,19 @@
   "clipboardOK": true,
   "aiInferenceOK": true,
   "first": {
-    "path": "/tmp/PaintPlus packaged Ω hteHHl/images/PaintPlus-smoke.png",
+    "path": "/tmp/PaintPlus packaged Ω gTMnFb/images/PaintPlus-smoke.png",
     "name": "PaintPlus-smoke.png"
   },
   "second": {
-    "path": "/tmp/PaintPlus packaged Ω hteHHl/images/PaintPlus-smoke (2).png",
+    "path": "/tmp/PaintPlus packaged Ω gTMnFb/images/PaintPlus-smoke (2).png",
     "name": "PaintPlus-smoke (2).png"
   },
   "collisionOK": true,
   "project": {
-    "path": "/tmp/PaintPlus packaged Ω hteHHl/images/PaintPlus-project-smoke.paintplus",
+    "path": "/tmp/PaintPlus packaged Ω gTMnFb/images/PaintPlus-project-smoke.paintplus",
     "name": "PaintPlus-project-smoke.paintplus"
   },
-  "projectBytes": 131443,
+  "projectBytes": 131091,
   "protocol": "paintplus:",
   "aiModel": true,
   "rendererErrors": [],
@@ -77,5 +77,19 @@
   "successiveTextCreation": true,
   "successiveShapeCreation": true,
   "hiddenMoveOutline": true,
-  "thinSelectionFrame": true
+  "thinSelectionFrame": true,
+  "accurateRulersEveryZoom": true,
+  "roundedSinglePassBrush": true,
+  "rasterLayerGroups": true,
+  "individualGroupMemberSelection": true,
+  "removedFolderGears": true,
+  "pixelSnappedRectangles": true,
+  "safeMovedSelectionDelete": true,
+  "selectionOutsideHistory": true,
+  "blackEraserWithoutHalo": true,
+  "adjustableBubbleTails": true,
+  "pointingHandLine": true,
+  "pointingHandCurve": true,
+  "singleSelectionPaste": true,
+  "crispQuarterTurns": true
 }

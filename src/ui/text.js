@@ -1,6 +1,6 @@
 import { textSource, textLayout } from '../core/editable.js';
 import { runStyle, runStyleKeys, textRuns, coalesceRuns, formatRuns, fontCSS } from '../core/rich-text.js';
-const defaults = { font: 'Segoe UI', fontSize: 12, fontUnit: 'pt', bold: false, italic: false, underline: false, strikeout: false, opaque: false, bubble: false, bubbleWidth: 3, padding: 12, lineGap: 0, bubbleShadow: false, shadowOffset: 3 };
+const defaults = { font: 'Segoe UI', fontSize: 12, fontUnit: 'pt', bold: false, italic: false, underline: false, strikeout: false, opaque: false, bubble: false, bubbleWidth: 3, padding: 12, lineGap: 0, bubbleShadow: false, shadowOffset: 3, tailWidth:18, tailPosition:28, tailTipX:14, tailTipY:24 };
 const bundled = ['Caveat','Inter','Lora','Merriweather','Pacifico','Roboto Mono'];
 const standard = ['Segoe UI','Arial','Calibri','Cambria','Candara','Consolas','Constantia','Corbel','Georgia','Times New Roman','Verdana','Tahoma','Trebuchet MS','Courier New','Comic Sans MS','Impact','Palatino Linotype','Book Antiqua','Century Gothic','Garamond','Lucida Console','Lucida Sans Unicode'];
 export class TextEditor {
@@ -17,7 +17,7 @@ export class TextEditor {
     this.node.addEventListener('paste',event=>{event.preventDefault();this.insertPlainText(event.clipboardData.getData('text/plain'));});
     this.node.addEventListener('keydown',event=>{if(event.key==='Escape'||event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();event.stopPropagation();this.finish();}});
     document.addEventListener('selectionchange',()=>{if(this.active&&this.node.contains(window.getSelection()?.anchorNode)){this.captureSelection();this.syncControls();}});
-    for(const[id,property]of[['text-font','font'],['text-size','fontSize'],['text-bubble-width','bubbleWidth'],['text-padding','padding'],['text-line-gap','lineGap'],['text-shadow-offset','shadowOffset']])document.getElementById(id).addEventListener('input',event=>{
+    for(const[id,property]of[['text-font','font'],['text-size','fontSize'],['text-bubble-width','bubbleWidth'],['text-padding','padding'],['text-line-gap','lineGap'],['text-shadow-offset','shadowOffset'],['text-tail-width','tailWidth'],['text-tail-position','tailPosition']])document.getElementById(id).addEventListener('input',event=>{
       const value=property==='font'?event.target.value:Number(event.target.value);
       if(property!=='font'&&(!event.target.value.trim()||!Number.isFinite(value)))return;
       if(property==='fontSize')this.sizeNavigating=false;
@@ -135,6 +135,8 @@ export class TextEditor {
   changeStyle(patch){
     const focused=document.activeElement,keepFocus=focused?.closest('#text-ribbon')&&focused.matches('input,select'),caret=keepFocus&&focused.type==='text'?[focused.selectionStart,focused.selectionEnd]:null,rawValue=keepFocus?focused.value:null;
     if('fontSize'in patch){patch.fontSize=Math.max(1,Math.min(384,patch.fontSize||12));patch.fontUnit='pt';}
+    if('tailWidth'in patch)patch.tailWidth=Math.max(2,Math.min(160,Math.round(patch.tailWidth||18)));
+    if('tailPosition'in patch){const props=this.object||this.properties;patch.tailPosition=Math.max(9,Math.min(16384,Math.round(patch.tailPosition||28)));patch.tailTipX=(props.tailTipX??14)+patch.tailPosition-(props.tailPosition??28);}
     if('shadowOffset'in patch)patch.shadowOffset=Math.max(0,Math.min(100,Math.round(patch.shadowOffset||0)));
     if('padding'in patch)patch.padding=Math.max(0,Math.min(100,patch.padding||0));if('lineGap'in patch)patch.lineGap=Math.max(-100,Math.min(200,patch.lineGap||0));if('bubbleWidth'in patch)patch.bubbleWidth=Math.max(1,Math.min(32,patch.bubbleWidth||3));
     Object.assign(this.defaults,patch);this.app.prefs.textStyle={...this.defaults};this.app.savePrefs();
@@ -157,12 +159,16 @@ export class TextEditor {
     if(keepFocus){focused.value=rawValue;focused.focus({preventScroll:true});if(caret)focused.setSelectionRange(...caret);}
   }
   syncControls(){const props=this.typingStyle&&this.active&&this.selection.start===this.selection.end?{...this.properties,...this.typingStyle}:this.properties;
-    for(const[id,key]of[['text-font','font'],['text-size','fontSize'],['text-bubble-width','bubbleWidth'],['text-padding','padding'],['text-line-gap','lineGap'],['text-shadow-offset','shadowOffset']]){const field=document.getElementById(id);if(document.activeElement!==field)field.value=props[key]??defaults[key];}
+    for(const[id,key]of[['text-font','font'],['text-size','fontSize'],['text-bubble-width','bubbleWidth'],['text-padding','padding'],['text-line-gap','lineGap'],['text-shadow-offset','shadowOffset'],['text-tail-width','tailWidth'],['text-tail-position','tailPosition']]){const field=document.getElementById(id);if(document.activeElement!==field)field.value=props[key]??defaults[key];}
+    const tailWidth=document.getElementById('text-tail-width'),tailPosition=document.getElementById('text-tail-position');
+    const object=this.object||this.app.doc.selectedObjects.find(object=>object.type==='text'),boxWidth=object?textLayout(object).boxWidth:500;
+    tailWidth.max=Math.max(2,Math.min(160,boxWidth-20));tailPosition.max=Math.max(9,boxWidth-9-Number(tailWidth.value));
+    tailWidth.disabled=tailPosition.disabled=!props.bubble;document.getElementById('tail-width-value').textContent=tailWidth.value+' px';document.getElementById('tail-position-value').textContent=tailPosition.value+' px';
     document.getElementById('text-opaque').checked=!!props.opaque;document.getElementById('text-bubble').checked=!!props.bubble;document.getElementById('text-bubble-shadow').checked=!!props.bubbleShadow;document.getElementById('text-bubble-shadow').disabled=!props.bubble;document.getElementById('text-shadow-offset').disabled=!props.bubble||!props.bubbleShadow;
     for(const button of document.querySelectorAll('button[data-text-style]')){const value=!!props[button.dataset.textStyle];button.classList.toggle('selected',value);button.setAttribute('aria-pressed',String(value));}
     const favorite=this.app.prefs.favoriteFonts.includes(props.font),button=document.getElementById('text-font-favorite');button.classList.toggle('selected',favorite);button.setAttribute('aria-pressed',String(favorite));button.title=favorite?'Unpin font':'Pin font to Favorites';
   }
-  position(){const object=this.object;if(!object)return;const layout=textLayout(object),zoom=this.app.zoom,angle=(object.angle||0)*Math.PI/180,dx=-object.width/2,dy=-object.height/2,x=object.x+object.width/2+dx*Math.cos(angle)-dy*Math.sin(angle),y=object.y+object.height/2+dx*Math.sin(angle)+dy*Math.cos(angle);
+  position(){const object=this.object;if(!object)return;const layout=textLayout(object),zoom=this.app.zoom,angle=(object.angle||0)*Math.PI/180,dx=(layout.bodyX||0)-object.width/2,dy=-object.height/2,x=object.x+object.width/2+dx*Math.cos(angle)-dy*Math.sin(angle),y=object.y+object.height/2+dx*Math.sin(angle)+dy*Math.cos(angle);
     Object.assign(this.node.style,{left:x*zoom+'px',top:y*zoom+'px',width:layout.boxWidth+'px',height:layout.bodyHeight+'px',padding:layout.padding+'px',font:layout.font,lineHeight:`calc(1.15em + ${Number(object.lineGap)||0}px)`,color:'transparent',caretColor:this.properties.textColor||'#000000',transform:`rotate(${object.angle||0}deg) scale(${zoom})`,transformOrigin:'0 0'});
   }
   finish(commit=false){if(!this.active)return;this.hideSizeMenu();const doc=this.app.doc,object=this.object;this.objectId=null;this.typingStyle=null;this.typingAnchor=null;this.node.classList.add('hidden');this.node.blur();if(!object)return;

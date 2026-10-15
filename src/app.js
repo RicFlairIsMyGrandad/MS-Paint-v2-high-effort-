@@ -1,7 +1,7 @@
 import "./ui/styles.css";
 import { layout, labels, tools, button } from "./ui/layout.js";
 import { icon } from "./ui/icons.js";
-import { PaintDocument, createLayer, drawObject, drawLayer, id } from "./core/document.js";
+import { PaintDocument, createLayer, drawObject, drawLayer, id, snapQuarterTurn } from "./core/document.js";
 import { canvas, cloneCanvas, bmpBytes, colorKey } from "./core/raster.js";
 import { serialize, deserialize, imageCanvas } from "./core/project.js";
 import { resample } from "./core/resample.js";
@@ -20,6 +20,7 @@ const defaultPrefs = {
   assetOwnLayer: true,
   aspectLock: true,
   transparentSelection: false,
+  handWobble:false,
   rulers: true,
   grid: false,
   zoom: 1,
@@ -137,6 +138,7 @@ export class PaintPlus {
     this.doc.history.redoStack = [];this.doc.history.trim();this.doc.changed();
   }
   recordTransform(before, label) {
+    before=this.doc.consumeSelectionBefore(before);
     const key = this.sessionKey(), previous = this.doc.history.undoStack.at(-1);
     if (previous?.sessionOpen && previous.sessionKey === key) this.updateSession(previous);
     else {
@@ -211,7 +213,8 @@ export class PaintPlus {
     this.updateTools();
     this.updateTitle();
     const list=document.querySelector('#layer-list'),ids=[...this.doc.layers].reverse().map(layer=>layer.id);
-    if(list&&(list.children.length!==ids.length||ids.some((id,index)=>list.children[index]?.dataset.id!==id)))this.updateLayers();
+    const rows=list?[...list.querySelectorAll('.layer-row')]:[];
+    if(list&&(rows.length!==ids.length||ids.some((id,index)=>rows[index]?.dataset.id!==id)))this.updateLayers();
     if (!this.renderLayersPending) {
       this.renderLayersPending = true;
       setTimeout(() => {
@@ -258,6 +261,7 @@ export class PaintPlus {
         !this.doc.selectedObjects.length;
     this.editor?.updateCursor(this.editor.hover);
     const shape = this.doc.selectedObjects.find(o => o.type === 'shape');
+    const handActive=['handLine','handCurve'].includes(shape?.shapeName||this.shape)&&this.tool==='shape';document.querySelector('.hand-wobble').classList.toggle('hidden',!handActive);document.querySelector('#hand-wobble').checked=shape?.shapeStyle.handWobble??this.prefs.handWobble;
     const shapeActive = !!shape || !!this.editor.pendingShape || this.editor.drag?.type === 'shape';
     document.querySelector('#outline').disabled = !shapeActive;
     document.querySelector('#shape-fill').disabled = !shapeActive;
@@ -301,10 +305,14 @@ export class PaintPlus {
   finishSelection() {
     const tool=this.tool;
     this.textEditor?.finish();
+    if(this.doc.selectionUnchanged()){this.doc.cancelTransientSelection();this.doc.selected=[];this.doc.selectedLayers=[];this.closeObjectSession();this.changedUI();return;}
     const previous = this.doc.history.undoStack.at(-1);
     const objects = [...this.doc.selectedObjects];
     this.doc.assertAllocation(this.doc.layers.filter(layer => layer.objects.some(o => objects.includes(o))).length * this.doc.width * this.doc.height * 4);
-    if (objects.length && this.selectedEditable()) this.doc.action('Commit selection', () => {
+    const transient=this.doc.transientSelection,hadTransaction=this.doc.inTransaction;
+    // Confirming/deselecting is a representation change, not a separate undo step.
+    this.doc.inTransaction=true;
+    try { if (objects.length && this.selectedEditable()) this.doc.action('Commit selection', () => {
       for (const layer of this.doc.layers) {
         const committing = layer.objects.filter(o => objects.includes(o));
         if (!committing.length) continue;
@@ -313,8 +321,10 @@ export class PaintPlus {
         layer.objects = layer.objects.filter(o => !committing.includes(o));
       }
       this.doc.selected = [];
-    });
-    this.coalesceCommit(previous);this.closeObjectSession();
+    }); } finally {this.doc.inTransaction=hadTransaction;}
+    if(previous?.sessionOpen&&previous.sessionKey===objects.map(object=>object.id).sort().join(','))this.updateSession(previous);
+    else if(transient){const before=transient.before;this.recordTransform(before,'Edit selected pixels');}
+    this.closeObjectSession();this.doc.selectedLayers=[];
     this.doc.selected = [];this.tool = tool==='move'?(this.selectionOrigin||'select'):tool;this.changedUI();
   }
   updateShapeStyle(patch = {}, history = true) {
@@ -354,6 +364,7 @@ export class PaintPlus {
     if (tool !== 'text') this.textEditor?.finish();
     if (tool === 'select' || tool === 'free') this.selectionOrigin = tool;
     this.editor.finishPending();
+    if(this.doc.transientSelection&&['brush','pencil','eraser','fill','shape'].includes(tool))this.finishSelection();
     if (this.doc.selectedObjects.some(object => object.draft) && ['brush','pencil','eraser','fill','shape'].includes(tool)) this.finishSelection();
     if (this.editor.drag) this.editor.finishDrag();
     if (!tools.includes(tool)) return;
@@ -530,10 +541,13 @@ export class PaintPlus {
         this.toast(err.message);
       }
     });
+    document.querySelector('#hand-wobble').addEventListener('change',event=>{this.prefs.handWobble=event.target.checked;this.updateShapeStyle({handWobble:event.target.checked});this.savePrefs();});
     const list = document.querySelector("#layer-list");
     document.querySelector('#layer-own-assets').addEventListener('change',event=>{this.prefs.assetOwnLayer=event.target.checked;this.savePrefs();});
     list.addEventListener("click", (e) => {
       if(e.target.closest('.layer-name-input'))return;
+      const header=e.target.closest('[data-layer-group]');
+      if(header){this.textEditor.finish();this.doc.selectLayers(this.doc.layers.filter(layer=>layer.group===header.dataset.layerGroup).map(layer=>layer.id));this.tool='select';this.updateLayers();return;}
       const row = e.target.closest(".layer-row");
       if (!row) return;
       const layer = this.doc.layers.find((l) => l.id === row.dataset.id);
@@ -551,11 +565,12 @@ export class PaintPlus {
             );
         });
       else {
-        this.doc.activeLayerId = layer.id;
-        const ids = layer.locked || !layer.visible ? [] : layer.objects.map((o) => o.id);
-        if (e.ctrlKey || e.shiftKey)
-          this.doc.selected = [...new Set([...this.doc.selected, ...ids])];
-        else this.doc.selected = ids;
+        this.textEditor.finish();
+        let ids=[layer.id];
+        if(e.shiftKey&&this.layerAnchor){const a=this.doc.layers.findIndex(item=>item.id===this.layerAnchor),b=this.doc.layers.indexOf(layer);ids=this.doc.layers.slice(Math.min(a,b),Math.max(a,b)+1).map(item=>item.id);}
+        else if(e.ctrlKey)ids=this.doc.selectedLayers.includes(layer.id)?this.doc.selectedLayers.filter(id=>id!==layer.id):[...this.doc.selectedLayers,layer.id];
+        else this.layerAnchor=layer.id;
+        this.doc.selectLayers(ids);this.doc.activeLayerId=layer.id;
         this.tool = this.selectionOrigin||"select";
         this.changedUI();
       }
@@ -584,12 +599,12 @@ export class PaintPlus {
           run: () => this.action("merge-layer"),
         },
         {
-          label: "Group selected objects",
+          label: "Group selected layers / objects",
           icon: "group",
           run: () => this.action("group"),
         },
         {
-          label: "Ungroup selected objects",
+          label: "Ungroup selected layers / objects",
           icon: "group",
           run: () => this.action("ungroup"),
         },
@@ -642,23 +657,29 @@ export class PaintPlus {
   updateLayers() {
     const list = document.querySelector("#layer-list");
     if (!list) return;
-    const rows=new Map([...list.children].map(row=>[row.dataset.id,row]));
+    const rows=new Map([...list.querySelectorAll('.layer-row')].map(row=>[row.dataset.id,row]));
+    const headers=new Map([...list.querySelectorAll('.layer-group-header')].map(header=>[header.dataset.layerGroup,header])),ordered=[],groups=new Set();
     [...this.doc.layers].reverse().forEach((layer,index)=>{
       let row=rows.get(layer.id);
       if(!row) {
         row=document.createElement('div');row.dataset.id=layer.id;row.draggable=true;row.tabIndex=0;
         row.innerHTML=`<button class="visibility" draggable="false">${icon("eye",16)}</button><img><span class="layer-name"></span><button class="lock-layer" draggable="false">${icon("lock",15)}</button><button class="delete-layer-row" draggable="false">${icon("trash",15)}</button>`;
       }
-      row.className=`layer-row ${layer.id===this.doc.activeLayerId?'active':''} ${layer.locked?'locked':''} ${!layer.visible?'hidden-layer':''}`;
+      if(layer.group&&!groups.has(layer.group)){
+        groups.add(layer.group);let header=headers.get(layer.group);if(!header){header=document.createElement('button');header.className='layer-group-header';header.dataset.layerGroup=layer.group;header.innerHTML=icon('group',15)+'<span></span>';header.title='Select all layers in this group';}const name=layer.groupName||'Group';if(header.querySelector('span').textContent!==name)header.querySelector('span').textContent=name;header.setAttribute('aria-label','Select '+name);ordered.push(header);headers.delete(layer.group);
+      }
+      row.className=`layer-row ${layer.id===this.doc.activeLayerId?'active':''} ${this.doc.selectedLayers.includes(layer.id)?'multi-selected':''} ${layer.group?'grouped-layer':''} ${layer.locked?'locked':''} ${!layer.visible?'hidden-layer':''}`;
+      row.setAttribute('aria-selected',String(this.doc.selectedLayers.includes(layer.id)));
       const visibility=row.querySelector('.visibility'),lock=row.querySelector('.lock-layer'),remove=row.querySelector('.delete-layer-row');
       visibility.title=(layer.visible?'Hide':'Show')+' layer';visibility.setAttribute('aria-label',(layer.visible?'Hide ':'Show ')+layer.name);visibility.setAttribute('aria-pressed',String(layer.visible));
       lock.title=(layer.locked?'Unlock':'Lock')+' layer';lock.setAttribute('aria-label',(layer.locked?'Unlock ':'Lock ')+layer.name);
       remove.title='Delete layer';remove.setAttribute('aria-label','Delete '+layer.name);
       row.querySelector('img').alt=layer.name+' thumbnail';if(!row.querySelector('.layer-name-input'))row.querySelector('.layer-name').innerHTML=this.escape(layer.name)+(layer.objects.some(object=>object.group)?'<span class="group-badge">▧</span>':'');
-      if(list.children[index]!==row)list.insertBefore(row,list.children[index]||null);
+      ordered.push(row);
       rows.delete(layer.id);
     });
-    for(const row of rows.values())row.remove();
+    for(const row of rows.values())row.remove();for(const header of headers.values())header.remove();
+    ordered.forEach((node,index)=>{if(list.children[index]!==node)list.insertBefore(node,list.children[index]||null);});
     for (const l of this.doc.layers) {
       const thumb = canvas(42, 42),
         ctx = thumb.getContext("2d"),
@@ -1547,7 +1568,7 @@ export class PaintPlus {
       this.currentFile = null;
       this.fileName = file.name.replace(/\.[^.]+$/, "");
       document.querySelector("#filename").value = this.fileName;
-      this.doc.dirty = false;
+      this.doc.dirty = false;if(this.doc.transientSelection)this.doc.transientSelection.dirty=false;
       this.editor.selectionRect = null;
       this.changedUI();
       this.editor.fit();
@@ -1561,7 +1582,7 @@ export class PaintPlus {
       throw new Error("Image exceeds the 64 million pixel limit.");
     this.doc = new PaintDocument(c.width, c.height, () => this.changedUI());
     this.doc.activeLayer.canvas = c;
-    this.doc.dirty = false;
+    this.doc.dirty = false;if(this.doc.transientSelection)this.doc.transientSelection.dirty=false;
   }
   async open() {
     if (!window.desktop) {
@@ -1597,7 +1618,7 @@ export class PaintPlus {
           : /\.webp$/i.test(file.path)
             ? "webp"
             : "png";
-    this.doc.dirty = false;
+    this.doc.dirty = false;if(this.doc.transientSelection)this.doc.transientSelection.dirty=false;
     this.editor.selectionRect = null;
     this.changedUI();
     this.editor.fit();
@@ -1683,7 +1704,7 @@ export class PaintPlus {
       this.download(bytes, name, format);
       this.toast("Downloaded " + name + "." + format);
     }
-    this.doc.dirty = false;
+    this.doc.dirty = false;if(this.doc.transientSelection)this.doc.transientSelection.dirty=false;
     this.changedUI();
   }
   async chooseOutput() {
@@ -1764,7 +1785,7 @@ export class PaintPlus {
     document.querySelector("#size-status span").textContent =
       "Saved · " + (bytes.length / 1024 / 1024).toFixed(2) + " MB";
     if (format === "paintplus") {
-      this.doc.dirty = false;
+      this.doc.dirty = false;if(this.doc.transientSelection)this.doc.transientSelection.dirty=false;
       this.changedUI();
     }
     return bytes;
@@ -1824,6 +1845,7 @@ export class PaintPlus {
       this.toast("The clipboard does not contain an image.");
       return;
     }
+    this.finishSelection();
     this.doc.transaction('Paste image', () => {
       const x=Math.max(0,Math.ceil((this.editor.viewport.scrollLeft-7)/this.zoom)),y=Math.max(0,Math.ceil((this.editor.viewport.scrollTop-7)/this.zoom));
       if (this.prefs.growCanvasOnPaste && (x+source.width > this.doc.width || y+source.height > this.doc.height))
@@ -1913,12 +1935,7 @@ export class PaintPlus {
             preview();
             const after = this.doc.metadata();
             applied = true;
-            this.doc.history.push({
-              label: "Resize & Rotate",
-              undo: () => this.doc.restore(before),
-              redo: () => this.doc.restore(after),
-            });
-            this.doc.changed();
+            this.recordTransform(before,'Resize & Rotate');
             this.prefs.aspectLock =
               document.querySelector("#resize-aspect").checked;
             this.prefs.smoothPreview =
@@ -1962,9 +1979,11 @@ export class PaintPlus {
         const o = this.doc.objects.find((o) => o.id === original.id);
         if (!o) continue;
         if (originals.length === 1) {
+          o.x=original.x;o.y=original.y;o.pixelSnapX=original.pixelSnapX||0;o.pixelSnapY=original.pixelSnapY||0;
+          if(nw!==original.width||nh!==original.height){o.pixelSnapX=0;o.pixelSnapY=0;}
           o.width = nw;
           o.height = nh;
-          o.angle = newAngle;
+          o.angle = newAngle;snapQuarterTurn(o);
         } else {
           const cx = b.x + b.width / 2,
             cy = b.y + b.height / 2,
@@ -2101,7 +2120,7 @@ export class PaintPlus {
                     x: (o.x * w) / sw,
                     y: (o.y * h) / sh,
                     width: (o.width * w) / sw,
-                    height: (o.height * h) / sh,
+                    height: (o.height * h) / sh,pixelSnapX:0,pixelSnapY:0,
                   })),
                 });
               this.doc.action(
@@ -2142,7 +2161,7 @@ export class PaintPlus {
             dy = o.y + o.height / 2 - cy;
           o.x = cx + dx * Math.cos(r) - dy * Math.sin(r) - o.width / 2;
           o.y = cy + dx * Math.sin(r) + dy * Math.cos(r) - o.height / 2;
-          o.angle += degrees;
+          o.angle += degrees;snapQuarterTurn(o);
         }
       });
     } else {
@@ -2159,7 +2178,7 @@ export class PaintPlus {
             const c = canvas(w, h),
               ctx = c.getContext("2d");
             ctx.translate(w / 2, h / 2);
-            ctx.rotate((degrees * Math.PI) / 180);
+            ctx.rotate((degrees * Math.PI) / 180);ctx.imageSmoothingEnabled=false;
             ctx.drawImage(l.canvas, -oldW / 2, -oldH / 2);
             return {
               ...l,
@@ -2172,7 +2191,7 @@ export class PaintPlus {
                   ...o,
                   x: w / 2 + dx * Math.cos(r) - dy * Math.sin(r) - o.width / 2,
                   y: h / 2 + dx * Math.sin(r) + dy * Math.cos(r) - o.height / 2,
-                  angle: o.angle + degrees,
+                  angle: o.angle + degrees,pixelSnapX:0,pixelSnapY:0,
                 };
               }),
             };
@@ -2423,7 +2442,7 @@ export class PaintPlus {
         this.doc.selected = [hero.id];
       }
       this.doc.history.clear();
-      this.doc.dirty = false;
+      this.doc.dirty = false;if(this.doc.transientSelection)this.doc.transientSelection.dirty=false;
       this.fileName = "MyScene";
       document.querySelector("#filename").value = this.fileName;
       this.tool = this.selectionOrigin||"select";

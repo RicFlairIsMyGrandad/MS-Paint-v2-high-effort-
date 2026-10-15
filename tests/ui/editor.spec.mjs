@@ -305,7 +305,7 @@ test("clipboard copy/paste preserves dimensions and transforms remain editable",
   await page.keyboard.press("Control+v");
   await expect
     .poll(() => page.evaluate(() => paintplus.doc.objects.length))
-    .toBe(2);
+    .toBe(1);
   expect(
     await page.evaluate(() => {
       const o = paintplus.doc.selectedObjects[0];
@@ -313,9 +313,9 @@ test("clipboard copy/paste preserves dimensions and transforms remain editable",
     }),
   ).toEqual([0, 0, 64, 80]);
   await page.keyboard.press("Delete");
-  expect(await page.evaluate(() => paintplus.doc.objects.length)).toBe(1);
+  expect(await page.evaluate(() => paintplus.doc.objects.length)).toBe(0);
   await page.keyboard.press("Control+z");
-  expect(await page.evaluate(() => paintplus.doc.objects.length)).toBe(2);
+  expect(await page.evaluate(() => paintplus.doc.objects.length)).toBe(1);
 });
 test("layers select, hide, lock, duplicate, reorder and merge", async ({
   page,

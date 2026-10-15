@@ -10,6 +10,7 @@ on:
       - 'tests/**'
       - 'tools/packaged-qa.mjs'
       - 'tools/palette-packaged-qa.mjs'
+      - 'tools/precision-packaged-qa.mjs'
       - 'tools/portable-windows-qa.cjs'
       - 'tools/publish-windows-evidence.cjs'
       - 'tools/use-release-candidate.cjs'

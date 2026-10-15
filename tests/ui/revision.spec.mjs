@@ -54,9 +54,9 @@ test('persistent selection mode keeps floating content after clicking outside',a
 });
 test('Shift arrow moves one pixel and stamps a trail with undo; Shift drag leaves a continuous trail',async({page})=>{
   await reset(page);await page.locator('#selection-transparent').check();await selection(page);await page.keyboard.press('Shift+ArrowRight');expect(await page.evaluate(()=>paintplus.doc.selectedObjects[0].x)).toBe(31);
-  await page.keyboard.press('Control+z');expect(await page.evaluate(()=>paintplus.doc.selectedObjects[0].x)).toBe(30);expect(await pixel(page,36,36)).toEqual([24,71,241,255]);
-  await page.keyboard.down('Shift');await drag(page,[43,43],[143,43]);await page.keyboard.up('Shift');expect(await pixel(page,90,40)).toEqual([24,71,241,255]);
-  await page.keyboard.press('Control+z');expect(await pixel(page,90,40)).toEqual([255,255,255,255]);expect(await page.evaluate(()=>paintplus.doc.selectedObjects[0].x)).toBe(30);
+  await page.keyboard.press('Control+z');expect(await page.evaluate(()=>paintplus.doc.objects.length)).toBe(0);expect(await pixel(page,36,36)).toEqual([24,71,241,255]);
+  await selection(page);await page.keyboard.down('Shift');await drag(page,[43,43],[143,43]);await page.keyboard.up('Shift');expect(await pixel(page,90,40)).toEqual([24,71,241,255]);
+  await page.keyboard.press('Control+z');expect(await pixel(page,90,40)).toEqual([255,255,255,255]);expect(await page.evaluate(()=>paintplus.doc.objects.length)).toBe(0);
 });
 test('row bin and Delete remove layers instantly, including clearing the last layer, with undo',async({page})=>{
   await reset(page);await page.locator('[data-action=new-layer]').click();await expect(page.locator('.layer-row')).toHaveCount(2);await page.locator('.layer-row.active .delete-layer-row').click();await expect(page.locator('.layer-row')).toHaveCount(1);await expect(page.getByRole('dialog')).toHaveCount(0);
