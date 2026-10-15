@@ -20,4 +20,9 @@ renders participating floating content to pixels; an unchanged cancelled area
 selection restores editable content. See LIMITATIONS.md for remaining features
 and hardware verification boundaries.
 
-Validation results will be recorded in TESTING.md after native package checks.
+Validation: 136 core tests and 137 browser workflows pass locally and on both
+hosted Windows runners. [Run 38780667059](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/actions/runs/38780667059) installs and
+launches the exact Setup download, checks the new features and native
+clipboard/fonts/offline AI, launches Portable, and verifies uninstall while
+preserving a project. Both archives pass integrity checks and contain the same
+application ASAR. TESTING.md records hashes and verification boundaries.

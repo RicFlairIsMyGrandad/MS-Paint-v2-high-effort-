@@ -3,15 +3,15 @@
 A local Windows Paint-style editor with layers, assets, editable shapes and text,
 and offline background removal.
 
-**[Download PaintPlus 1.0.6 Setup for Windows](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Setup-1.0.6-x64.exe)**
+**[Download PaintPlus 1.0.7 Setup for Windows](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Setup-1.0.7-x64.exe)**
 
-[Portable EXE](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Portable-1.0.6-x64.exe) · [Complete source ZIP](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Source-1.0.6.zip) · [Full source as TXT](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Full-Source.txt)
+[Portable EXE](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Portable-1.0.7-x64.exe) · [Complete source ZIP](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Source-1.0.7.zip) · [Full source as TXT](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Full-Source.txt)
 
 ![Running PaintPlus editor](docs/screenshots/packaged-linux.png)
 
 ## Install
 
-1. Download **PaintPlus-Setup-1.0.6-x64.exe** and run it on a 64-bit Windows 10 or
+1. Download **PaintPlus-Setup-1.0.7-x64.exe** and run it on a 64-bit Windows 10 or
    Windows 11 computer. The installer can update an existing PaintPlus installation.
 2. Choose the installation folder and complete the wizard. Open PaintPlus from
    the desktop or Start menu shortcut. Node.js, Python and other developer tools
@@ -24,7 +24,7 @@ The portable EXE runs without installation. Both downloads include the AI model
 and runtime. There are no model downloads, online AI calls or telemetry. Uninstall
 preserves projects, source assets and user preferences.
 
-Version 1.0.6 includes the earlier blank-window startup fixes: software rendering
+Version 1.0.7 includes the earlier blank-window startup fixes: software rendering
 on Windows, ASAR-aware resource loading, correct script/WASM types, a visible
 startup error screen and diagnostics at `%APPDATA%\PaintPlus\startup.log`.
 Hosted Windows checks test the exact release downloads. Results are in
@@ -36,12 +36,14 @@ Home-edition laptop remains a separate hardware check.
 - Zoom uses only Paint's eleven fixed levels (12.5% through 800%). Image pixels
   stay sharp and selection handles keep a constant screen size. Top and side rulers
   align with canvas pixels at every level and while scrolling.
-- New images start at 731 × 411 pixels. Round brush tips are antialiased without repeated stamp buildup or extra endpoint rows. The eraser cursor is a black square without a white halo; erasing uses Color 2.
+- New images start at 731 × 411 pixels. Round brush tips are antialiased without repeated stamp buildup or extra endpoint rows. The eraser cursor previews Color 2 in a square of the chosen pixel size with a thin black outline.
 - Draw a shape, then move/resize/rotate it or change its outline/fill. Ctrl+Numpad
   Plus/Minus changes the current stroke width by one pixel. Each tool remembers
   its own size; width changes do not add undo steps. Enter commits the shape.
 - Drag a text box and type directly on the canvas. The Text ribbon controls
-  formatting, spacing, padding and an optional rounded speech bubble. Select
+  formatting, line spacing, independent horizontal/vertical bubble padding and
+  an optional rounded speech bubble. Background offers Color 2, off-white
+  (RGB 254/255/255), or a custom colour; text-colour changes preserve its fill. Select
   words to change their font, point size, colour and style independently; Ctrl+A
   in the box formats all text. Font favorites stay pinned. Six font families are
   bundled alongside the fonts installed on your computer. Finished
@@ -68,10 +70,19 @@ Home-edition laptop remains a separate hardware check.
 - Shift-click layer rows to select a range, or Ctrl-click individual layers, then
   choose Group (Ctrl+G). Painted pixels and inserted objects move together. Grey
   group headers select the whole group; indented child rows select individual
-  layers. Ungroup with the adjacent button or Ctrl+Shift+G. Stack order is preserved.
+  layers. After choosing a group header, choose Select or Free-form Select to
+  select the same canvas region on every visible, unlocked member. Move, resize,
+  rotate, flip, cut, copy and delete apply to every selected region. Brush, pencil,
+  eraser and fill also link across members with one undo step. New objects go
+  on the active layer, and visibility/naming/locking remain individual properties.
+  Ungroup with the adjacent button or Ctrl+Shift+G. Stack order is preserved.
 - Shapes also includes **Pointing hand line** and **Pointing hand curve**. Drag the
   shaft; curves accept two bend drags or Enter to finish early. The black hand follows
   the endpoint direction. **Hand-drawn wobble** makes the shaft less straight.
+- Edit Colors uses the classic two-pane layout with 48 basic swatches, 16
+  saved custom slots, hue/saturation and luminance controls, and synchronized
+  RGB/HSL fields. Add to Custom Colors saves a slot; OK applies and Cancel
+  preserves the current colour.
 - Exact 90/180/270-degree rotations preserve hard pixels and alpha, without
   accumulating position drift. Arbitrary-angle rotation can use smoothing.
 - Toggle asset layers directly below the Layers list. Right-click → Rename layer edits the name in place; double-click does not rename. Visibility is excluded from undo/redo, including when undoing another edit.
@@ -94,10 +105,10 @@ Home-edition laptop remains a separate hardware check.
   for applications such as MS Paint. Save **.paintplus** for editable layers,
   source images, text, shape geometry and groups.
 
-[Release notes and issue-by-issue results](docs/RELEASE-1.0.6.md) ·
+[Release notes and issue-by-issue results](docs/RELEASE-1.0.7.md) ·
 [Known limitations](docs/LIMITATIONS.md) · [Test evidence](docs/TESTING.md)
 
-The toolbar icons are original refined SVGs and the transparent easel logo is generated
+The toolbar icons are original refined SVGs and the painters palette logo is generated
 artwork. Cursors follow the supplied Paint references; Microsoft binary resource
 files, GDI text pixels and every brush variant are not claimed identical. Other
 remaining differences are listed explicitly in the limitations document.
