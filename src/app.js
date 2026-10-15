@@ -261,7 +261,7 @@ export class PaintPlus {
         !this.doc.selectedObjects.length;
     this.editor?.updateCursor(this.editor.hover);
     const shape = this.doc.selectedObjects.find(o => o.type === 'shape');
-    const handActive=['handLine','handCurve'].includes(shape?.shapeName||this.shape)&&this.tool==='shape';document.querySelector('.hand-wobble').classList.toggle('hidden',!handActive);document.querySelector('#hand-wobble').checked=shape?.shapeStyle.handWobble??this.prefs.handWobble;
+    const handActive=shape?['handLine','handCurve'].includes(shape.shapeName):this.tool==='shape'&&['handLine','handCurve'].includes(this.shape);document.querySelector('.hand-wobble').classList.toggle('hidden',!handActive);document.querySelector('#hand-wobble').checked=shape?.shapeStyle.handWobble??this.prefs.handWobble;
     const shapeActive = !!shape || !!this.editor.pendingShape || this.editor.drag?.type === 'shape';
     document.querySelector('#outline').disabled = !shapeActive;
     document.querySelector('#shape-fill').disabled = !shapeActive;
