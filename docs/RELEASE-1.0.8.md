@@ -26,4 +26,9 @@ The setup upgrades previous installations. All prior startup diagnostics and
 software rendering fixes remain. See LIMITATIONS.md for incomplete features and
 physical laptop verification boundaries.
 
-Validation results will be recorded in TESTING.md after native package checks.
+Validation: all 143 core tests and 149 browser workflows pass locally and on both
+hosted Windows runners. [Run 38800513773](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/actions/runs/38800513773) installs and
+launches the exact Setup download, verifies the new features and native
+clipboard/fonts/offline AI, launches Portable and checks uninstall while
+preserving a project. Both executable archives pass integrity checks and contain
+the same application ASAR. TESTING.md records the hashes and verification limits.

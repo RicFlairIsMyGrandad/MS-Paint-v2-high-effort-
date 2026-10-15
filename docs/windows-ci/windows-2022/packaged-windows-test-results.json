@@ -1,6 +1,6 @@
 {
   "isPackaged": true,
-  "appPath": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω byDQWf\\installed app with spaces\\resources\\app.asar",
+  "appPath": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω fJaPIH\\installed app with spaces\\resources\\app.asar",
   "platform": "win32",
   "gpuStatus": {
     "2d_canvas": "unavailable_software",
@@ -20,7 +20,7 @@
     "webgpu": "unavailable_software",
     "webnn": "unavailable_software"
   },
-  "version": "1.0.7",
+  "version": "1.0.8",
   "installationPathHasSpacesAndUnicode": true,
   "firstLaunchReady": true,
   "defaultCanvasDimensions": true,
@@ -45,19 +45,19 @@
   "clipboardOK": true,
   "aiInferenceOK": true,
   "first": {
-    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω byDQWf\\images\\PaintPlus-smoke.png",
+    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω fJaPIH\\images\\PaintPlus-smoke.png",
     "name": "PaintPlus-smoke.png"
   },
   "second": {
-    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω byDQWf\\images\\PaintPlus-smoke (2).png",
+    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω fJaPIH\\images\\PaintPlus-smoke (2).png",
     "name": "PaintPlus-smoke (2).png"
   },
   "collisionOK": true,
   "project": {
-    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω byDQWf\\images\\PaintPlus-project-smoke.paintplus",
+    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω fJaPIH\\images\\PaintPlus-project-smoke.paintplus",
     "name": "PaintPlus-project-smoke.paintplus"
   },
-  "projectBytes": 128399,
+  "projectBytes": 128428,
   "protocol": "paintplus:",
   "aiModel": true,
   "rendererErrors": [],
@@ -101,5 +101,17 @@
   "independentBubblePadding": true,
   "classicEditColors": true,
   "persistentCustomColorSlots": true,
-  "customBubbleBackground": true
+  "customBubbleBackground": true,
+  "dialogFocusPreserved": true,
+  "alphaLayerMode": true,
+  "alphaLayerEraser": true,
+  "alphaLayerSelection": true,
+  "layerActivationWithoutSelection": true,
+  "doubleClickLayerRename": true,
+  "compactLayerOptions": true,
+  "luminanceArrowDrag": true,
+  "emptyCustomPaletteRow": true,
+  "editedColorSavedToRibbon": true,
+  "persistentPaletteColors": true,
+  "threeTextBackgroundChoices": true
 }
