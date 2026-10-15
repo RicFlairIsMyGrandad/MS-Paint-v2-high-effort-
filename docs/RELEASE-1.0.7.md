@@ -5,7 +5,7 @@
 | Eraser preview | The square uses the chosen secondary colour, the selected pixel width, and a thin black outline. Hover does not paint. |
 | Pointing hand | A straight finger follows the shaft with a small rounded palm below it, matching the supplied reference more closely. The silhouette follows straight/curved endpoints and wobble remains optional. |
 | Grouped edits | Choose the group header, then Select/Free-form Select to lift the same region on all visible, unlocked members. Move, resize, rotate, flip, cut, copy and delete operate on all lifted regions. Brush, pencil, eraser and flood fill also link across group members with one undo step. Click a member row for individual editing. |
-| Bubble background | Background controls offer Color 2, off-white RGB 254/255/255, and a custom colour using Edit Colors. Changing text colour preserves the bubble outline and fill. |
+| Bubble background | Background controls offer Color 2, off-white RGB 254/255/255, and a custom colour using Edit Colors. Changing text colour preserves the bubble outline and fill. Color 2 updates only boxes set to follow it, including mixed selections. |
 | Padding | Separate horizontal and vertical bubble padding control wrapping and spacing. Older projects with a single padding value retain their original spacing. |
 | Edit Colors | Classic compact two-pane layout: 48 basic swatches, 16 persistent custom slots, hue/saturation spectrum, luminance ramp, synchronized RGB and classic HSL fields, preview, OK/Cancel and Add to Custom Colors. The custom pane is open, so Define Custom Colors is disabled. |
 

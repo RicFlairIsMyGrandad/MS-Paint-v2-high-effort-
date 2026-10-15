@@ -145,7 +145,7 @@ export class TextEditor {
     const object=this.object;if(!object)return;
     try{const candidate={...object,...patch,x:Math.round(object.x),y:Math.round(object.y),resampling:'nearest'},layout=textLayout(candidate);this.app.doc.assertAllocation(layout.width*layout.height*24);const source=textSource(candidate);Object.assign(object,candidate,{source,width:source.width,height:source.height});this.modified=true;this.app.doc.dirty=true;this.position();this.syncControls();this.app.changedUI();}catch(error){this.app.toast(error.message);}
   }
-  changeStyle(patch){
+  changeStyle(patch, filter=null){
     const focused=document.activeElement,keepFocus=focused?.closest('#text-ribbon')&&focused.matches('input,select'),caret=keepFocus&&focused.type==='text'?[focused.selectionStart,focused.selectionEnd]:null,rawValue=keepFocus?focused.value:null;
     if('fontSize'in patch){patch.fontSize=Math.max(1,Math.min(384,patch.fontSize||12));patch.fontUnit='pt';}
     if('tailWidth'in patch)patch.tailWidth=Math.max(2,Math.min(160,Math.round(patch.tailWidth||18)));
@@ -153,9 +153,9 @@ export class TextEditor {
     if('shadowOffset'in patch)patch.shadowOffset=Math.max(0,Math.min(100,Math.round(patch.shadowOffset||0)));
     for(const key of ['paddingX','paddingY'])if(key in patch)patch[key]=Math.max(0,Math.min(100,Math.round(patch[key]||0)));
     if('padding'in patch)patch.padding=Math.max(0,Math.min(100,patch.padding||0));if('lineGap'in patch)patch.lineGap=Math.max(-100,Math.min(200,patch.lineGap||0));if('bubbleWidth'in patch)patch.bubbleWidth=Math.max(1,Math.min(32,patch.bubbleWidth||3));
-    Object.assign(this.defaults,tailPatch(this.defaults,patch));this.app.prefs.textStyle={...this.defaults};this.app.savePrefs();
+    if(!filter||filter(this.defaults)){Object.assign(this.defaults,tailPatch(this.defaults,patch));this.app.prefs.textStyle={...this.defaults};this.app.savePrefs();}
     const inline=Object.keys(patch).some(key=>runStyleKeys.includes(key));
-    if(this.active){
+    if(this.active&&(!filter||filter(this.object))){
       const selected=this.captureSelection(),object=this.object;
       const globalPatch=Object.fromEntries(Object.entries(patch).filter(([key])=>!runStyleKeys.includes(key)));
       if(inline && Object.keys(globalPatch).length)this.update(globalPatch);
@@ -167,7 +167,7 @@ export class TextEditor {
         }
       }else{this.update({...tailPatch(object,patch),...(patch.bubble===true?{minHeight:1}:{})});this.rebuild(selected);}
     }else{
-      const targets=this.app.doc.selectedObjects.filter(object=>object.type==='text');if(targets.length&&this.app.selectedEditable())this.app.doc.action('Format text',()=>{for(const object of targets){const candidate={...object,...tailPatch(object,patch),textRuns:inline?formatRuns(textRuns(object),0,object.text.length,patch):object.textRuns};if(patch.bubble)candidate.minHeight=1;const layout=textLayout(candidate);this.app.doc.assertAllocation(layout.width*layout.height*24);const source=textSource(candidate);Object.assign(object,candidate,{source,width:source.width,height:source.height});}});
+      const targets=this.app.doc.selectedObjects.filter(object=>object.type==='text'&&(!filter||filter(object)));if(targets.length&&this.app.selectedEditable())this.app.doc.action('Format text',()=>{for(const object of targets){const candidate={...object,...tailPatch(object,patch),textRuns:inline?formatRuns(textRuns(object),0,object.text.length,patch):object.textRuns};if(patch.bubble)candidate.minHeight=1;const layout=textLayout(candidate);this.app.doc.assertAllocation(layout.width*layout.height*24);const source=textSource(candidate);Object.assign(object,candidate,{source,width:source.width,height:source.height});}});
     }
     this.syncControls();this.app.changedUI();
     if(keepFocus){focused.value=rawValue;focused.focus({preventScroll:true});if(caret)focused.setSelectionRange(...caret);}
