@@ -3,6 +3,12 @@ import { runStyle, runStyleKeys, textRuns, coalesceRuns, formatRuns, fontCSS } f
 const defaults = { font: 'Segoe UI', fontSize: 12, fontUnit: 'pt', bold: false, italic: false, underline: false, strikeout: false, opaque: false, bubble: false, bubbleWidth: 3, padding: 12, lineGap: 0, bubbleShadow: false, shadowOffset: 3, tailWidth:18, tailPosition:28, tailTipX:14, tailTipY:24 };
 const bundled = ['Caveat','Inter','Lora','Merriweather','Pacifico','Roboto Mono'];
 const standard = ['Segoe UI','Arial','Calibri','Cambria','Candara','Consolas','Constantia','Corbel','Georgia','Times New Roman','Verdana','Tahoma','Trebuchet MS','Courier New','Comic Sans MS','Impact','Palatino Linotype','Book Antiqua','Century Gothic','Garamond','Lucida Console','Lucida Sans Unicode'];
+function tailPatch(object,patch) {
+  if(!('tailWidth'in patch||'tailPosition'in patch))return patch;
+  const tail=textLayout(object).tail,result={...(Number.isFinite(object.tailTipY)?{}:{tailWidth:tail.width,tailPosition:tail.left,tailTipX:tail.tipX,tailTipY:tail.tipY}),...patch};
+  if('tailPosition'in patch)result.tailTipX=tail.tipX+patch.tailPosition-tail.left;
+  return result;
+}
 export class TextEditor {
   constructor(app) {
     this.app = app;this.defaults = {...defaults};this.selection={start:0,end:0};
@@ -136,10 +142,10 @@ export class TextEditor {
     const focused=document.activeElement,keepFocus=focused?.closest('#text-ribbon')&&focused.matches('input,select'),caret=keepFocus&&focused.type==='text'?[focused.selectionStart,focused.selectionEnd]:null,rawValue=keepFocus?focused.value:null;
     if('fontSize'in patch){patch.fontSize=Math.max(1,Math.min(384,patch.fontSize||12));patch.fontUnit='pt';}
     if('tailWidth'in patch)patch.tailWidth=Math.max(2,Math.min(160,Math.round(patch.tailWidth||18)));
-    if('tailPosition'in patch){const props=this.object||this.properties;patch.tailPosition=Math.max(9,Math.min(16384,Math.round(patch.tailPosition||28)));patch.tailTipX=(props.tailTipX??14)+patch.tailPosition-(props.tailPosition??28);}
+    if('tailPosition'in patch)patch.tailPosition=Math.max(9,Math.min(16384,Math.round(patch.tailPosition||28)));
     if('shadowOffset'in patch)patch.shadowOffset=Math.max(0,Math.min(100,Math.round(patch.shadowOffset||0)));
     if('padding'in patch)patch.padding=Math.max(0,Math.min(100,patch.padding||0));if('lineGap'in patch)patch.lineGap=Math.max(-100,Math.min(200,patch.lineGap||0));if('bubbleWidth'in patch)patch.bubbleWidth=Math.max(1,Math.min(32,patch.bubbleWidth||3));
-    Object.assign(this.defaults,patch);this.app.prefs.textStyle={...this.defaults};this.app.savePrefs();
+    Object.assign(this.defaults,tailPatch(this.defaults,patch));this.app.prefs.textStyle={...this.defaults};this.app.savePrefs();
     const inline=Object.keys(patch).some(key=>runStyleKeys.includes(key));
     if(this.active){
       const selected=this.captureSelection(),object=this.object;
@@ -151,17 +157,18 @@ export class TextEditor {
           const style={...runStyle(this.properties),...patch},span=this.span({...style,text:'\u200b'});this.restoreSelection(selected);const range=window.getSelection().getRangeAt(0);range.insertNode(span);range.setStart(span.firstChild,1);range.collapse(true);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);
           this.typingStyle=style;this.typingAnchor={node:span.firstChild,index:selected.start};this.position();this.syncControls();
         }
-      }else{this.update({...patch,...(patch.bubble===true?{minHeight:1}:{})});this.rebuild(selected);}
+      }else{this.update({...tailPatch(object,patch),...(patch.bubble===true?{minHeight:1}:{})});this.rebuild(selected);}
     }else{
-      const targets=this.app.doc.selectedObjects.filter(object=>object.type==='text');if(targets.length&&this.app.selectedEditable())this.app.doc.action('Format text',()=>{for(const object of targets){const candidate={...object,...patch,textRuns:inline?formatRuns(textRuns(object),0,object.text.length,patch):object.textRuns};if(patch.bubble)candidate.minHeight=1;const layout=textLayout(candidate);this.app.doc.assertAllocation(layout.width*layout.height*24);const source=textSource(candidate);Object.assign(object,candidate,{source,width:source.width,height:source.height});}});
+      const targets=this.app.doc.selectedObjects.filter(object=>object.type==='text');if(targets.length&&this.app.selectedEditable())this.app.doc.action('Format text',()=>{for(const object of targets){const candidate={...object,...tailPatch(object,patch),textRuns:inline?formatRuns(textRuns(object),0,object.text.length,patch):object.textRuns};if(patch.bubble)candidate.minHeight=1;const layout=textLayout(candidate);this.app.doc.assertAllocation(layout.width*layout.height*24);const source=textSource(candidate);Object.assign(object,candidate,{source,width:source.width,height:source.height});}});
     }
     this.syncControls();this.app.changedUI();
     if(keepFocus){focused.value=rawValue;focused.focus({preventScroll:true});if(caret)focused.setSelectionRange(...caret);}
   }
   syncControls(){const props=this.typingStyle&&this.active&&this.selection.start===this.selection.end?{...this.properties,...this.typingStyle}:this.properties;
-    for(const[id,key]of[['text-font','font'],['text-size','fontSize'],['text-bubble-width','bubbleWidth'],['text-padding','padding'],['text-line-gap','lineGap'],['text-shadow-offset','shadowOffset'],['text-tail-width','tailWidth'],['text-tail-position','tailPosition']]){const field=document.getElementById(id);if(document.activeElement!==field)field.value=props[key]??defaults[key];}
+    const layout=textLayout(props);
+    for(const[id,key]of[['text-font','font'],['text-size','fontSize'],['text-bubble-width','bubbleWidth'],['text-padding','padding'],['text-line-gap','lineGap'],['text-shadow-offset','shadowOffset'],['text-tail-width','tailWidth'],['text-tail-position','tailPosition']]){const field=document.getElementById(id);if(document.activeElement!==field)field.value=key==='tailWidth'?layout.tail.width:key==='tailPosition'?layout.tail.left:props[key]??defaults[key];}
     const tailWidth=document.getElementById('text-tail-width'),tailPosition=document.getElementById('text-tail-position');
-    const object=this.object||this.app.doc.selectedObjects.find(object=>object.type==='text'),boxWidth=object?textLayout(object).boxWidth:500;
+    const object=this.object||this.app.doc.selectedObjects.find(object=>object.type==='text'),boxWidth=object?layout.boxWidth:500;
     tailWidth.max=Math.max(2,Math.min(160,boxWidth-20));tailPosition.max=Math.max(9,boxWidth-9-Number(tailWidth.value));
     tailWidth.disabled=tailPosition.disabled=!props.bubble;document.getElementById('tail-width-value').textContent=tailWidth.value+' px';document.getElementById('tail-position-value').textContent=tailPosition.value+' px';
     document.getElementById('text-opaque').checked=!!props.opaque;document.getElementById('text-bubble').checked=!!props.bubble;document.getElementById('text-bubble-shadow').checked=!!props.bubbleShadow;document.getElementById('text-bubble-shadow').disabled=!props.bubble;document.getElementById('text-shadow-offset').disabled=!props.bubble||!props.bubbleShadow;
