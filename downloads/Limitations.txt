@@ -1,4 +1,4 @@
-# Remaining limitations — 1.0.7
+# Remaining limitations — 1.0.8
 
 These are differences or unverified areas, rather than completed acceptance claims.
 
@@ -26,15 +26,16 @@ These are differences or unverified areas, rather than completed acceptance clai
   pixel-for-pixel comparison with mspaint.exe covers every brush or shape.
   Calligraphy, spray, oil, crayon, marker and watercolor remain approximations.
   Diagonal/curved brush edges and rounded stroke ends can be antialiased.
-- **Layer key colour:** Exact current Color-2 matches on upper rasters and objects reveal lower layers; the bottom canvas is exempt. This also hides intentionally painted matching colours. Choose another Color 2 or use the bottom layer to retain those colours. Changing Color 2 changes this appearance and is stored in projects.
+- **Layer transparency:** Check Use Color 2 as transparency for the older exact-key behavior, or uncheck it for standard alpha compositing. Keyed mode hides intentionally painted Color-2 matches on upper layers. Alpha mode preserves them and erases upper layers to transparent pixels; the bottom paper canvas still erases to Color 2. Projects store the mode, and older files without it keep keyed mode. An object explicitly given Transparent Selection still has its own independent colour key, even in alpha mode.
 - **Photo resizing:** Lanczos improves smoothness but is not claimed pixel-identical to Microsoft Word. Previews needing over 192MB of estimated filter buffers fall back to the browser's high-quality sampling; exports still use the worker. Original source pixels remain available while the object is floating.
-- **Group editing:** A group header links whole-group transforms, rectangular/free-form
-  pixel selections, brush/pencil/eraser strokes and flood fill across visible,
-  unlocked members. Choose Select or Free-form Select after choosing the header
+- **Group editing:** A group header activates members without pre-selecting canvas content.
+  Manually select a rectangular/free-form region to transform it on all visible,
+  unlocked members. Brush/pencil/eraser strokes and flood fill also link across
+  those members. Choose Select or Free-form Select after choosing the header
   to select the same canvas region on all members. Click a member row to edit it
-  individually. Area selection renders that group's floating text/shapes to
-  pixels when an area edit is confirmed; cancelling an unchanged selection
-  restores their original editable objects. Cut, Copy, Delete, resize, rotate
+  individually. Raster painting or area editing renders participating floating objects to
+  pixels. Undo restores their original editable objects; cancelling an unchanged
+  selection or a no-op fill also restores them without a history entry. Cut, Copy, Delete, resize, rotate
   and flip operate on all selected regions while preserving separate layers.
   New text/shapes/assets are inserted on the active layer; grouping does not
   duplicate new objects on every member. Layer properties such as visibility,
@@ -57,10 +58,11 @@ These are differences or unverified areas, rather than completed acceptance clai
   converts it to pixels; save an editable project beforehand. Bubble corners retain their pixel radius; new text bubbles have smaller tails,
   width/attachment sliders and a draggable tip below the body (up to 1,024px
   beyond its edges). Older projects keep their legacy tails until adjusted.
-  Bubble backgrounds can follow Color 2, use RGB 254/255/255, or use a custom
-  colour; horizontal/vertical bubble padding are independent. Exact Color-2
-  transparency still applies on upper layers, so a custom fill that equals
-  Color 2 will be transparent there. Shadows follow the silhouette. The generic callout
+  New text backgrounds use Transparent, White (RGB 254/255/255), or Custom;
+  horizontal/vertical bubble padding are independent. Older Color-2-following
+  boxes retain that behavior until a new background option is chosen. Keyed
+  layer mode still hides fills matching Color 2 on upper layers; choose alpha
+  layer mode to retain those colours. Shadows follow the silhouette. The generic callout
   shape remains a proportional geometric shape.
 - **Library index:** It is a saved index, not a live filesystem watcher. New or
   moved source files need re-importing. Removing library entries or categories
