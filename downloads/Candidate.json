@@ -1,10 +1,10 @@
 {
   "version": "1.0.8",
-  "sourceRevision": "c222cc4b7583ce49ba0475000783b1f3835de4c7",
-  "appSourceSha256": "a7976868f92963de7469b7eb039cfdab71f9ae75ab83d3b2bae892f50e306b77",
-  "appAsarSha256": "a8c8627e66f472ea56dabc11aa1bcaf589a1defb6c33f59485ba872f8c7826d6",
+  "sourceRevision": "87ace3cd306a43e0b47b0540933942bac3cf40e8",
+  "appSourceSha256": "268e96a9fcf2469410e0f315b9f65f8b005b25fdcd838077bd6a79d4ed570fd8",
+  "appAsarSha256": "7b12aabd9e37ab2749155217c956034e8cdb8b57a82482220fd8499e75e6d47a",
   "files": {
-    "PaintPlus-Setup-1.0.8-x64.exe": "8291609f13af806688fd120a4f2bc804e49e3cfb9a793e0f7ccc5a090574bda6",
-    "PaintPlus-Portable-1.0.8-x64.exe": "9adca02336ebdcce6b837b698fff440665a04c1e6a65a944852dc1355ff40701"
+    "PaintPlus-Setup-1.0.8-x64.exe": "d9d9645ea3484f4a1fce59292c0bf8d2891233bd65e4c22a2ee746e53913159c",
+    "PaintPlus-Portable-1.0.8-x64.exe": "2a282c3b78ba75346b82f1d2db917998684aa965a516a2ea04c1481cced8074e"
   }
 }

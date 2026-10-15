@@ -29,8 +29,9 @@ These are differences or unverified areas, rather than completed acceptance clai
 - **Layer transparency:** Check Use Color 2 as transparency for the older exact-key behavior, or uncheck it for standard alpha compositing. Keyed mode hides intentionally painted Color-2 matches on upper layers. Alpha mode preserves them and erases upper layers to transparent pixels; the bottom paper canvas still erases to Color 2. Projects store the mode, and older files without it keep keyed mode. An object explicitly given Transparent Selection still has its own independent colour key, even in alpha mode.
 - **Photo resizing:** Lanczos improves smoothness but is not claimed pixel-identical to Microsoft Word. Previews needing over 192MB of estimated filter buffers fall back to the browser's high-quality sampling; exports still use the worker. Original source pixels remain available while the object is floating.
 - **Group editing:** A group header activates members without pre-selecting canvas content.
-  After manually selecting an area, transforms, rectangular/free-form pixel selections, brush/pencil/eraser strokes and flood fill across visible,
-  unlocked members. Choose Select or Free-form Select after choosing the header
+  Manually select a rectangular/free-form region to transform it on all visible,
+  unlocked members. Brush/pencil/eraser strokes and flood fill also link across
+  those members. Choose Select or Free-form Select after choosing the header
   to select the same canvas region on all members. Click a member row to edit it
   individually. Raster painting or area editing renders participating floating objects to
   pixels. Undo restores their original editable objects; cancelling an unchanged

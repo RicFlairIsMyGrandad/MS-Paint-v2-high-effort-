@@ -6,7 +6,7 @@
 | Layer renaming | Double-click the layer **name** to edit it in place. Enter/blur saves; Escape cancels. The eye and other layer controls do not trigger renaming. Right-click → Rename layer remains available. |
 | Layer activation | Layer rows and group headers activate their target without selecting or lifting canvas content and preserve the current drawing tool. Select canvas regions yourself. Shift/Ctrl still selects layer rows for grouping. |
 | Compact layer options | Both preference rows have the same 32px height as Lock Background/Group/Commit. |
-| Tone slider | Drag anywhere on the right-hand luminance ramp or its arrow. It reaches the exact black and white endpoints and synchronizes the RGB/HSL fields. Keyboard adjustments remain available. |
+| Tone slider | Drag anywhere on the right-hand luminance ramp or its arrow. It reaches the exact black and white endpoints and synchronizes the RGB/HSL fields. Keyboard adjustments remain available. Opening the dialog preserves a field or slider already chosen by the user. |
 | Custom ribbon colours | The bottom palette row starts with nine empty custom slots and fixed RGB 24/71/241 at the right. Click an empty slot to define it. Edit Colors → OK applies and saves the colour to the ribbon; Add to Custom Colors saves it in the dialog and ribbon. Filled custom cells can be selected and edited again. Custom colours survive restart. |
 | Text background | Exactly three exclusive checkboxes: **Transparent**, **White** (RGB 254/255/255), and **Custom**. Custom opens Edit Colors; the adjacent swatch reopens it. Text-colour changes preserve the bubble fill and outline. |
 

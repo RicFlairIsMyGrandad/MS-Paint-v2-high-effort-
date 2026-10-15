@@ -11,6 +11,15 @@ test('Edit Colors OK adds the selected shade to the ribbon and an empty clicked 
  await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('paintplus-settings')).preferences.paletteColors[5])).toBe('#c8784d');await page.reload();await page.waitForFunction(()=>window.paintplus);await expect(page.locator('.palette [data-palette-slot="5"]')).toHaveAttribute('data-color','#c8784d');await expect(page.locator('.palette .special-color')).toHaveAttribute('data-color','#1847F1');
 });
 test('Add to Custom Colors immediately fills the ribbon while Cancel preserves the active paint color',async({page})=>{await fresh(page);await page.evaluate(()=>paintplus.colorDialog('#1847f1'));await rgb(page,33,44,55);await page.locator('#colors-add').click();await page.locator('#colors-cancel').click();await expect(page.locator('.palette [data-palette-slot="0"]')).toHaveAttribute('data-color','#212c37');expect(await page.evaluate(()=>paintplus.color1)).toBe('#000000');});
+test('opening Edit Colors preserves focus when a numeric field or the luminance slider is already in use',async({page})=>{
+ await fresh(page);
+ for(const selector of ['#color-g','.color-luminance']){
+  const focused=await page.evaluate(async selector=>{paintplus.colorDialog('#123456');document.querySelector(selector).focus();await new Promise(resolve=>setTimeout(resolve,70));return document.activeElement===document.querySelector(selector);},selector);
+  expect(focused).toBe(true);
+  await page.locator('#colors-cancel').click();
+ }
+ await page.evaluate(()=>paintplus.colorDialog('#123456'));await rgb(page,200,120,77);await page.locator('#colors-ok').click();expect(await page.evaluate(()=>paintplus.color1)).toBe('#c8784d');
+});
 test('the full luminance bar including its arrow can be dragged to dark and light tones',async({page})=>{
  await fresh(page);await page.evaluate(()=>paintplus.colorDialog('#0000ff'));const b=await page.locator('.color-luminance').boundingBox();await page.mouse.move(b.x+20,b.y+94);await page.mouse.down();await page.mouse.move(b.x+20,b.y+165,{steps:8});await page.mouse.up();expect(Number(await page.locator('#color-l').inputValue())).toBeLessThan(40);expect(Number(await page.locator('#color-b').inputValue())).toBeLessThan(90);
  await page.mouse.move(b.x+20,b.y+165);await page.mouse.down();await page.mouse.move(b.x+20,b.y+20,{steps:8});await page.mouse.up();expect(Number(await page.locator('#color-l').inputValue())).toBeGreaterThan(200);expect(Number(await page.locator('#color-r').inputValue())).toBeGreaterThan(180);await page.mouse.click(b.x+20,b.y+b.height-1);await expect(page.locator('#color-l')).toHaveValue('0');await page.mouse.click(b.x+20,b.y);await expect(page.locator('#color-l')).toHaveValue('240');await page.locator('.color-luminance').press('Home');await expect(page.locator('#color-b')).toHaveValue('0');await page.locator('.color-luminance').press('End');await expect(page.locator('#color-b')).toHaveValue('255');
