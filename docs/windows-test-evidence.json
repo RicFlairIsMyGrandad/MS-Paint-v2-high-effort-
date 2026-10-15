@@ -1,40 +1,40 @@
 {
-  "run": "38624971626",
-  "source": "3d2c2c9a82ae8a625850585a268d035132c11472",
-  "url": "https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/actions/runs/38624971626",
-  "version": "1.0.5",
+  "run": "38668076059",
+  "source": "d38676e8a63d16b78a7c559253dc67fbe6e7cfec",
+  "url": "https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/actions/runs/38668076059",
+  "version": "1.0.6",
   "exactExecutableChecksums": {
-    "PaintPlus-Setup-1.0.5-x64.exe": "10c2db8047f670a1ad7f0768fe1de16e385b3a66dc2ecdc35bbf3f70d9de1241",
-    "PaintPlus-Portable-1.0.5-x64.exe": "851f98df36e0e427612a709957d1b5a016381a4523ea25abcebfcc71fb9407ec"
+    "PaintPlus-Setup-1.0.6-x64.exe": "7d73455d854f1faac73154a49d491d301573612a8d4320f5f042a5fc6ca3b2db",
+    "PaintPlus-Portable-1.0.6-x64.exe": "28c565ab893c149d425025a38b5026fe4a83eb84ef114bdeefc70aac711e301c"
   },
   "runners": [
     {
       "target": "windows-2022",
       "os": "Windows Server 2022 Datacenter",
       "release": "10.0.20348",
-      "corePassed": 100,
-      "uiPassed": 107,
+      "corePassed": 128,
+      "uiPassed": 127,
       "installedPackagedChecksPassed": true,
       "portablePassed": true,
       "fontCatalogSource": "GDI",
       "fontCatalogCount": 126,
       "shortcutsAndAssociationPassed": true,
       "uninstallPreservedProject": true,
-      "evidenceBranch": "windows-evidence-38624971626-windows-2022"
+      "evidenceBranch": "windows-evidence-38668076059-windows-2022"
     },
     {
       "target": "windows-latest",
       "os": "Windows Server 2025 Datacenter",
       "release": "10.0.26100",
-      "corePassed": 100,
-      "uiPassed": 107,
+      "corePassed": 128,
+      "uiPassed": 127,
       "installedPackagedChecksPassed": true,
       "portablePassed": true,
       "fontCatalogSource": "GDI",
       "fontCatalogCount": 144,
       "shortcutsAndAssociationPassed": true,
       "uninstallPreservedProject": true,
-      "evidenceBranch": "windows-evidence-38624971626-windows-latest"
+      "evidenceBranch": "windows-evidence-38668076059-windows-latest"
     }
   ]
 }

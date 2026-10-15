@@ -19,3 +19,10 @@ This release addresses the latest ruler, brush, grouping, selection and speech-b
 | 12 | Exact quarter-turn transforms preserve raster pixels, including partial alpha and mixed odd/even image dimensions. Pixel alignment corrections do not accumulate when rotated repeatedly. Arbitrary-angle rotation may still need smoothing. |
 
 See [LIMITATIONS.md](LIMITATIONS.md) for remaining differences and hardware verification limits. The Windows downloads are unsigned x64 builds for Windows 10/11. Native release-validation results are appended after the exact installer and portable files pass hosted Windows checks.
+
+Validation: 128 core tests and 127 UI workflows passed locally and on both hosted
+Windows runners. [Run 38668076059](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/actions/runs/38668076059) installed and launched
+the exact Setup download, checked the new editor features, fonts/clipboard/AI,
+launched Portable and verified uninstall while preserving a project. Both
+archives contain the same application and pass integrity checks. TESTING.md
+contains logs, hashes and the verification boundaries.
