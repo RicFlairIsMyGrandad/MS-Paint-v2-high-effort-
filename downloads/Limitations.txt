@@ -1,4 +1,4 @@
-# Remaining limitations — 1.0.6
+# Remaining limitations — 1.0.7
 
 These are differences or unverified areas, rather than completed acceptance claims.
 
@@ -28,12 +28,20 @@ These are differences or unverified areas, rather than completed acceptance clai
   Diagonal/curved brush edges and rounded stroke ends can be antialiased.
 - **Layer key colour:** Exact current Color-2 matches on upper rasters and objects reveal lower layers; the bottom canvas is exempt. This also hides intentionally painted matching colours. Choose another Color 2 or use the bottom layer to retain those colours. Changing Color 2 changes this appearance and is stored in projects.
 - **Photo resizing:** Lanczos improves smoothness but is not claimed pixel-identical to Microsoft Word. Previews needing over 192MB of estimated filter buffers fall back to the browser's high-quality sampling; exports still use the worker. Original source pixels remain available while the object is floating.
-- **Selection scope:** Pixel selections lift the active raster layer. They do not
-  combine multiple raster layers into one selection. Shift-click layer rows and Group to move raster content and objects together.
-  Group headers select all members; child rows select individual layers. Grouping
-  preserves layer stacking, including nonadjacent members. Groups do not have Photoshop effects,
-  nested hierarchies, blend modes or masks. In trail mode opaque selection margins
-  also stamp, matching normal opaque selection behavior; enable Transparent to
+- **Group editing:** A group header links whole-group transforms, rectangular/free-form
+  pixel selections, brush/pencil/eraser strokes and flood fill across visible,
+  unlocked members. Choose Select or Free-form Select after choosing the header
+  to select the same canvas region on all members. Click a member row to edit it
+  individually. Area selection renders that group's floating text/shapes to
+  pixels when an area edit is confirmed; cancelling an unchanged selection
+  restores their original editable objects. Cut, Copy, Delete, resize, rotate
+  and flip operate on all selected regions while preserving separate layers.
+  New text/shapes/assets are inserted on the active layer; grouping does not
+  duplicate new objects on every member. Layer properties such as visibility,
+  locking and naming remain per-layer. Groups have no nested hierarchies,
+  blend modes, effects or masks. Locked/hidden members are excluded from linked
+  painting and selection. Stack order, including nonadjacent members, is preserved.
+  In trail mode opaque selection margins also stamp; enable Transparent to
   ignore exact Color-2 pixels.
 - **Text:** Mixed font/point-size/colour/style runs, favorites and re-editing are
   implemented. Font availability depends on the computer; six Latin font families
@@ -49,7 +57,10 @@ These are differences or unverified areas, rather than completed acceptance clai
   converts it to pixels; save an editable project beforehand. Bubble corners retain their pixel radius; new text bubbles have smaller tails,
   width/attachment sliders and a draggable tip below the body (up to 1,024px
   beyond its edges). Older projects keep their legacy tails until adjusted.
-  Shadows follow the silhouette. The generic callout
+  Bubble backgrounds can follow Color 2, use RGB 254/255/255, or use a custom
+  colour; horizontal/vertical bubble padding are independent. Exact Color-2
+  transparency still applies on upper layers, so a custom fill that equals
+  Color 2 will be transparent there. Shadows follow the silhouette. The generic callout
   shape remains a proportional geometric shape.
 - **Library index:** It is a saved index, not a live filesystem watcher. New or
   moved source files need re-importing. Removing library entries or categories
