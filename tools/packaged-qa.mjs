@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import {paletteChecks} from './palette-packaged-qa.mjs';
 import {precisionChecks} from './precision-packaged-qa.mjs';
 import {linkedChecks} from './linked-packaged-qa.mjs';
+import {alphaChecks} from './alpha-packaged-qa.mjs';
 const windows = process.platform === "win32";
 const version=JSON.parse(await readFile('package.json','utf8')).version;
 const original = path.resolve(process.env.PAINTPLUS_TEST_EXECUTABLE || (windows ? "release/win-unpacked/PaintPlus.exe" : "release/linux-unpacked/paintplus"));
@@ -35,7 +36,7 @@ try {
   const box=await page.locator("#overlay").boundingBox();
   await page.mouse.move(box.x+30,box.y+30);await page.mouse.down();await page.mouse.move(box.x+80,box.y+30);await page.mouse.up();
   assert.deepEqual(await page.evaluate(()=>[...paintplus.doc.activeLayer.canvas.getContext("2d").getImageData(50,30,1,1).data]),[24,71,241,255]);
-  const palette=await paletteChecks(page),precision=await precisionChecks(page),linked=await linkedChecks(page);
+  const palette=await paletteChecks(page),precision=await precisionChecks(page),linked=await linkedChecks(page),alpha=await alphaChecks(page);
   // Exercise the revised editor in the installed ASAR, including the native
   // external clipboard path rather than the browser's in-app copy fallback.
   await page.evaluate(()=>{paintplus.width=3;paintplus.editor.createShape('rectangle',{x:140,y:60},{x:240,y:120},{width:3,color:'#000000',background:'#ffffff',outline:'solid',fill:'none'});});
@@ -46,7 +47,7 @@ try {
   await page.locator('#text-content').fill('Editable speech bubble\nInstalled Windows test');
   await page.locator('#text-bubble').check();
   await page.locator('#text-line-gap').fill('5');
-  await page.locator('#text-background-mode').selectOption('offwhite');
+  await page.locator('#text-background-white').check();
   await page.locator('#text-padding-x').fill('18');await page.locator('#text-padding-y').fill('8');
   await page.screenshot({path:`docs/screenshots/packaged-${windows?"windows":"linux"}-text.png`});
   await page.locator('[data-action=finish-text]').click();
@@ -129,7 +130,7 @@ try {
   await page.screenshot({path:`docs/screenshots/packaged-${windows?"windows":"linux"}-dialog.png`});
   await page.evaluate(x=>{paintplus.closeDialog();paintplus.doc.selected=[];paintplus.color1='#000000';paintplus.textEditor.defaults.fontSize=16;paintplus.doc.addLayer('Speech');paintplus.editText(null,{x,y:160});},windows?100:620);
   await page.locator('#text-content').fill('Fixed-size corners & tail.\nSharp text: fgjkpqrwyz');
-  await page.locator('#text-bubble').check();await page.locator('#text-opaque').check();await page.locator('#text-bubble-shadow').check();await page.locator('#text-shadow-offset').fill('3');await page.locator('#text-content').press('Control+a');await page.locator('[data-text-style=bold]').click();await page.locator('[data-text-style=underline]').click();
+  await page.locator('#text-bubble').check();await page.locator('#text-background-white').check();await page.locator('#text-bubble-shadow').check();await page.locator('#text-shadow-offset').fill('3');await page.locator('#text-content').press('Control+a');await page.locator('[data-text-style=bold]').click();await page.locator('[data-text-style=underline]').click();
   await page.evaluate(()=>{const length=paintplus.doc.selectedObjects[0].text.length;paintplus.textEditor.restoreSelection({start:length,end:length});});
   await page.screenshot({path:`docs/screenshots/packaged-${windows?"windows":"linux"}-text.png`});
   await page.locator('[data-action=finish-text]').click();
@@ -143,7 +144,7 @@ try {
   assert(catalog?.count>6);assert.equal(catalog.count,availableFonts.length);
   const result={...runtime,version,installationPathHasSpacesAndUnicode:true,firstLaunchReady:true,defaultCanvasDimensions:true,pointerDrawing:true,editableShapes:true,inlineSpeechText:true,richTextFormatting:true,typingPixelsUnchanged:true,fontSizeInputTwoDigits:true,bubbleShadow:true,outsideClickCommits:true,selectionContextMenu:true,color2CutLayer:true,layerVisibilityOneClick:true,bundledFonts:true,systemFontCatalog:true,brandedExecutableIcons:windows,externalCopyPreservesColor2:true,clipboardAlpha:true,savedPNGBytes:true,savedEditableProject:true,...smoke,rendererErrors:errors,externalRequests:external};
   result.fontCatalogSource=catalog.source;result.fontCatalogCount=catalog.count;
-  Object.assign(result,palette,precision,linked);
+  Object.assign(result,palette,precision,linked,alpha);
   await writeFile(`docs/packaged-${windows?"windows":"linux"}-test-results.json`,JSON.stringify(result,null,2));
   console.log(JSON.stringify(result));
 } catch(error) {

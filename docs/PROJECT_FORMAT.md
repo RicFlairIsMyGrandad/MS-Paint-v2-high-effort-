@@ -12,6 +12,7 @@ Top-level fields:
 | `version` | Integer `1` |
 | `width`, `height` | Canvas pixel dimensions |
 | `color2` | Optional exact upper-layer key colour; older files default to white |
+| `layerTransparency` | `color2` for exact upper-layer keying, `alpha` for standard alpha; absent means legacy `color2` |
 | `activeLayerId` | Selected raster layer |
 | `selected` | Floating object IDs that were selected |
 | `sources` | Array of base64 PNG data URLs, deduplicated by source reference |
@@ -65,3 +66,12 @@ Shadow colour is always #808080 rather than a stored or user-selected colour.
 New fields are validated when reading projects. Clicking outside in default
 Paint mode confirms editable objects to their layer raster; save before doing
 so to retain their metadata.
+
+Version 1.0.8 keeps container version 1. `layerTransparency` preserves the
+document's alpha/keyed compositing mode. Raster/object source PNGs retain their
+own RGBA pixels when switching this setting. Text `backgroundMode` accepts
+`transparent`, `offwhite`, `custom`, and legacy `color2`; `opaque` and `background`
+hold the actual fill behavior and RGB colour. Off-white is exactly #feffff.
+Ribbon custom palette slots and the preferred mode for new documents are user
+preferences, separate from project files. Earlier readers do not understand
+alpha layer mode and may apply their legacy Color-2 key to upper layers.

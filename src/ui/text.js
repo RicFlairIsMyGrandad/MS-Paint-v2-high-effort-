@@ -1,6 +1,6 @@
 import { textSource, textLayout } from '../core/editable.js';
 import { runStyle, runStyleKeys, textRuns, coalesceRuns, formatRuns, fontCSS } from '../core/rich-text.js';
-const defaults = { font: 'Segoe UI', fontSize: 12, fontUnit: 'pt', bold: false, italic: false, underline: false, strikeout: false, opaque: false, bubble: false, bubbleWidth: 3, padding: 12, paddingX: 12, paddingY: 12, backgroundMode: 'color2', background: '#ffffff', lineGap: 0, bubbleShadow: false, shadowOffset: 3, tailWidth:18, tailPosition:28, tailTipX:14, tailTipY:24 };
+const defaults = { font: 'Segoe UI', fontSize: 12, fontUnit: 'pt', bold: false, italic: false, underline: false, strikeout: false, opaque: false, bubble: false, bubbleWidth: 3, padding: 12, paddingX: 12, paddingY: 12, backgroundMode: 'transparent', background: '#feffff', lineGap: 0, bubbleShadow: false, shadowOffset: 3, tailWidth:18, tailPosition:28, tailTipX:14, tailTipY:24 };
 const bundled = ['Caveat','Inter','Lora','Merriweather','Pacifico','Roboto Mono'];
 const standard = ['Segoe UI','Arial','Calibri','Cambria','Candara','Consolas','Constantia','Corbel','Georgia','Times New Roman','Verdana','Tahoma','Trebuchet MS','Courier New','Comic Sans MS','Impact','Palatino Linotype','Book Antiqua','Century Gothic','Garamond','Lucida Console','Lucida Sans Unicode'];
 function tailPatch(object,patch) {
@@ -30,13 +30,13 @@ export class TextEditor {
       if(property==='fontSize')this.sizeNavigating=false;
       this.changeStyle({[property]:value});
     });
-    for(const[id,property]of[['text-opaque','opaque'],['text-bubble','bubble'],['text-bubble-shadow','bubbleShadow']])document.getElementById(id).addEventListener('change',event=>this.changeStyle({[property]:event.target.checked}));
-    const chooseBackground=()=>this.app.colorDialog(this.properties.background||this.app.color2,value=>this.changeStyle({backgroundMode:'custom',background:value,opaque:true}));
-    document.getElementById('text-background-mode').addEventListener('change',event=>{
-      const mode=event.target.value;if(mode==='custom')chooseBackground();else this.changeStyle({backgroundMode:mode,background:mode==='offwhite'?'#feffff':this.app.color2,opaque:true});
-      this.syncControls();
+    for(const[id,property]of[['text-bubble','bubble'],['text-bubble-shadow','bubbleShadow']])document.getElementById(id).addEventListener('change',event=>this.changeStyle({[property]:event.target.checked}));
+    const chooseBackground=()=>this.app.colorDialog(this.properties.background||'#feffff',value=>this.changeStyle({backgroundMode:'custom',background:value,opaque:true}));
+    for(const mode of ['transparent','white','custom'])document.getElementById('text-background-'+mode).addEventListener('change',()=>{
+      if(mode==='custom'){this.syncControls();chooseBackground();}
+      else this.changeStyle({backgroundMode:mode==='white'?'offwhite':'transparent',opaque:mode!=='transparent',...(mode==='white'?{background:'#feffff'}:{})});
     });
-    document.getElementById('text-background-custom').addEventListener('click',chooseBackground);
+    document.getElementById('text-background-edit').addEventListener('click',event=>{event.preventDefault();chooseBackground();});
     this.setupSizeMenu();
     this.node.addEventListener('contextmenu',event=>this.app.editor.contextMenu(event));
     this.node.addEventListener('pointerdown',event=>{
@@ -136,7 +136,7 @@ export class TextEditor {
     const doc=this.app.doc,layer=object?doc.layers.find(layer=>layer.objects.includes(object)):doc.activeLayer;
     if(!layer||layer.locked||!layer.visible){this.app.toast('Show and unlock this layer before editing text.');return;}
     doc.activeLayerId=layer.id;this.creationBefore=object?null:doc.metadata();this.creationDirty=doc.dirty;
-    if(!object){const props={...this.defaults,type:'text',text:'',textRuns:[],x:Math.round(rect.x),y:Math.round(rect.y),width:Math.round(rect.width),textBoxWidth:Math.round(rect.width),minHeight:this.defaults.bubble?1:Math.round(rect.height),textColor:this.app.color1,background:this.defaults.backgroundMode==='offwhite'?'#feffff':this.defaults.backgroundMode==='custom'?this.defaults.background:this.app.color2,bubbleColor:this.app.color1,resampling:'nearest'};
+    if(!object){const props={...this.defaults,type:'text',text:'',textRuns:[],x:Math.round(rect.x),y:Math.round(rect.y),width:Math.round(rect.width),textBoxWidth:Math.round(rect.width),minHeight:this.defaults.bubble?1:Math.round(rect.height),textColor:this.app.color1,background:this.defaults.backgroundMode==='color2'?this.app.color2:this.defaults.backgroundMode==='offwhite'?'#feffff':this.defaults.background,bubbleColor:this.app.color1,resampling:'nearest'};
       doc.assertAllocation(rect.width*rect.height*24);const source=textSource(props);props.height=source.height;doc.inTransaction=true;try{object=doc.insert(source,'Text',false,props);}finally{doc.inTransaction=false;}}
     doc.selected=[object.id];this.before=doc.metadata();this.objectId=object.id;this.modified=false;this.app.tool='text';this.node.classList.remove('hidden');this.selection={start:object.text?.length||0,end:object.text?.length||0};
     this.rebuild();this.app.switchTab('text');this.syncControls();this.app.changedUI();this.node.focus();this.restoreSelection(this.selection);
@@ -175,12 +175,14 @@ export class TextEditor {
   syncControls(){const props=this.typingStyle&&this.active&&this.selection.start===this.selection.end?{...this.properties,...this.typingStyle}:this.properties;
     const layout=textLayout(props);
     for(const[id,key]of[['text-font','font'],['text-size','fontSize'],['text-bubble-width','bubbleWidth'],['text-padding-x','paddingX'],['text-padding-y','paddingY'],['text-line-gap','lineGap'],['text-shadow-offset','shadowOffset'],['text-tail-width','tailWidth'],['text-tail-position','tailPosition']]){const field=document.getElementById(id);if(document.activeElement!==field)field.value=key==='tailWidth'?layout.tail.width:key==='tailPosition'?layout.tail.left:(key==='paddingX'||key==='paddingY'?props[key]??props.padding??defaults[key]:props[key]??defaults[key]);}
-    document.getElementById('text-background-mode').value=props.backgroundMode||'color2';document.querySelector('#text-background-custom i').style.background=props.background||this.app.color2;
+    const backgroundMode=!props.opaque?'transparent':props.backgroundMode==='offwhite'?'white':'custom';
+    for(const mode of ['transparent','white','custom'])document.getElementById('text-background-'+mode).checked=mode===backgroundMode;
+    document.querySelector('#text-background-edit i').style.background=props.background||'#feffff';
     const tailWidth=document.getElementById('text-tail-width'),tailPosition=document.getElementById('text-tail-position');
     const object=this.object||this.app.doc.selectedObjects.find(object=>object.type==='text'),boxWidth=object?layout.boxWidth:500;
     tailWidth.max=Math.max(2,Math.min(160,boxWidth-20));tailPosition.max=Math.max(9,boxWidth-9-Number(tailWidth.value));
     tailWidth.disabled=tailPosition.disabled=!props.bubble;document.getElementById('tail-width-value').textContent=tailWidth.value+' px';document.getElementById('tail-position-value').textContent=tailPosition.value+' px';
-    document.getElementById('text-opaque').checked=!!props.opaque;document.getElementById('text-bubble').checked=!!props.bubble;document.getElementById('text-bubble-shadow').checked=!!props.bubbleShadow;document.getElementById('text-bubble-shadow').disabled=!props.bubble;document.getElementById('text-shadow-offset').disabled=!props.bubble||!props.bubbleShadow;
+    document.getElementById('text-bubble').checked=!!props.bubble;document.getElementById('text-bubble-shadow').checked=!!props.bubbleShadow;document.getElementById('text-bubble-shadow').disabled=!props.bubble;document.getElementById('text-shadow-offset').disabled=!props.bubble||!props.bubbleShadow;
     for(const button of document.querySelectorAll('button[data-text-style]')){const value=!!props[button.dataset.textStyle];button.classList.toggle('selected',value);button.setAttribute('aria-pressed',String(value));}
     const favorite=this.app.prefs.favoriteFonts.includes(props.font),button=document.getElementById('text-font-favorite');button.classList.toggle('selected',favorite);button.setAttribute('aria-pressed',String(favorite));button.title=favorite?'Unpin font':'Pin font to Favorites';
   }

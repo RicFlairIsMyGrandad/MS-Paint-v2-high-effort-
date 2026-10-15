@@ -118,7 +118,7 @@ export class PaintDocument {
     this.selected = [];
     this.onChange = onChange;
     this.dirty = false;
-    this.color2='#ffffff';this.renderRevision=0;this.visibilityOverrides=new Map();
+    this.color2='#ffffff';this.layerTransparency='color2';this.renderRevision=0;this.visibilityOverrides=new Map();
     this.transientSelection=null;this.selectedLayers=[];this.editGroupId=null;
     this.maxWorkingBytes = 512 * 1024 * 1024;
     this.history = new History(() => {
@@ -143,6 +143,14 @@ export class PaintDocument {
       this.layers.find((l) => l.id === this.activeLayerId) || this.layers[0]
     );
   }
+  layerKey(layer) { return this.layerTransparency === 'color2' && this.layers.indexOf(layer) > 0 ? this.color2 : null; }
+  focusLayers(ids) {
+    this.selected=[];this.selectedLayers=this.layers.filter(layer=>ids.includes(layer.id)).map(layer=>layer.id);
+    const members=this.layers.filter(layer=>this.selectedLayers.includes(layer.id));
+    this.editGroupId=members.length>1&&members[0].group&&members.every(layer=>layer.group===members[0].group)?members[0].group:null;
+    if(members.length)this.activeLayerId=members.at(-1).id;
+    this.invalidateLayers();this.onChange();
+  }
   get objects() {
     return this.layers.flatMap((l) => l.objects);
   }
@@ -158,8 +166,21 @@ export class PaintDocument {
     if(layers.some(layer=>layer.locked||!layer.visible))throw new Error('Show and unlock the layer before painting.');
     // Capture all layers before touching any of them, and retain tile-based undo.
     this.assertAllocation(layers.length*this.width*this.height*8);
+    const before=layers.some(layer=>layer.objects.length)?this.metadata():null,dirty=this.dirty;
+    if(before)try{
+      for(const layer of layers)if(layer.objects.length){
+        layer.canvas=cloneCanvas(layer.canvas);
+        for(const object of layer.objects)drawObject(layer.canvas.getContext('2d'),object,true,this.layerKey(layer));
+        layer.objects=[];
+      }
+    }catch(error){this.restore(before);this.dirty=dirty;throw error;}
     const edits=layers.map(layer=>new RasterEdit(layer,this.history,()=>this.changed(),()=>this.layers.find(item=>item.id===layer.id)));
-    return {edits,commit:label=>{
+    return {edits,cancel:()=>{if(before){this.restore(before);this.dirty=dirty;this.onChange();}},commit:label=>{
+      if(before){
+        const after=this.metadata();
+        this.history.push({label,resources:[...new Set([...this.resources(before),...this.resources(after)])],undo:()=>this.restore(before),redo:()=>this.restore(after)});
+        this.changed();return;
+      }
       const commands=edits.map(edit=>edit.commit(label,false)).filter(Boolean);
       if(!commands.length)return;
       this.history.push({label,bytes:commands.reduce((sum,command)=>sum+command.bytes,0),undo:()=>{for(const command of commands)command.undo();},redo:()=>{for(const command of commands)command.redo();}});
@@ -183,6 +204,7 @@ export class PaintDocument {
     return {
       width: this.width,
       height: this.height,
+      layerTransparency:this.layerTransparency,
       activeLayerId: this.activeLayerId,
       selected: [...this.selected],
       layers: this.layers.map((l) => ({
@@ -193,6 +215,7 @@ export class PaintDocument {
   }
   restore(state) {
     this.transientSelection=null;this.selectedLayers=[];
+    this.layerTransparency=state.layerTransparency||'color2';
     this.width = state.width;
     this.height = state.height;
     this.activeLayerId = state.activeLayerId;
@@ -301,7 +324,7 @@ export class PaintDocument {
       ctx.fillStyle = background;
       ctx.fillRect(0, 0, this.width, this.height);
     }
-    this.layers.forEach((layer,index)=>{if(layer.visible)drawLayer(ctx,layer,index?this.color2:null);});
+    this.layers.forEach((layer,index)=>{if(layer.visible)drawLayer(ctx,layer,this.layerKey(layer));});
     return out;
   }
   cutIntoLayer(background = '#ffffff') {
@@ -311,7 +334,7 @@ export class PaintDocument {
     this.assertAllocation(this.width*this.height*(this.layers.length+4)*4);
     this.action('Cut into new layer',()=>{
       for(const layer of this.layers)layer.objects=layer.objects.filter(object=>!objects.includes(object));
-      const layer=createLayer(this.width,this.height,'Cut selection',background);layer.objects=objects;
+      const layer=createLayer(this.width,this.height,'Cut selection',this.layerTransparency==='alpha'?null:background);layer.objects=objects;
       this.layers.push(layer);this.activeLayerId=layer.id;
     });
   }
@@ -399,12 +422,13 @@ export class PaintDocument {
     const mask=path?polygonMask(w,h,path,x,y):null,objects=[];
     for(const l of targets){
       const flattened=canvas(this.width,this.height);
-      if(this.editGroupId){drawLayer(flattened.getContext('2d'),l,this.layers.indexOf(l)?this.color2:null);l.objects=[];}
-      else flattened.getContext('2d').drawImage(l.canvas,0,0);
+      flattened.getContext('2d').drawImage(l.canvas,0,0);
+      for(const object of l.objects)drawObject(flattened.getContext('2d'),object,true,this.layerKey(l));
+      l.objects=[];
       l.canvas=flattened;
       const src=canvas(w,h),ctx=src.getContext('2d'),raster=l.canvas.getContext('2d');
       const before=raster.getImageData(x,y,w,h),lifted=new Uint8ClampedArray(before.data),erased=new Uint8ClampedArray(before.data);
-      const replacement=[...hexRGB(paintBackground),255];
+      const replacement=this.layerTransparency==='alpha'&&this.layers.indexOf(l)>0?[0,0,0,0]:[...hexRGB(paintBackground),255];
       for(let pixel=0;pixel<w*h;pixel++)if(!mask||mask[pixel])erased.set(replacement,pixel*4);else lifted[pixel*4+3]=0;
       const sourceImage=ctx.createImageData(w,h);sourceImage.data.set(lifted);ctx.putImageData(sourceImage,0,0);
       const erasedImage=raster.createImageData(w,h);erasedImage.data.set(erased);raster.putImageData(erasedImage,x,y);
@@ -437,13 +461,13 @@ export class PaintDocument {
     this.assertAllocation(targets.length*this.width*this.height*8);
     for(const layer of targets) {
       // Key-colour pixels are the empty paper; retain the paper on the base layer.
-      const source=colorKey(layer.canvas,this.color2),ctx=source.getContext('2d'),data=ctx.getImageData(0,0,this.width,this.height).data;
+      const source=this.layerTransparency==='color2'?colorKey(layer.canvas,this.color2):cloneCanvas(layer.canvas),ctx=source.getContext('2d'),data=ctx.getImageData(0,0,this.width,this.height).data;
       let left=this.width,top=this.height,right=-1,bottom=-1;
       for(let y=0;y<this.height;y++)for(let x=0;x<this.width;x++)if(data[(y*this.width+x)*4+3]){left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y);}
       if(right>=left) {
         const image=canvas(right-left+1,bottom-top+1);image.getContext('2d').drawImage(source,-left,-top);
         layer.canvas=canvas(this.width,this.height);
-        if(layer===this.layers[0]){
+        if(layer===this.layers[0]&&this.layerTransparency==='color2'){
           const original=before.layers.find(item=>item.id===layer.id).canvas.getContext('2d').getImageData(0,0,this.width,this.height),paper=layer.canvas.getContext('2d'),rgb=hexRGB(this.color2);
           for(let i=0;i<data.length;i+=4)if(data[i+3]){if(original.data[i+3]===255)original.data.set([...rgb,255],i);else original.data[i+3]=0;}
           paper.putImageData(original,0,0);
@@ -463,7 +487,7 @@ export class PaintDocument {
     if(targets.some(layer=>layer.locked))throw new Error('Unlock selected layers before grouping.');
     this.cancelTransientSelection();const group=id(),name='Group '+(new Set(this.layers.map(layer=>layer.group).filter(Boolean)).size+1);
     this.action('Group layers',()=>{for(const layer of this.layers)if(ids.includes(layer.id)){layer.group=group;layer.groupName=name;}});
-    this.selectLayers(ids);return group;
+    this.focusLayers(ids);return group;
   }
   ungroupLayers(ids=this.selectedLayers) {
     const groups=new Set(this.layers.filter(layer=>ids.includes(layer.id)).map(layer=>layer.group).filter(Boolean));
@@ -517,7 +541,7 @@ export class PaintDocument {
     const resized = new Map();
     for (const o of targets) {
       let src = o.transparentColor ? colorKeyCached(o) : o.source;
-      const layer=this.layers.find(layer=>layer.objects.includes(o));if(this.layers.indexOf(layer)>0&&o.transparentColor!==this.color2)src=keyedSource(src,this.color2);
+      const layer=this.layers.find(layer=>layer.objects.includes(o));const key=this.layerKey(layer);if(key&&o.transparentColor!==key)src=keyedSource(src,key);
       resized.set(
         o.id,
         await resample(
@@ -563,8 +587,8 @@ export class PaintDocument {
       () => {
         bottom.canvas = cloneCanvas(bottom.canvas);
         const ctx = bottom.canvas.getContext("2d");
-        for (const o of bottom.objects) drawObject(ctx, o,true,index>1?this.color2:null);
-        drawLayer(ctx,top,this.color2);
+        for (const o of bottom.objects) drawObject(ctx, o,true,this.layerKey(bottom));
+        drawLayer(ctx,top,this.layerKey(top));
         bottom.objects = [];
         this.layers.splice(index, 1);
         this.activeLayerId = bottom.id;

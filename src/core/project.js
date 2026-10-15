@@ -33,6 +33,7 @@ export function serialize(doc) {
     width: doc.width,
     height: doc.height,
     color2:doc.color2,
+    layerTransparency:doc.layerTransparency,
     activeLayerId: doc.activeLayerId,
     selected: doc.selected,
     sources,
@@ -52,6 +53,7 @@ export function serialize(doc) {
 }
 export async function deserialize(text, onChange = () => {}) {
   const p = JSON.parse(text);
+  if(p.layerTransparency!==undefined&&!['color2','alpha'].includes(p.layerTransparency))throw new Error('Invalid layer transparency mode.');
   if(p.color2!==undefined&&!/^#[0-9a-f]{6}$/i.test(p.color2))throw new Error('Invalid layer key colour.');
   if (p.format !== "PaintPlus" || p.version !== 1)
     throw new Error("This is not a supported PaintPlus project.");
@@ -113,7 +115,7 @@ export async function deserialize(text, onChange = () => {}) {
     }
   }
   const doc = new PaintDocument(p.width, p.height, onChange);
-  doc.color2=p.color2||'#ffffff';
+  doc.color2=p.color2||'#ffffff';doc.layerTransparency=p.layerTransparency||'color2';
   doc.layers = p.layers.map((l) => {
     if (
       !sources[l.raster] ||
@@ -151,7 +153,7 @@ export async function deserialize(text, onChange = () => {}) {
             if (typeof run.text !== 'string' || (run.font !== undefined && (typeof run.font !== 'string' || run.font.length > 100)) || (run.fontSize !== undefined && (!Number.isFinite(run.fontSize) || run.fontSize < 1 || run.fontSize > 512)) || (run.textColor !== undefined && !/^#[0-9a-f]{6}$/i.test(run.textColor))) throw new Error('Invalid rich text style.');
           }
           if(o.tailTipX!==undefined&&(!Number.isFinite(o.tailTipX)||Math.abs(o.tailTipX)>17408))throw new Error('Invalid speech bubble tip.');
-          if(o.backgroundMode!==undefined&&!['color2','offwhite','custom'].includes(o.backgroundMode))throw new Error('Invalid text background mode.');
+          if(o.backgroundMode!==undefined&&!['transparent','color2','offwhite','custom'].includes(o.backgroundMode))throw new Error('Invalid text background mode.');
           if(o.background!==undefined&&(typeof o.background!=='string'||!/^#[0-9a-f]{6}$/i.test(o.background)))throw new Error('Invalid text background color.');
           if(o.bubbleShadow!==undefined&&typeof o.bubbleShadow!=='boolean')throw new Error('Invalid bubble shadow.');
           for (const [key, limit] of [['paddingX',100],['paddingY',100],['padding',100],['lineGap',200],['bubbleWidth',32],['minHeight',16384],['textBoxWidth',16384],['shadowOffset',100],['tailWidth',160],['tailPosition',16384],['tailTipY',1024]])

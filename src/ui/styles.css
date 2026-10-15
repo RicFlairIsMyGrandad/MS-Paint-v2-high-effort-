@@ -1895,3 +1895,14 @@ body.fullscreen .titlebar {
 .speech-options>div>label {white-space:nowrap;}
 .layer-group-header[aria-pressed=true] {background:#c8ddf2;box-shadow:inset 3px 0 #087fff;}
 .layer-group-hint {font-size:11px;line-height:1.4;padding:5px 8px;color:#48607a;background:#edf3f9;}
+.layer-own-assets,.layer-transparency {display:flex;align-items:center;gap:6px;padding:0 8px;min-height:32px;height:32px;flex:0 0 32px;font-size:11px;border-top:1px solid #d8e0ea;margin:0;}
+.layer-extras {height:32px;min-height:32px;flex:0 0 32px;align-items:center;padding:0;margin-top:0;}
+.layer-transparency input {accent-color:#087fff;}
+.color-chip.empty-color {background:#f5f5f5;}
+.color-luminance {width:24px;z-index:2;touch-action:none;cursor:ns-resize;}
+#color-luminance {pointer-events:none;}
+.luminance-pointer {cursor:ns-resize;}
+.text-background-group {width:152px;min-width:152px;gap:3px;padding-top:7px;}
+.text-background-group>label {height:22px;flex-shrink:0;font-size:12px;}
+#text-background-edit {display:inline-flex;align-items:center;gap:3px;height:21px;padding:1px 4px;font-size:12px;}
+#text-background-edit i {width:14px;height:14px;border:1px solid #888;display:inline-block;}

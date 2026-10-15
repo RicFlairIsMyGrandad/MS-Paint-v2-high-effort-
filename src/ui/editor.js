@@ -170,7 +170,7 @@ export class Editor {
     const ctx = this.display.getContext("2d");
     ctx.clearRect(0, 0, d.width, d.height);
     d.color2=this.app.color2;
-    d.layers.forEach((layer,index)=>{if(layer.visible)drawLayer(ctx,layer,index?d.color2:null,d.renderRevision);});
+    d.layers.forEach((layer,index)=>{if(layer.visible)drawLayer(ctx,layer,d.layerKey(layer),d.renderRevision);});
     const over = this.overlay.getContext("2d");
     over.setTransform(1, 0, 0, 1, 0, 0);
     over.clearRect(0, 0, this.overlay.width, this.overlay.height);
@@ -501,7 +501,7 @@ export class Editor {
       } else if (a.tool === "fill") {
         const edit=d.beginLinkedRaster();let changed=false;
         for(const raster of edit.edits){raster.capture(0,0,d.width,d.height);changed=floodFill(raster.layer.canvas,p.x,p.y,color,a.prefs.fillTolerance)||changed;}
-        if(changed)edit.commit('Fill');
+        if(changed)edit.commit('Fill');else edit.cancel();
       } else if (a.tool === "dropper") {
         const c = d.composite(a.color2);
         const picked = colorAt(c, p.x, p.y);
@@ -536,7 +536,7 @@ export class Editor {
       const ctx=edit.layer.canvas.getContext('2d');
       if(app.tool==='brush'&&app.brush==='round'){edit.restoreBefore();paintRoundPath(ctx,drag.points,app.width,drag.color);}
       else if(app.tool==='eraser'&&drag.right)replaceColorSegment(ctx,a,b,app.color1,app.color2,app.width);
-      else if(app.tool==='eraser'){ctx.save();ctx.fillStyle=app.color2;pixelSegment(ctx,a,b,app.width);ctx.restore();}
+      else if(app.tool==='eraser'){ctx.save();if(this.doc.layerTransparency==='alpha'&&this.doc.layers.indexOf(edit.layer)>0)ctx.globalCompositeOperation='destination-out';ctx.fillStyle=app.color2;pixelSegment(ctx,a,b,app.width);ctx.restore();}
       else paintSegment(ctx,a,b,{type:app.tool,brush:app.brush,color:drag.color,background:drag.background,width:app.width});
     }
   }

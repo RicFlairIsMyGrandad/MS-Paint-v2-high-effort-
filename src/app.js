@@ -47,10 +47,14 @@ const defaultPrefs = {
   toolWidths: {},
   favoriteFonts: [],
   customColors: [],
+  paletteColors: [],
+  paletteNext: 0,
+  layerTransparencyMode: "color2",
 };
 export class PaintPlus {
   constructor() {
     this.doc = new PaintDocument(731, 411, () => this.changedUI());
+    this.doc.layerTransparency=this.prefs?.layerTransparencyMode||'color2';
     this.color1 = "#1847f1";
     this.color2 = "#ffffff";
     this.activeColor = 1;
@@ -100,6 +104,10 @@ export class PaintPlus {
         : [...defaultPrefs.shortcuts];
     this.prefs.favoriteFonts = Array.isArray(settings.preferences?.favoriteFonts) ? settings.preferences.favoriteFonts.filter(font => typeof font === 'string' && font.length < 100).slice(0,200) : [];
     this.prefs.customColors = Array.isArray(settings.preferences?.customColors) ? settings.preferences.customColors.filter(color => typeof color === 'string' && /^#[0-9a-f]{6}$/i.test(color)).slice(0,16) : [];
+    this.prefs.paletteColors = Array.from({length:9},(_,index)=>{const colors=settings.preferences?.paletteColors;const value=Array.isArray(colors)?colors[index]:this.prefs.customColors.filter(color=>color.toLowerCase()!=='#ffffff')[index];return typeof value==='string'&&/^#[0-9a-f]{6}$/i.test(value)?value.toLowerCase():null;});
+    this.prefs.paletteNext=Math.max(0,Math.min(8,Math.floor(this.prefs.paletteNext)||0));
+    if(!['alpha','color2'].includes(this.prefs.layerTransparencyMode))this.prefs.layerTransparencyMode='color2';
+    this.doc.layerTransparency=this.prefs.layerTransparencyMode;
     this.toolWidths = Object.fromEntries(Object.entries(this.prefs.toolWidths || {}).filter(([key,value]) => typeof key === 'string' && Number.isInteger(value) && value >= 1 && value <= 256));
     this.zoom = nearestZoom(this.prefs.zoom);
     document.querySelector("#app").innerHTML = layout();
@@ -207,6 +215,7 @@ export class PaintPlus {
   changedUI() {
     if (!this.editor) return;
     this.doc.color2=this.color2;this.doc.invalidateLayers();
+    document.querySelector('#layer-color2-transparency').checked=this.doc.layerTransparency==='color2';
     document.querySelector('#layer-own-assets').checked=this.prefs.assetOwnLayer;
     if (this.doc.history.droppedOperation) {
       this.doc.history.droppedOperation = null;
@@ -280,6 +289,11 @@ export class PaintPlus {
     this.updateColors();
   }
   updateColors() {
+    for(const chip of document.querySelectorAll('.palette [data-palette-slot]')){
+      const index=Number(chip.dataset.paletteSlot),color=this.prefs.paletteColors?.[index];chip.classList.toggle('empty-color',!color);
+      if(color){chip.dataset.color=color;chip.style.setProperty('--chip',color);chip.title=color;chip.setAttribute('aria-label',`Custom palette color ${index+1}: ${color}`);}
+      else{delete chip.dataset.color;chip.style.setProperty('--chip','#f5f5f5');chip.title='Choose a custom color';chip.setAttribute('aria-label',`Empty custom color ${index+1}`);}
+    }
     document.querySelector("#color1-swatch").style.background = this.color1;
     document.querySelector("#color2-swatch").style.background = this.color2;
     document
@@ -320,7 +334,7 @@ export class PaintPlus {
         const committing = layer.objects.filter(o => objects.includes(o));
         if (!committing.length) continue;
         layer.canvas = cloneCanvas(layer.canvas);
-        for (const object of committing) drawObject(layer.canvas.getContext('2d'), object,true,this.doc.layers.indexOf(layer)?this.color2:null);
+        for (const object of committing) drawObject(layer.canvas.getContext('2d'), object,true,this.doc.layerKey(layer));
         layer.objects = layer.objects.filter(o => !committing.includes(o));
       }
       this.doc.selected = [];
@@ -436,8 +450,10 @@ export class PaintPlus {
         this.shape = shape.dataset.shape;
         this.setTool("shape");
       }
+      const empty=e.target.closest('.palette .custom-color-slot:not([data-color])');if(empty){this.paletteTarget=Number(empty.dataset.paletteSlot);this.colorDialog();}
       const color = e.target.closest("[data-color]");
       if (color) {
+        this.paletteTarget=color.dataset.paletteSlot!==undefined?Number(color.dataset.paletteSlot):null;
         if (this.activeColor === 1) this.color1 = color.dataset.color;
         else this.color2 = color.dataset.color;
         this.colorChanged();
@@ -447,13 +463,11 @@ export class PaintPlus {
       if (!e.target.closest("#menu") && !e.target.closest("[data-action]"))
         this.closeMenu();
     });
-    document.querySelectorAll("[data-color]").forEach((b) =>
-      b.addEventListener("contextmenu", (e) => {
-        e.preventDefault();
-        this.color2 = b.dataset.color;
-        this.colorChanged(2);
-      }),
-    );
+    document.querySelector('.palette').addEventListener('contextmenu',event=>{
+      const chip=event.target.closest('.color-chip');if(!chip)return;event.preventDefault();
+      this.paletteTarget=chip.dataset.paletteSlot!==undefined?Number(chip.dataset.paletteSlot):null;
+      if(chip.dataset.color){this.color2=chip.dataset.color;this.colorChanged(2);}else {const active=this.activeColor;this.activeColor=2;this.colorDialog();this.activeColor=active;}
+    });
     document.querySelector("#outline").onchange = (e) => { this.outline = e.target.value;this.updateShapeStyle({ outline: this.outline }); };
     document.querySelector("#shape-fill").onchange = (e) => { this.shapeFill = e.target.value;this.updateShapeStyle({ fill: this.shapeFill }); };
     document.querySelector("#selection-transparent").onchange = e => this.toggleTransparency(e.target.checked);
@@ -546,11 +560,12 @@ export class PaintPlus {
     });
     document.querySelector('#hand-wobble').addEventListener('change',event=>{this.prefs.handWobble=event.target.checked;this.updateShapeStyle({handWobble:event.target.checked});this.savePrefs();});
     const list = document.querySelector("#layer-list");
+    document.querySelector('#layer-color2-transparency').addEventListener('change',event=>{const mode=event.target.checked?'color2':'alpha';this.textEditor.finish();this.doc.action('Layer transparency mode',()=>{this.doc.layerTransparency=mode;});this.prefs.layerTransparencyMode=mode;this.savePrefs();});
     document.querySelector('#layer-own-assets').addEventListener('change',event=>{this.prefs.assetOwnLayer=event.target.checked;this.savePrefs();});
     list.addEventListener("click", (e) => {
       if(e.target.closest('.layer-name-input'))return;
       const header=e.target.closest('[data-layer-group]');
-      if(header){this.layerFocused=false;this.editor.groupRegionArmed=false;this.textEditor.finish();this.doc.selectLayers(this.doc.layers.filter(layer=>layer.group===header.dataset.layerGroup).map(layer=>layer.id));this.tool='select';this.updateLayers();return;}
+      if(header){this.layerFocused=false;this.editor.groupRegionArmed=false;this.finishSelection();this.doc.focusLayers(this.doc.layers.filter(layer=>layer.group===header.dataset.layerGroup).map(layer=>layer.id));this.updateLayers();return;}
       const row = e.target.closest(".layer-row");
       if (!row) return;
       const layer = this.doc.layers.find((l) => l.id === row.dataset.id);
@@ -561,24 +576,24 @@ export class PaintPlus {
         this.doc.setLayerVisibility(layer.id,!layer.visible);
       else if (e.target.closest(".lock-layer"))
         this.doc.action("Toggle layer lock", () => {
-          layer.locked = !layer.locked;
-          if (layer.locked)
+          const current=this.doc.layers.find(item=>item.id===layer.id);current.locked = !current.locked;
+          if (current.locked)
             this.doc.selected = this.doc.selected.filter(
               (id) => !layer.objects.some((o) => o.id === id),
             );
         });
       else {
-        this.editor.groupRegionArmed=false;this.textEditor.finish();
+        const focusedLayers=[...this.doc.selectedLayers];this.editor.groupRegionArmed=false;this.finishSelection();
         let ids=[layer.id];
-        if(e.shiftKey&&this.layerAnchor){const a=this.doc.layers.findIndex(item=>item.id===this.layerAnchor),b=this.doc.layers.indexOf(layer);ids=this.doc.layers.slice(Math.min(a,b),Math.max(a,b)+1).map(item=>item.id);}
-        else if(e.ctrlKey)ids=this.doc.selectedLayers.includes(layer.id)?this.doc.selectedLayers.filter(id=>id!==layer.id):[...this.doc.selectedLayers,layer.id];
+        if(e.shiftKey&&this.layerAnchor){const a=this.doc.layers.findIndex(item=>item.id===this.layerAnchor),b=this.doc.layers.findIndex(item=>item.id===layer.id);ids=this.doc.layers.slice(Math.min(a,b),Math.max(a,b)+1).map(item=>item.id);}
+        else if(e.ctrlKey)ids=focusedLayers.includes(layer.id)?focusedLayers.filter(id=>id!==layer.id):[...focusedLayers,layer.id];
         else this.layerAnchor=layer.id;
-        this.doc.selectLayers(ids);this.doc.activeLayerId=layer.id;
-        this.tool = this.selectionOrigin||"select";
+        this.doc.focusLayers(ids);this.doc.activeLayerId=layer.id;
         this.changedUI();
       }
       this.updateLayers();
     });
+    list.addEventListener('dblclick',event=>{const name=event.target.closest('.layer-name');if(name&&!event.target.closest('input')){event.preventDefault();this.renameLayer(name.closest('.layer-row').dataset.id);}});
     list.addEventListener("contextmenu", (e) => {
       e.preventDefault();
       const row = e.target.closest(".layer-row");
@@ -696,7 +711,7 @@ export class PaintPlus {
         (42 - b.height * scale) / 2 - b.y * scale,
       );
       ctx.scale(scale, scale);
-      drawLayer(ctx,l,this.doc.layers.indexOf(l)?this.color2:null,this.doc.renderRevision);
+      drawLayer(ctx,l,this.doc.layerKey(l),this.doc.renderRevision);
       list.querySelector(`[data-id="${l.id}"] img`).src = thumb.toDataURL();
     }
   }
@@ -1400,9 +1415,17 @@ export class PaintPlus {
       }
     });
   }
+  rememberColor(value, slot=null) {
+    if(!/^#[0-9a-f]{6}$/i.test(value))return;value=value.toLowerCase();
+    const colors=Array.from({length:9},(_,index)=>this.prefs.paletteColors?.[index]||null);
+    let index=Number.isInteger(slot)&&slot>=0&&slot<9?slot:colors.indexOf(value);
+    if(index<0)index=colors.indexOf(null);
+    if(index<0){index=this.prefs.paletteNext||0;this.prefs.paletteNext=(index+1)%9;}
+    colors[index]=value;this.prefs.paletteColors=colors;this.updateColors();this.savePrefs();
+  }
   colorDialog(initial = this.activeColor === 1 ? this.color1 : this.color2, apply = null) {
     const slot=this.activeColor;
-    return editColors(this,initial,apply || (value=>{if(slot===1)this.color1=value;else this.color2=value;this.colorChanged(slot);}));
+    return editColors(this,initial,apply || (value=>{if(slot===1)this.color1=value;else this.color2=value;this.colorChanged(slot);}),apply?null:this.paletteTarget??null);
   }
   settingsDialog() {
     const previousTransparency = this.prefs.transparentSelection;
@@ -1494,6 +1517,7 @@ export class PaintPlus {
     )
       return;
     this.doc = new PaintDocument(731, 411, () => this.changedUI());
+    this.doc.layerTransparency=this.prefs?.layerTransparencyMode||'color2';
     this.currentFile = null;
     this.fileName = "Untitled";
     document.querySelector("#filename").value = this.fileName;
@@ -1538,7 +1562,7 @@ export class PaintPlus {
     const c = await imageCanvas(url);
     if (c.width * c.height > 64000000)
       throw new Error("Image exceeds the 64 million pixel limit.");
-    this.doc = new PaintDocument(c.width, c.height, () => this.changedUI());
+    this.doc = new PaintDocument(c.width, c.height, () => this.changedUI());this.doc.layerTransparency=this.prefs.layerTransparencyMode;
     this.doc.activeLayer.canvas = c;
     this.doc.dirty = false;if(this.doc.transientSelection)this.doc.transientSelection.dirty=false;
   }
@@ -1593,12 +1617,12 @@ export class PaintPlus {
     }
     for (const [index,l] of this.doc.layers.entries())
       if (l.visible) {
-        ctx.drawImage(index?colorKey(l.canvas,this.color2):l.canvas, 0, 0);
+        ctx.drawImage(this.doc.layerKey(l)?colorKey(l.canvas,this.doc.layerKey(l)):l.canvas, 0, 0);
         for (const o of l.objects) {
           let source = o.transparentColor
             ? colorKey(o.source, o.transparentColor)
             : o.source;
-          if(index&&o.transparentColor!==this.color2)source=colorKey(source,this.color2);
+          const key=this.doc.layerKey(l);if(key&&o.transparentColor!==key)source=colorKey(source,key);
           const resized = await resample(
             source,
             o.width,
@@ -1758,7 +1782,7 @@ export class PaintPlus {
       );
       const ctx = source.getContext("2d");
       ctx.translate(-b.x, -b.y);
-      for (const layer of this.doc.layers)for(const o of layer.objects)if(this.doc.selected.includes(o.id))drawObject(ctx,o,true,this.doc.layers.indexOf(layer)?this.color2:null);
+      for (const layer of this.doc.layers)for(const o of layer.objects)if(this.doc.selected.includes(o.id))drawObject(ctx,o,true,this.doc.layerKey(layer));
     } else {
       source = this.doc.composite();
     }
@@ -2072,7 +2096,7 @@ export class PaintPlus {
               for (const [index,l] of this.doc.layers.entries())
                 layers.push({
                   ...l,
-                  canvas: await resample(index?colorKey(l.canvas,this.color2):l.canvas, w, h, quality),
+                  canvas: await resample(this.doc.layerKey(l)?colorKey(l.canvas,this.doc.layerKey(l)):l.canvas, w, h, quality),
                   objects: l.objects.map((o) => ({
                     ...o,
                     x: (o.x * w) / sw,
@@ -2371,7 +2395,7 @@ export class PaintPlus {
         new URL("demo/landscape.png", document.baseURI).href,
       );
       const c = await resample(landscape, 1200, 800);
-      this.doc = new PaintDocument(c.width, c.height, () => this.changedUI());
+      this.doc = new PaintDocument(c.width, c.height, () => this.changedUI());this.doc.layerTransparency=this.prefs.layerTransparencyMode;
       this.doc.activeLayer.canvas = c;
       this.doc.activeLayer.locked = true;
       const hero = await this.library.insert("hero");
