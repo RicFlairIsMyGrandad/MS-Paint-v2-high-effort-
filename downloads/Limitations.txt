@@ -1,4 +1,4 @@
-# Remaining limitations — 1.0.5
+# Remaining limitations — 1.0.6
 
 These are differences or unverified areas, rather than completed acceptance claims.
 
@@ -29,8 +29,9 @@ These are differences or unverified areas, rather than completed acceptance clai
 - **Layer key colour:** Exact current Color-2 matches on upper rasters and objects reveal lower layers; the bottom canvas is exempt. This also hides intentionally painted matching colours. Choose another Color 2 or use the bottom layer to retain those colours. Changing Color 2 changes this appearance and is stored in projects.
 - **Photo resizing:** Lanczos improves smoothness but is not claimed pixel-identical to Microsoft Word. Previews needing over 192MB of estimated filter buffers fall back to the browser's high-quality sampling; exports still use the worker. Original source pixels remain available while the object is floating.
 - **Selection scope:** Pixel selections lift the active raster layer. They do not
-  combine multiple raster layers into one selection. Image and text objects can
-  be selected and grouped across layers. Groups do not have Photoshop effects,
+  combine multiple raster layers into one selection. Shift-click layer rows and Group to move raster content and objects together.
+  Group headers select all members; child rows select individual layers. Grouping
+  preserves layer stacking, including nonadjacent members. Groups do not have Photoshop effects,
   nested hierarchies, blend modes or masks. In trail mode opaque selection margins
   also stamp, matching normal opaque selection behavior; enable Transparent to
   ignore exact Color-2 pixels.
@@ -45,8 +46,10 @@ These are differences or unverified areas, rather than completed acceptance clai
   their text is edited, when the new renderer regenerates them. Font substitution
   can change edited text when an original font is unavailable. Editable text sits
   above its layer's raster while selected. Default outside-click confirmation
-  converts it to pixels; save an editable project beforehand. Fixed bubble
-  corners/tails and shadows apply to text bubbles, while the generic callout
+  converts it to pixels; save an editable project beforehand. Bubble corners retain their pixel radius; new text bubbles have smaller tails,
+  width/attachment sliders and a draggable tip below the body (up to 1,024px
+  beyond its edges). Older projects keep their legacy tails until adjusted.
+  Shadows follow the silhouette. The generic callout
   shape remains a proportional geometric shape.
 - **Library index:** It is a saved index, not a live filesystem watcher. New or
   moved source files need re-importing. Removing library entries or categories
@@ -63,3 +66,9 @@ These are differences or unverified areas, rather than completed acceptance clai
 
 Screenshots come from the running packaged application. The example scene uses
 original artwork; it is not a screenshot mockup.
+
+- **Pointing-hand tools:** The shaft uses the chosen primary colour and width; the
+  original hand silhouette stays black. Hand-drawn wobble is deterministic,
+  rather than a recorded human stroke. Curves use two bend points like the existing
+  curve tool. The tail handle and these shapes are editable while floating;
+  confirming them into raster pixels ends that editability.
