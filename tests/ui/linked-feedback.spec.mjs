@@ -39,3 +39,9 @@ test('sixteen custom color slots persist across restart and can be reused for th
 test('malformed saved custom colors cannot break startup',async({page})=>{
  await page.goto('/');await page.waitForFunction(()=>window.paintplus);await page.evaluate(()=>localStorage.setItem('paintplus-settings',JSON.stringify({preferences:{customColors:['<script>','#123456',null,12]}})));await page.reload();await page.waitForFunction(()=>window.paintplus);await page.evaluate(()=>paintplus.colorDialog());await expect(page.locator('[data-custom]')).toHaveCount(16);await expect(page.locator('[data-custom="0"]')).toHaveAttribute('title','#123456');
 });
+
+test('mixed selected bubble backgrounds retain each custom fill when Color 2 changes',async({page})=>{
+ await fresh(page);await bubble(page);await page.locator('#text-background-mode').selectOption('offwhite');await page.locator('#text-content').press('Control+Enter');
+ const result=await page.evaluate(()=>{const d=paintplus.doc,offwhite=d.selectedObjects[0];d.duplicateSelected();const paper=d.selectedObjects[0];paper.backgroundMode='color2';paper.background='#ffffff';d.duplicateSelected();const custom=d.selectedObjects[0];custom.backgroundMode='custom';custom.background='#fcf0dc';d.selected=[offwhite.id,paper.id,custom.id];paintplus.color2='#ffeeaa';paintplus.colorChanged(2);return[d.objects.map(o=>[o.backgroundMode,o.background]),paintplus.textEditor.defaults.backgroundMode,paintplus.textEditor.defaults.background];});
+ expect(result).toEqual([[['offwhite','#feffff'],['color2','#ffeeaa'],['custom','#fcf0dc']],'offwhite','#feffff']);
+});

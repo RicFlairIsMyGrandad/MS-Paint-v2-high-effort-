@@ -349,7 +349,7 @@ export class PaintPlus {
   colorChanged(slot = this.activeColor) {
     this.updateColors();this.updateShapeStyle(slot === 1 ? { color: this.color1 } : { background: this.color2 });
     if(slot===2){this.doc.color2=this.color2;this.doc.changed();}
-    if (this.doc.selectedObjects.some(o => o.type === 'text') && (slot===1 || ['color2',undefined].includes(this.textEditor.properties.backgroundMode))) this.textEditor.changeStyle(slot === 1 ? { textColor: this.color1 } : { background: this.color2 });
+    if (this.doc.selectedObjects.some(o => o.type === 'text')) this.textEditor.changeStyle(slot === 1 ? { textColor: this.color1 } : { background: this.color2 }, slot === 2 ? object => !object.backgroundMode || object.backgroundMode === 'color2' : null);
   }
   deleteLayer(layer = this.doc.activeLayer) {
     if (layer.locked) throw new Error('Unlock this layer before deleting it.');

@@ -1,6 +1,6 @@
 {
   "isPackaged": true,
-  "appPath": "/tmp/PaintPlus packaged Ω f7aGIk/installed app with spaces/resources/app.asar",
+  "appPath": "/tmp/PaintPlus packaged Ω AfMCbZ/installed app with spaces/resources/app.asar",
   "platform": "linux",
   "gpuStatus": {
     "2d_canvas": "unavailable_software",
@@ -45,16 +45,16 @@
   "clipboardOK": true,
   "aiInferenceOK": true,
   "first": {
-    "path": "/tmp/PaintPlus packaged Ω f7aGIk/images/PaintPlus-smoke.png",
+    "path": "/tmp/PaintPlus packaged Ω AfMCbZ/images/PaintPlus-smoke.png",
     "name": "PaintPlus-smoke.png"
   },
   "second": {
-    "path": "/tmp/PaintPlus packaged Ω f7aGIk/images/PaintPlus-smoke (2).png",
+    "path": "/tmp/PaintPlus packaged Ω AfMCbZ/images/PaintPlus-smoke (2).png",
     "name": "PaintPlus-smoke (2).png"
   },
   "collisionOK": true,
   "project": {
-    "path": "/tmp/PaintPlus packaged Ω f7aGIk/images/PaintPlus-project-smoke.paintplus",
+    "path": "/tmp/PaintPlus packaged Ω AfMCbZ/images/PaintPlus-project-smoke.paintplus",
     "name": "PaintPlus-project-smoke.paintplus"
   },
   "projectBytes": 131295,
@@ -92,6 +92,7 @@
   "pointingHandCurve": true,
   "singleSelectionPaste": true,
   "crispQuarterTurns": true,
+  "mixedBubbleBackgrounds": true,
   "groupDeleteLinked": true,
   "groupRegionSelection": true,
   "groupRegionSafeDelete": true,
