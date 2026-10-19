@@ -246,7 +246,7 @@ test("bundled thumbnails decode and palette ends in exact signature blue", async
   );
 });
 
-test("drawing commits an opaque deselected asset onto its existing layer", async ({ page }) => {
+test("painting a deselected asset commits it and one undo restores its editable source", async ({ page }) => {
   await open(page);
   await page.evaluate(async () => {
     const c = document.createElement("canvas");
@@ -263,9 +263,10 @@ test("drawing commits an opaque deselected asset onto its existing layer", async
   expect(await page.evaluate(() => paintplus.doc.objects.length)).toBe(0);
   expect(await page.evaluate(() => [...paintplus.doc.activeLayer.canvas.getContext("2d").getImageData(40, 40, 1, 1).data])).toEqual([24, 71, 241, 255]);
   await page.keyboard.press("Control+z");
-  expect(await page.evaluate(() => [...paintplus.doc.activeLayer.canvas.getContext("2d").getImageData(40, 40, 1, 1).data])).toEqual([255, 153, 0, 255]);
-  await page.keyboard.press("Control+z");
+  expect(await page.evaluate(() => [...paintplus.doc.composite().getContext("2d").getImageData(40, 40, 1, 1).data])).toEqual([255, 153, 0, 255]);
   expect(await page.evaluate(() => paintplus.doc.objects.length)).toBe(1);
+  await page.keyboard.press("Control+z");
+  expect(await page.evaluate(() => paintplus.doc.objects.length)).toBe(0);
 });
 
 test("pasted transparency key survives resize after Color 2 changes", async ({page}) => {

@@ -143,7 +143,7 @@ export class Editor {
     this.app.changedUI();
   }
   selectWand(point,event={}) {
-    const d=this.doc,previous=this.wandSelection?.doc===d&&d.selectionUnchanged()?this.wandSelection.mask:null;
+    const d=this.doc,previous=this.wandSelection?.doc===d&&this.wandSelection.ids.every(id=>d.selected.includes(id))&&d.selectionUnchanged()?this.wandSelection.mask:null;
     this.app.finishSelection();d.assertAllocation(d.width*d.height*24);
     const source=this.app.prefs.wandMerged?d.composite():canvas(d.width,d.height);
     if(!this.app.prefs.wandMerged)drawLayer(source.getContext('2d'),d.activeLayer,d.layerKey(d.activeLayer));
@@ -235,7 +235,7 @@ export class Editor {
     const bounds = selectionBounds(selected);
     if (bounds && this.drag?.type!=='move') {
       this.drawSelection(over, bounds);
-      const wand=this.wandSelection;if(wand?.doc===d&&wand.ids.every(id=>d.selected.includes(id))){const object=selected[0];over.save();over.strokeStyle='#222';over.lineWidth=1/z;over.setLineDash([3/z,3/z]);over.beginPath();for(const[x1,y1,x2,y2]of wand.edges){const a=worldPoint(object,x1*object.width/wand.rect.width,y1*object.height/wand.rect.height),b=worldPoint(object,x2*object.width/wand.rect.width,y2*object.height/wand.rect.height);over.moveTo(a.x,a.y);over.lineTo(b.x,b.y);}over.stroke();over.restore();}
+      const wand=this.wandSelection;if(wand?.doc===d&&wand.ids.every(id=>d.selected.includes(id))){const object=selected[0],point=(x,y)=>worldPoint(object,(object.flipH?wand.rect.width-x:x)*object.width/wand.rect.width,(object.flipV?wand.rect.height-y:y)*object.height/wand.rect.height);over.save();over.strokeStyle='#222';over.lineWidth=1/z;over.setLineDash([3/z,3/z]);over.beginPath();for(const[x1,y1,x2,y2]of wand.edges){const a=point(x1,y1),b=point(x2,y2);over.moveTo(a.x,a.y);over.lineTo(b.x,b.y);}over.stroke();over.restore();}
       if(selected.length===1&&selected[0].type==='text'&&selected[0].bubble){
         const tip=this.tailPoint(selected[0]),s=4/z;over.save();over.translate(tip.x,tip.y);over.rotate(Math.PI/4);over.fillStyle='#fff';over.strokeStyle='#0078ff';over.lineWidth=1/z;over.fillRect(-s,-s,2*s,2*s);over.strokeRect(-s,-s,2*s,2*s);over.restore();
       }
@@ -439,7 +439,16 @@ export class Editor {
       const groupRegion=!!this.groupRegionArmed&&['select','free'].includes(a.tool);
       if(groupRegion){a.finishSelection();d.selected=[];this.groupRegionArmed=false;}
       let existingHandle = groupRegion?null:this.handleAt(p);
-      if(a.tool==='wand'){const state=this.wandSelection,object=d.selectedObjects[0],local=object?localPoint(object,p.x,p.y):null,x=local&&Math.floor((object.flipH?object.width-local.x:local.x)*state?.rect.width/object.width),y=local&&Math.floor((object.flipV?object.height-local.y:local.y)*state?.rect.height/object.height),inside=state?.doc===d&&x>=0&&y>=0&&x<state.rect.width&&y<state.rect.height&&state.cropped[y*state.rect.width+x];if(existingHandle?.type==='move'&&!inside)existingHandle=null;if(e.shiftKey||e.altKey||a.prefs.wandMode!=='new'||!existingHandle){this.selectWand(p,e);this.requestRender();return;}}
+      if(a.tool==='wand') {
+        const state=this.wandSelection,object=d.selectedObjects[0];let inside=true;
+        if(state?.doc===d&&object&&state.ids.every(id=>d.selected.includes(id))) {
+          const local=localPoint(object,p.x,p.y),x=Math.floor((object.flipH?object.width-local.x:local.x)*state.rect.width/object.width),y=Math.floor((object.flipV?object.height-local.y:local.y)*state.rect.height/object.height);
+          inside=x>=0&&y>=0&&x<state.rect.width&&y<state.rect.height&&state.cropped[y*state.rect.width+x];
+        }
+        if(existingHandle?.type==='move'&&!inside)existingHandle=null;
+        const transformHandle=existingHandle&&existingHandle.type!=='move';
+        if(!transformHandle&&(e.shiftKey||e.altKey||a.prefs.wandMode!=='new'||!existingHandle)) {this.selectWand(p,e);this.requestRender();return;}
+      }
       const replacingSelection=!!d.selectedObjects.length&&!existingHandle&&!e.ctrlKey&&a.prefs.selectionMode==='paint';
       if(replacingSelection)a.finishSelection();
       if(a.textEditor?.active&&!existingHandle)a.textEditor.finish();

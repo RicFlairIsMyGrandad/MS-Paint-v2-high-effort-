@@ -251,6 +251,7 @@ export class PaintPlus {
     document.title = this.fileName + " — PaintPlus";
   }
   updateTools() {
+    document.querySelector('.wand-options').classList.toggle('hidden',this.tool!=='wand');
     document
       .querySelectorAll(".tool-button")
       .forEach((b) =>
@@ -2342,6 +2343,7 @@ export class PaintPlus {
     return true;
   }
   selectAll() {
+    if(this.tool==='wand'){this.doc.assertAllocation(this.doc.width*this.doc.height*24);this.editor.applyWand(new Uint8Array(this.doc.width*this.doc.height).fill(1));return;}
     this.doc.selected = this.doc.layers
       .filter((l) => !l.locked && l.visible)
       .flatMap((l) => l.objects.map((o) => o.id));
