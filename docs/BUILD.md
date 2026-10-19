@@ -115,3 +115,24 @@ workflow installs and launches those same candidate bytes. Its isolated evidence
 branches can be verified and collected with `tools/collect-windows-evidence.py`.
 `python tools/package-deliverables.py downloads` exports the source ZIP/TXT,
 installer, portable, examples, font, PDFs, screenshots and SHA-256 manifest.
+
+The pinned builder-util allows each NSIS compiler subprocess four minutes.
+On a busy Linux cloud machine, finish browser tests before packaging, or run the
+browser checks at lower priority (`nice -n 10 npm run test:ui`). This preserves
+compiler CPU time without changing compression, package integrity or signatures.
+
+For slower cross-compilation hosts, the repository also provides an explicit
+NSIS budget wrapper. It extends only the compiler subprocess limit to fifteen
+minutes and retains warnings-as-errors, compression flags, exit failures and all
+integrity checks, without modifying node_modules or package-lock.json:
+
+```sh
+npm run build
+ELECTRON_BUILDER_CACHE=/workspace/.cache/electron-builder \
+  node tools/cloud-windows-builder.cjs --win nsis portable --x64 --publish never \
+  --config.electronDist=/workspace/.cache/electron/win32
+```
+
+A checked `release/win-unpacked` build may be repackaged with `--prepackaged
+release/win-unpacked`; its ASAR hash must match the tested application. This
+wrapper is build tooling only and is not included in the installed app.

@@ -17,6 +17,7 @@ on:
       - 'tools/portable-windows-qa.cjs'
       - 'tools/publish-windows-evidence.cjs'
       - 'tools/use-release-candidate.cjs'
+      - 'tools/cloud-windows-builder.cjs'
       - 'package*.json'
       - 'vite.config.mjs'
       - 'playwright.config.mjs'
@@ -62,7 +63,9 @@ jobs:
       - name: Build the Windows installer and portable application
         shell: pwsh
         run: |
-          npm run package:win 2>&1 | Tee-Object -FilePath windows-build-tests.log
+          npm run build 2>&1 | Tee-Object -FilePath windows-build-tests.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/cloud-windows-builder.cjs --win nsis portable --x64 --publish never 2>&1 | Tee-Object -FilePath windows-build-tests.log -Append
           $testExit = $LASTEXITCODE
           if ($testExit -ne 0) { Get-Content windows-build-tests.log | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append }
           exit $testExit
