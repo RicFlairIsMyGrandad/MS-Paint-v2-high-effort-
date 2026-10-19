@@ -108,9 +108,13 @@ Home-edition laptop remains a separate hardware check.
 - Choose **Grade Wobble** in the Text font list for the original first handwriting
   approximation. Upper/lower case, digits, punctuation, size and colour work.
   [Installable TTF](downloads/Grade-Wobble.ttf), [specimen](downloads/Grade-Wobble-Specimen.pdf)
-  and [character template](downloads/Handwriting-Template.pdf) are included. A full
-  A–Z/a–z/0–9/punctuation sheet with three examples each and a clean 300dpi+ scan
-  would improve the match; the current font is not an exact learned reconstruction.
+  and [PDF character template](downloads/Handwriting-Template.pdf) are included.
+  For rough mouse-drawn lettering, use the newer [native-pixel PNG template pack](downloads/handwriting-png/Mouse-Lettering-PNG-Pack.zip)
+  and [filled example](downloads/handwriting-png/02-Lowercase-EXAMPLE.png).
+  Draw in MS Paint at 100%, keep the original dimensions and rough edges, and
+  return the PNGs; no high-resolution scan or polishing is needed. The current
+  font remains an approximation. A separate bitmap-lettering tool is
+  [proposed, awaiting completed samples](docs/handwriting/Mouse-Lettering.md).
 - Exact 90/180/270-degree rotations preserve hard pixels and alpha, without
   accumulating position drift. Arbitrary-angle rotation can use smoothing.
 - Above the asset-layer toggle, check **Use Color 2 as transparency** for exact
