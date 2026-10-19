@@ -75,3 +75,13 @@ hold the actual fill behavior and RGB colour. Off-white is exactly #feffff.
 Ribbon custom palette slots and the preferred mode for new documents are user
 preferences, separate from project files. Earlier readers do not understand
 alpha layer mode and may apply their legacy Color-2 key to upper layers.
+
+Version 1.0.9 adds optional boolean `color2Transparent`. It defaults to false for
+older projects. True disables the hidden RGB key when the secondary paint is the
+transparent swatch; source alpha remains authoritative. New transparent text/run
+and shape-ink colors use the CSS literal `transparent`; ordinary colors stay RGB
+hex. Wand masks are transient selection geometry; selected pixels are embedded in
+the existing floating source PNGs. The eight ribbon custom slots are deliberately
+not saved between sessions. Shift shortcuts and export-matte preferences are
+workspace settings, separate from project pixels. Old readers may ignore these
+new fields, so their keyed appearance can differ.

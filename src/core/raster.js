@@ -23,7 +23,7 @@ export function replaceColorSegment(ctx, a, b, from, to, width = 1) {
     x1 = Math.min(ctx.canvas.width, Math.floor(Math.max(a.x, b.x)) - radius + size),
     y1 = Math.min(ctx.canvas.height, Math.floor(Math.max(a.y, b.y)) - radius + size);
   if (x1 <= x0 || y1 <= y0) return;
-  const image = ctx.getImageData(x0, y0, x1 - x0, y1 - y0), rgb = hexRGB(from), replacement = hexRGB(to);
+  const image = ctx.getImageData(x0, y0, x1 - x0, y1 - y0), rgb = hexRGB(from), replacement = to==='transparent'?[0,0,0,0]:hexRGB(to);
   let x = Math.floor(a.x), y = Math.floor(a.y);
   const bx = Math.floor(b.x), by = Math.floor(b.y), dx = Math.abs(bx - x), dy = -Math.abs(by - y), sx = x < bx ? 1 : -1, sy = y < by ? 1 : -1;
   let err = dx + dy;
@@ -63,7 +63,7 @@ export function floodFill(c, x, y, color, tolerance = 0) {
     d = image.data;
   const idx = (y * c.width + x) * 4,
     target = [...d.slice(idx, idx + 4)],
-    replacement = [...hexRGB(color), 255];
+    replacement = color==='transparent'?[0,0,0,0]:[...hexRGB(color), 255];
   if (target.every((v, i) => v === replacement[i])) return false;
   const visited = new Uint8Array(c.width * c.height);
   const matches = (i) =>

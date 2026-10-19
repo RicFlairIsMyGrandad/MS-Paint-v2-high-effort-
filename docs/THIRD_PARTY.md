@@ -48,3 +48,13 @@ The current transparent painter's palette app icon was generated for version 1.0
 user's request. Its full-resolution source is in assets/design and the Windows ICO
 and PNG derivatives are in assets. Windows PE branding uses resedit 3.0.2 and
 pe-library 2.0.1 (MIT), only during the build.
+
+## Grade Wobble in 1.0.9
+
+Grade Wobble is original monoline font artwork built from explicit centreline
+coordinates in tools/build-handwriting-font.py and the supplied incomplete sample
+as a visual reference. It is a first approximation, not a trained or exact traced
+reconstruction. The TTF and source JSON carry the project's MIT licence. It is
+bundled alongside the six third-party families above. Rebuilding this optional
+font asset requires Python fontTools; running or building PaintPlus uses the
+checked-in TTF and does not require Python or fontTools.

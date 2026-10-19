@@ -1,0 +1,3 @@
+export const extraActions={'flip-h':'Flip horizontally','flip-v':'Flip vertically','rotate-left':'Rotate 90° left','rotate-right':'Rotate 90° right','toggle-asset-layer':'Toggle asset layers','deselect':'Deselect','undo':'Undo','redo':'Redo','select-all':'Select all','none':'Unassigned'};
+export const defaultShiftShortcuts=['flip-h','flip-v','rotate-left','rotate-right','toggle-asset-layer','wand','eraser','zoom','deselect','select-all'];
+export function numberKey(event){const match=/^(?:Digit|Numpad)([0-9])$/.exec(event.code||'');return match?Number(match[1]):/^[0-9]$/.test(event.key)?Number(event.key):null;}

@@ -1,4 +1,5 @@
 const paths = {
+  wand: "m3 21 13-13 3 3L6 24ZM15 1v4M22 7h-4M7 4l3 3M20 15l2 2",
   undo: "M9 5 4 10l5 5M4 10h10a6 6 0 0 1 0 12",
   redo: "M15 5l5 5-5 5m5-5H10a6 6 0 0 0 0 12",
   save: "M4 3h14l3 3v16H3V3h1Zm3 0v7h10V3M7 22v-8h10v8",

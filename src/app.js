@@ -11,6 +11,7 @@ import { TextEditor } from "./ui/text.js";
 import { nearestZoom, stepZoom, zoomLevels } from "./core/zoom.js";
 import { refreshEditable } from "./core/editable.js";
 import { editColors } from "./ui/colors.js";
+import {extraActions,defaultShiftShortcuts,numberKey} from './core/shortcuts.js';
 import { foregroundPixels } from "./core/alpha.js";
 const defaultPrefs = {
   assetsOpen: true,
@@ -50,6 +51,9 @@ const defaultPrefs = {
   paletteColors: [],
   paletteNext: 0,
   layerTransparencyMode: "color2",
+  keepExportTransparency:true,
+  shiftShortcuts:defaultShiftShortcuts,
+  wandTolerance:0,wandContiguous:true,wandMerged:false,wandMode:"new",
 };
 export class PaintPlus {
   constructor() {
@@ -58,6 +62,7 @@ export class PaintPlus {
     this.color1 = "#1847f1";
     this.color2 = "#ffffff";
     this.activeColor = 1;
+    this.color1Transparent=false;this.color2Transparent=false;this.dropperReturnTool="brush";
     this.toolWidths = {};
     this.strokeOverrides = new Map();
     this.tool = "select";
@@ -99,13 +104,16 @@ export class PaintPlus {
     const savedShortcuts = settings.preferences?.shortcuts;
     this.prefs.shortcuts = Array.isArray(savedShortcuts) ? savedShortcuts.map(tool => tool === "crop" ? "transparent" : tool) : null;
     this.prefs.shortcuts =
-      Array.isArray(this.prefs.shortcuts) && this.prefs.shortcuts.length === 10 && this.prefs.shortcuts.every(tool => tools.includes(tool))
+      Array.isArray(this.prefs.shortcuts) && this.prefs.shortcuts.length === 10 && this.prefs.shortcuts.every(tool => tools.includes(tool)||Object.hasOwn(extraActions,tool))
         ? this.prefs.shortcuts
         : [...defaultPrefs.shortcuts];
     this.prefs.favoriteFonts = Array.isArray(settings.preferences?.favoriteFonts) ? settings.preferences.favoriteFonts.filter(font => typeof font === 'string' && font.length < 100).slice(0,200) : [];
     this.prefs.customColors = Array.isArray(settings.preferences?.customColors) ? settings.preferences.customColors.filter(color => typeof color === 'string' && /^#[0-9a-f]{6}$/i.test(color)).slice(0,16) : [];
-    this.prefs.paletteColors = Array.from({length:9},(_,index)=>{const colors=settings.preferences?.paletteColors;const value=Array.isArray(colors)?colors[index]:this.prefs.customColors.filter(color=>color.toLowerCase()!=='#ffffff')[index];return typeof value==='string'&&/^#[0-9a-f]{6}$/i.test(value)?value.toLowerCase():null;});
-    this.prefs.paletteNext=Math.max(0,Math.min(8,Math.floor(this.prefs.paletteNext)||0));
+    this.prefs.paletteColors=Array(8).fill(null);this.prefs.paletteNext=0;
+    const shifted=settings.preferences?.shiftShortcuts;
+    this.prefs.shiftShortcuts=Array.isArray(shifted)&&shifted.length===10&&shifted.every(action=>tools.includes(action)||Object.hasOwn(extraActions,action))?[...shifted]:[...defaultShiftShortcuts];
+    this.prefs.wandTolerance=Math.max(0,Math.min(255,this.prefs.wandTolerance));
+    if(!['new','add','subtract','intersect'].includes(this.prefs.wandMode))this.prefs.wandMode='new';
     if(!['alpha','color2'].includes(this.prefs.layerTransparencyMode))this.prefs.layerTransparencyMode='color2';
     this.doc.layerTransparency=this.prefs.layerTransparencyMode;
     this.toolWidths = Object.fromEntries(Object.entries(this.prefs.toolWidths || {}).filter(([key,value]) => typeof key === 'string' && Number.isInteger(value) && value >= 1 && value <= 256));
@@ -115,13 +123,14 @@ export class PaintPlus {
     this.library = new Library(this, settings);
     this.selectionOrigin = "select";
     await Promise.all(['Caveat','Inter','Lora','Merriweather','Pacifico','Roboto Mono'].map(name => document.fonts.load('16px "PaintPlus ' + name + '"')));
+    await document.fonts.load('16px "Grade Wobble"');
     this.textEditor = new TextEditor(this);
     this.bind();
     this.applyPrefs();
     this.changedUI();
     window.desktop?.onProject(async (text) => {
       try {
-        this.doc = await deserialize(text, () => this.changedUI());this.color2=this.doc.color2;this.updateColors();
+        this.doc = await deserialize(text, () => this.changedUI());this.color2=this.doc.color2;this.color2Transparent=!!this.doc.color2Transparent;this.updateColors();
         this.changedUI();
         this.editor.fit();
       } catch (e) {
@@ -210,11 +219,11 @@ export class PaintPlus {
     return this.persistChain;
   }
   savePrefs() {
-    return this.persist({ preferences: { ...this.prefs } });
+    const {paletteColors,paletteNext,...preferences}=this.prefs;return this.persist({ preferences });
   }
   changedUI() {
     if (!this.editor) return;
-    this.doc.color2=this.color2;this.doc.invalidateLayers();
+    this.doc.color2=this.color2;this.doc.color2Transparent=this.color2Transparent;this.doc.invalidateLayers();
     document.querySelector('#layer-color2-transparency').checked=this.doc.layerTransparency==='color2';
     document.querySelector('#layer-own-assets').checked=this.prefs.assetOwnLayer;
     if (this.doc.history.droppedOperation) {
@@ -292,10 +301,9 @@ export class PaintPlus {
     for(const chip of document.querySelectorAll('.palette [data-palette-slot]')){
       const index=Number(chip.dataset.paletteSlot),color=this.prefs.paletteColors?.[index];chip.classList.toggle('empty-color',!color);
       if(color){chip.dataset.color=color;chip.style.setProperty('--chip',color);chip.title=color;chip.setAttribute('aria-label',`Custom palette color ${index+1}: ${color}`);}
-      else{delete chip.dataset.color;chip.style.setProperty('--chip','#f5f5f5');chip.title='Choose a custom color';chip.setAttribute('aria-label',`Empty custom color ${index+1}`);}
+      else{delete chip.dataset.color;chip.style.setProperty('--chip','#f4f5f7');chip.title='Choose a custom color';chip.setAttribute('aria-label',`Empty custom color ${index+1}`);}
     }
-    document.querySelector("#color1-swatch").style.background = this.color1;
-    document.querySelector("#color2-swatch").style.background = this.color2;
+    for(const slot of [1,2]){const swatch=document.querySelector('#color'+slot+'-swatch');swatch.style.background=this['color'+slot+'Transparent']?'':this['color'+slot];swatch.classList.toggle('checkerboard',this['color'+slot+'Transparent']);swatch.setAttribute('aria-label',this['color'+slot+'Transparent']?'Transparent paint':this['color'+slot]);}
     document
       .querySelector("[data-action=color1]")
       .classList.toggle("selected", this.activeColor === 1);
@@ -315,7 +323,7 @@ export class PaintPlus {
     this.prefs.transparentSelection = value;
     const selected = this.doc.selectedObjects.filter(o => !['shape','text'].includes(o.type));
     if (selected.length && this.selectedEditable()) this.doc.action('Selection transparency', () => {
-      for (const object of selected) object.transparentColor = value ? this.color2 : null;
+      for (const object of selected) object.transparentColor = value && !this.color2Transparent ? this.color2 : null;
     });
     this.savePrefs();this.changedUI();
   }
@@ -360,10 +368,12 @@ export class PaintPlus {
     for(const object of this.doc.selectedObjects) if(object.type === 'shape')this.strokeOverrides.set(object.id,selectedWidth);
     this.updateShapeStyle({width:selectedWidth},false);this.savePrefs();
   }
+  paintColor(slot){return this['color'+slot+'Transparent']?'transparent':this['color'+slot];}
+  choosePaintColor(color,slot=this.activeColor){this['color'+slot+'Transparent']=color==='transparent';if(color!=='transparent')this['color'+slot]=color;this.colorChanged(slot);}
   colorChanged(slot = this.activeColor) {
-    this.updateColors();this.updateShapeStyle(slot === 1 ? { color: this.color1 } : { background: this.color2 });
+    this.updateColors();this.updateShapeStyle(slot === 1 ? { color: this.paintColor(1) } : { background: this.paintColor(2) });
     if(slot===2){this.doc.color2=this.color2;this.doc.changed();}
-    if (this.doc.selectedObjects.some(o => o.type === 'text')) this.textEditor.changeStyle(slot === 1 ? { textColor: this.color1 } : { background: this.color2 }, slot === 2 ? object => !object.backgroundMode || object.backgroundMode === 'color2' : null);
+    if (this.doc.selectedObjects.some(o => o.type === 'text')) this.textEditor.changeStyle(slot === 1 ? { textColor: this.paintColor(1) } : { background: this.color2 }, slot === 2 ? object => !object.backgroundMode || object.backgroundMode === 'color2' : null);
   }
   deleteLayer(layer = this.doc.activeLayer) {
     if (layer.locked) throw new Error('Unlock this layer before deleting it.');
@@ -375,25 +385,29 @@ export class PaintPlus {
     });
     this.changedUI();
   }
-  async setTool(tool) {
+  async setTool(tool,options={}) {
     if(tool==='move')tool=this.selectionOrigin||'select';
-    if (tool === 'transparent') { this.toggleTransparency();return; }
-    if (tool !== 'text') this.textEditor?.finish();
-    if (tool === 'select' || tool === 'free') {this.selectionOrigin = tool;if(this.doc.editGroupId){this.finishSelection();this.doc.selected=[];this.editor.groupRegionArmed=true;}}
+    if(tool==='transparent'){this.toggleTransparency();return;}
+    if(!tools.includes(tool))return;
+    const previous=this.tool;
+    if(this.editor.drag)this.editor.finishDrag();
     this.editor.finishPending();
-    if(this.doc.transientSelection&&['brush','pencil','eraser','fill','shape'].includes(tool))this.finishSelection();
-    if (this.doc.selectedObjects.some(object => object.draft) && ['brush','pencil','eraser','fill','shape'].includes(tool)) this.finishSelection();
-    if (this.editor.drag) this.editor.finishDrag();
-    if (!tools.includes(tool)) return;
-    if (["pencil", "brush", "eraser", "fill", "shape"].includes(tool) && !this.doc.activeLayer.locked && this.doc.activeLayer.visible) {
-      const editable=this.doc.layers.filter(l=>l.visible&&!l.locked).flatMap(l=>l.objects.filter(o=>o.type !== 'text' && (this.doc.selected.includes(o.id)||l.id===this.doc.activeLayerId)).map(o=>o.id));
-      if(editable.length){this.doc.selected=editable;try{await this.runBusy('Committing floating content…',()=>this.doc.rasterize(resample));}catch(e){this.toast(e.message);}}
-    }
-    this.tool = tool;
-    if (tool === "text") this.switchTab(this.textEditor.active?'text':'home');
-    else if (!document.querySelector("#text-ribbon").classList.contains("hidden")) this.switchTab("home");
-    this.updateTools();
-    this.editor.requestRender();
+    if(!options.preserveSelection){this.finishSelection();this.doc.selected=[];this.editor.wandSelection=null;}
+    if(tool==='dropper'&&previous!=='dropper')this.dropperReturnTool=previous;
+    if(['select','free','wand'].includes(tool)){this.selectionOrigin=tool;this.editor.groupRegionArmed=!!this.doc.editGroupId;}
+    this.tool=tool;
+    this.switchTab(tool==='text'&&this.textEditor.active?'text':'home');
+    document.querySelector('.wand-options').classList.toggle('hidden',tool!=='wand');
+    this.updateTools();this.editor.requestRender();
+  }
+  runShortcut(action){
+    if(tools.includes(action))return this.setTool(action);
+    if(action==='flip-h'||action==='flip-v')return this.flip(action==='flip-h'?'H':'V');
+    if(action==='rotate-left'||action==='rotate-right')return this.rotate(action==='rotate-left'?-90:90);
+    if(action==='toggle-asset-layer'){this.prefs.assetOwnLayer=!this.prefs.assetOwnLayer;this.savePrefs();this.changedUI();return;}
+    if(action==='deselect'){this.finishSelection();return;}
+    if(action==='select-all'){this.selectAll();return;}
+    if(action!=='none')return this.action(action);
   }
   applyPrefs() {
     for (const [key, panel, tab] of [
@@ -418,24 +432,9 @@ export class PaintPlus {
     this.editor.requestRender();
   }
   updateShortcutTable() {
-    const short = [
-      "Rec sel",
-      "Fr.form sel",
-      "Brush",
-      "Pencil",
-      "Fill",
-      "Text",
-      "Shape",
-      "Eyedropper",
-      "Transparent",
-      "Select/transform",
-    ];
-    document.querySelector("#shortcut-table").innerHTML = this.prefs.shortcuts
-      .map(
-        (t, i) =>
-          `<div class="shortcut-cell"><b>${i}</b><span>${this.escape(short[defaultPrefs.shortcuts.indexOf(t)] || labels[t] || t)}</span></div>`,
-      )
-      .join("");
+    const shifted=!!this.shiftShortcutsActive,mapping=shifted?this.prefs.shiftShortcuts:this.prefs.shortcuts;
+    document.getElementById('shortcut-heading').textContent=shifted?'Shift + number shortcuts':'Number shortcuts · hold Shift for more';
+    document.querySelector('#shortcut-table').innerHTML=mapping.map((action,i)=>`<div class="shortcut-cell" title="${this.escape(extraActions[action]||labels[action]||action)}"><b>${shifted?'⇧':''}${i}</b><span>${this.escape(extraActions[action]||labels[action]||action)}</span></div>`).join('');
   }
   bind() {
     document.addEventListener("click", (e) => {
@@ -454,9 +453,7 @@ export class PaintPlus {
       const color = e.target.closest("[data-color]");
       if (color) {
         this.paletteTarget=color.dataset.paletteSlot!==undefined?Number(color.dataset.paletteSlot):null;
-        if (this.activeColor === 1) this.color1 = color.dataset.color;
-        else this.color2 = color.dataset.color;
-        this.colorChanged();
+        this.choosePaintColor(color.dataset.color);
       }
       const tab = e.target.closest("[data-tab]");
       if (tab) this.switchTab(tab.dataset.tab);
@@ -466,7 +463,7 @@ export class PaintPlus {
     document.querySelector('.palette').addEventListener('contextmenu',event=>{
       const chip=event.target.closest('.color-chip');if(!chip)return;event.preventDefault();
       this.paletteTarget=chip.dataset.paletteSlot!==undefined?Number(chip.dataset.paletteSlot):null;
-      if(chip.dataset.color){this.color2=chip.dataset.color;this.colorChanged(2);}else {const active=this.activeColor;this.activeColor=2;this.colorDialog();this.activeColor=active;}
+      if(chip.dataset.color){this.choosePaintColor(chip.dataset.color,2);}else {const active=this.activeColor;this.activeColor=2;this.colorDialog();this.activeColor=active;}
     });
     document.querySelector("#outline").onchange = (e) => { this.outline = e.target.value;this.updateShapeStyle({ outline: this.outline }); };
     document.querySelector("#shape-fill").onchange = (e) => { this.shapeFill = e.target.value;this.updateShapeStyle({ fill: this.shapeFill }); };
@@ -524,10 +521,15 @@ export class PaintPlus {
     },{passive:false});
     document.addEventListener('pointerdown',event=>{
       if(this.busy||!event.target.closest('.workspace')||event.target.closest('#canvas-stage,[data-canvas-handle]'))return;
+      const viewport=this.editor.viewport,rect=viewport.getBoundingClientRect();
+      if(event.target===viewport&&(event.clientX>=rect.left+viewport.clientLeft+viewport.clientWidth||event.clientY>=rect.top+viewport.clientTop+viewport.clientHeight))return;
       if(this.prefs.selectionMode==='paint'&&this.doc.selectedObjects.length)this.finishSelection();
       else {this.closeObjectSession();this.doc.selected=[];this.changedUI();}
     });
     document.addEventListener("keydown", (e) => this.keyDown(e));
+    document.addEventListener('keyup',event=>{if(event.key==='Shift'){this.shiftShortcutsActive=false;this.updateShortcutTable();}});
+    window.addEventListener('blur',()=>{this.shiftShortcutsActive=false;this.updateShortcutTable();});
+    for(const [id,key] of [['wand-tolerance','wandTolerance'],['wand-contiguous','wandContiguous'],['wand-merged','wandMerged'],['wand-mode','wandMode']]){const field=document.getElementById(id);if(field.type==='checkbox')field.checked=this.prefs[key];else field.value=this.prefs[key];field.addEventListener('change',()=>{this.prefs[key]=field.type==='checkbox'?field.checked:field.type==='number'?Math.max(0,Math.min(255,Number(field.value)||0)):field.value;this.savePrefs();});}
     this.editor.viewport.addEventListener("dragover", (e) => {
       e.preventDefault();
       e.dataTransfer.dropEffect = "copy";
@@ -550,7 +552,7 @@ export class PaintPlus {
             else if (file.type.startsWith("image/")) {
               const source = await imageCanvas(await this.fileURL(file));
               this.doc.insert(source, file.name, this.prefs.assetOwnLayer);
-              this.setTool("move");
+              this.setTool("move",{preserveSelection:true});
               this.changedUI();
             }
           }
@@ -1241,6 +1243,8 @@ export class PaintPlus {
           },
         ]);
         break;
+      case "deselect":this.finishSelection();break;
+      case "wand-invert":this.editor.invertWand();break;
       case "shortcuts":
         this.shortcutsDialog();
         break;
@@ -1272,6 +1276,7 @@ export class PaintPlus {
     this.changedUI();
   }
   keyDown(e) {
+    if(e.key==='Shift'){this.shiftShortcutsActive=true;this.updateShortcutTable();}
     const target = e.target;
     if ((e.ctrlKey || e.metaKey) && ['z','y'].includes(e.key.toLowerCase())) {
       e.preventDefault();this.action(e.key.toLowerCase() === 'y' || e.shiftKey ? 'redo' : 'undo').catch(error => this.toast(error.message));return;
@@ -1317,8 +1322,9 @@ export class PaintPlus {
         c: "copy",
         x: "cut",
         v: "paste",
-        d: "duplicate",
+        d: e.shiftKey ? "duplicate" : "deselect",
         g: e.shiftKey ? "ungroup" : "group",
+
       }[key];
       if (key === "a") {
         e.preventDefault();
@@ -1332,9 +1338,9 @@ export class PaintPlus {
         this.library.insert(asset.id);
         return;
       }
-    } else if (/^[0-9]$/.test(e.key)) {
+    } else if (numberKey(e)!==null) {
       e.preventDefault();
-      this.setTool(this.prefs.shortcuts[Number(e.key)]);
+      Promise.resolve(this.runShortcut((e.shiftKey?this.prefs.shiftShortcuts:this.prefs.shortcuts)[numberKey(e)])).catch(error=>this.toast(error.message));
       return;
     } else if (e.key === "Delete") { if(!this.layerFocused&&this.doc.selectedObjects.some(object=>object.type==='text'))return;action = this.layerFocused || target.closest(".layer-row") ? "delete-layer" : "delete"; }
     else if (e.key === "Enter" && this.doc.selected.length)
@@ -1416,27 +1422,28 @@ export class PaintPlus {
   }
   rememberColor(value, slot=null) {
     if(!/^#[0-9a-f]{6}$/i.test(value))return;value=value.toLowerCase();
-    const colors=Array.from({length:9},(_,index)=>this.prefs.paletteColors?.[index]||null);
-    let index=Number.isInteger(slot)&&slot>=0&&slot<9?slot:colors.indexOf(value);
+    const colors=Array.from({length:8},(_,index)=>this.prefs.paletteColors?.[index]||null);
+    let index=Number.isInteger(slot)&&slot>=0&&slot<8?slot:colors.indexOf(value);
     if(index<0)index=colors.indexOf(null);
-    if(index<0){index=this.prefs.paletteNext||0;this.prefs.paletteNext=(index+1)%9;}
+    if(index<0){index=this.prefs.paletteNext||0;this.prefs.paletteNext=(index+1)%8;}
     colors[index]=value;this.prefs.paletteColors=colors;this.updateColors();this.savePrefs();
   }
   colorDialog(initial = this.activeColor === 1 ? this.color1 : this.color2, apply = null) {
     const slot=this.activeColor;
-    return editColors(this,initial,apply || (value=>{if(slot===1)this.color1=value;else this.color2=value;this.colorChanged(slot);}),apply?null:this.paletteTarget??null);
+    return editColors(this,initial,apply || (value=>{this.choosePaintColor(value,slot);}),apply?null:this.paletteTarget??null);
   }
   settingsDialog() {
     const previousTransparency = this.prefs.transparentSelection;
     this.dialog(
       "PaintPlus settings",
-      `<label class="check-row"><input id="pref-own-layer" type="checkbox" ${this.prefs.assetOwnLayer ? "checked" : ""}> Insert assets on their own layer</label><label class="check-row"><input id="pref-aspect" type="checkbox" ${this.prefs.aspectLock ? "checked" : ""}> Maintain aspect ratio while resizing objects</label><label class="check-row"><input id="pref-transparent" type="checkbox" ${this.prefs.transparentSelection ? "checked" : ""}> Transparent selection (Color 2)</label><label class="check-row"><input id="pref-smooth" type="checkbox" ${this.prefs.smoothPreview ? "checked" : ""}> Smooth preview while resizing</label><div class="prefs-row"><label>Selection behavior</label><select id="pref-selection-mode"><option value="paint" ${this.prefs.selectionMode === "paint" ? "selected" : ""}>Paint: click outside to commit</option><option value="persistent" ${this.prefs.selectionMode === "persistent" ? "selected" : ""}>Keep floating selections editable</option></select></div><label class="check-row"><input id="pref-grow-paste" type="checkbox" ${this.prefs.growCanvasOnPaste ? "checked" : ""}> Expand the canvas to fit larger pasted images</label><div class="prefs-row"><label>Fill tolerance (0 = exact)</label><input id="pref-tolerance" type="number" min="0" max="100" value="${this.prefs.fillTolerance}"></div><p>True PNG alpha is always preserved. Color-2 transparency removes only exact matches and applies to floating pixel selections. Right-click a palette color to set Color 2.</p>`,
+      `<label class="check-row"><input id="pref-export-alpha" type="checkbox" ${this.prefs.keepExportTransparency?"checked":""}> Keep transparency in saved PNG/WebP images (uncheck to fill with white)</label><label class="check-row"><input id="pref-own-layer" type="checkbox" ${this.prefs.assetOwnLayer ? "checked" : ""}> Insert assets on their own layer</label><label class="check-row"><input id="pref-aspect" type="checkbox" ${this.prefs.aspectLock ? "checked" : ""}> Maintain aspect ratio while resizing objects</label><label class="check-row"><input id="pref-transparent" type="checkbox" ${this.prefs.transparentSelection ? "checked" : ""}> Transparent selection (Color 2)</label><label class="check-row"><input id="pref-smooth" type="checkbox" ${this.prefs.smoothPreview ? "checked" : ""}> Smooth preview while resizing</label><div class="prefs-row"><label>Selection behavior</label><select id="pref-selection-mode"><option value="paint" ${this.prefs.selectionMode === "paint" ? "selected" : ""}>Paint: click outside to commit</option><option value="persistent" ${this.prefs.selectionMode === "persistent" ? "selected" : ""}>Keep floating selections editable</option></select></div><label class="check-row"><input id="pref-grow-paste" type="checkbox" ${this.prefs.growCanvasOnPaste ? "checked" : ""}> Expand the canvas to fit larger pasted images</label><div class="prefs-row"><label>Fill tolerance (0 = exact)</label><input id="pref-tolerance" type="number" min="0" max="100" value="${this.prefs.fillTolerance}"></div><p>True PNG alpha is always preserved. Color-2 transparency removes only exact matches and applies to floating pixel selections. Right-click a palette color to set Color 2.</p>`,
       [
         { label: "Cancel", run: () => this.closeDialog() },
         {
           label: "Save settings",
           primary: true,
           run: () => {
+            this.prefs.keepExportTransparency=document.querySelector("#pref-export-alpha").checked;
             this.prefs.assetOwnLayer =
               document.querySelector("#pref-own-layer").checked;
             this.prefs.aspectLock =
@@ -1471,40 +1478,13 @@ export class PaintPlus {
     );
   }
   shortcutsDialog() {
-    this.dialog(
-      "Edit Shortcuts",
-      `<p>Choose an action for each number key. Number shortcuts are inactive while typing.</p><div class="shortcut-edit">${Array.from({ length: 10 }, (_, i) => `<b>${i}</b><select data-shortcut="${i}">${tools.map((t) => `<option value="${t}" ${this.prefs.shortcuts[i] === t ? "selected" : ""}>${labels[t]}</option>`).join("")}</select>`).join("")}</div><p class="warning">Windows shortcuts (Ctrl+S, Ctrl+C, Ctrl+V and others) and Ctrl+Numpad +/- stay reserved. Duplicate tool assignments will be flagged before saving.</p>`,
-      [
-        {
-          label: "Reset defaults",
-          run: () => {
-            document
-              .querySelectorAll("[data-shortcut]")
-              .forEach((el, i) => (el.value = defaultPrefs.shortcuts[i]));
-          },
-        },
-        { label: "Cancel", run: () => this.closeDialog() },
-        {
-          label: "Save",
-          primary: true,
-          run: () => {
-            const mapping = [
-              ...document.querySelectorAll("[data-shortcut]"),
-            ].map((el) => el.value);
-            if (new Set(mapping).size !== mapping.length) {
-              this.toast(
-                "Each tool should have one number shortcut. Change duplicate assignments.",
-              );
-              return;
-            }
-            this.prefs.shortcuts = mapping;
-            this.savePrefs();
-            this.updateShortcutTable();
-            this.closeDialog();
-          },
-        },
-      ],
-    );
+    const actions=[...tools,...Object.keys(extraActions)];
+    const bank=(name,title,values)=>`<fieldset><legend>${title}</legend><div class="shortcut-edit">${values.map((value,index)=>`<b>${name==='shift'?'Shift + ':''}${index}</b><select data-shortcut="${index}" data-bank="${name}">${actions.map(action=>`<option value="${action}" ${action===value?'selected':''}>${this.escape(extraActions[action]||labels[action])}</option>`).join('')}</select>`).join('')}</div></fieldset>`;
+    this.dialog('Edit Shortcuts',`<p>Choose tools or actions. Shortcuts are inactive while typing; hold Shift to show the second bank.</p><div class="shortcut-banks">${bank('normal','Number keys',this.prefs.shortcuts)}${bank('shift','Shift + number keys',this.prefs.shiftShortcuts)}</div>`,[
+      {label:'Reset defaults',run:()=>{for(const field of document.querySelectorAll('[data-shortcut]'))field.value=(field.dataset.bank==='shift'?defaultShiftShortcuts:defaultPrefs.shortcuts)[Number(field.dataset.shortcut)];}},
+      {label:'Cancel',run:()=>this.closeDialog()},
+      {label:'Save',primary:true,run:()=>{const banks={};for(const name of ['normal','shift']){const mapping=[...document.querySelectorAll(`[data-bank="${name}"]`)].map(field=>field.value);if(new Set(mapping.filter(value=>value!=='none')).size!==mapping.filter(value=>value!=='none').length){this.toast('Change duplicate assignments in the '+name+' bank.');return;}banks[name]=mapping;}this.prefs.shortcuts=banks.normal;this.prefs.shiftShortcuts=banks.shift;this.savePrefs();this.updateShortcutTable();this.closeDialog();}}
+    ]);
   }
   async newDocument() {
     if (
@@ -1544,7 +1524,7 @@ export class PaintPlus {
       )
         return;
       if (file.name.endsWith(".paintplus"))
-        {this.doc = await deserialize(await file.text(), () => this.changedUI());this.color2=this.doc.color2;this.updateColors();}
+        {this.doc = await deserialize(await file.text(), () => this.changedUI());this.color2=this.doc.color2;this.color2Transparent=!!this.doc.color2Transparent;this.updateColors();}
       else await this.loadImage(await this.fileURL(file));
       this.currentFile = null;
       this.fileName = file.name.replace(/\.[^.]+$/, "");
@@ -1581,7 +1561,7 @@ export class PaintPlus {
     const file = await window.desktop.open();
     if (!file) return;
     if (file.project){
-      this.doc = await deserialize(file.project, () => this.changedUI());this.color2=this.doc.color2;this.updateColors();
+      this.doc = await deserialize(file.project, () => this.changedUI());this.color2=this.doc.color2;this.color2Transparent=!!this.doc.color2Transparent;this.updateColors();
     }
     else await this.loadImage(file.url);
     this.currentFile = file.path;
@@ -1610,7 +1590,7 @@ export class PaintPlus {
       return new TextEncoder().encode(serialize(this.doc));
     const out = canvas(this.doc.width, this.doc.height),
       ctx = out.getContext("2d");
-    if (format === "jpg" || format === "bmp") {
+    if (format === "jpg" || format === "bmp" || !this.prefs.keepExportTransparency) {
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, out.width, out.height);
     }
@@ -1831,9 +1811,9 @@ export class PaintPlus {
       const x=Math.max(0,Math.ceil((this.editor.viewport.scrollLeft-7)/this.zoom)),y=Math.max(0,Math.ceil((this.editor.viewport.scrollTop-7)/this.zoom));
       if (this.prefs.growCanvasOnPaste && (x+source.width > this.doc.width || y+source.height > this.doc.height))
         this.doc.resizeCanvas(Math.max(x+source.width, this.doc.width), Math.max(y+source.height, this.doc.height), this.color2);
-      this.doc.insert(source, "Pasted image", this.prefs.assetOwnLayer, {x,y,transparentColor: this.prefs.transparentSelection ? this.color2 : null });
+      this.doc.insert(source, "Pasted image", this.prefs.assetOwnLayer, {x,y,transparentColor: this.prefs.transparentSelection && !this.color2Transparent ? this.color2 : null });
     });
-    this.setTool("move");
+    this.setTool("move",{preserveSelection:true});
     this.changedUI();
   }
   resizeDialog() {
@@ -2373,8 +2353,8 @@ export class PaintPlus {
       this.doc.selectRegion(
         { x: 0, y: 0, width: this.doc.width, height: this.doc.height },
         null,
-        this.prefs.transparentSelection ? this.color2 : null,
-        this.color2,
+        this.prefs.transparentSelection && !this.color2Transparent ? this.color2 : null,
+        this.paintColor(2),
       );
     }
     this.tool = this.selectionOrigin||"select";

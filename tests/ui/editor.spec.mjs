@@ -498,8 +498,8 @@ test("shortcut edits preserve reserved controls and work without intercepting te
     .locator(".shortcuts-panel [data-action=shortcuts]")
     .first()
     .click();
-  await page.locator('[data-shortcut="0"]').selectOption("brush");
-  await page.locator('[data-shortcut="2"]').selectOption("select");
+  await page.locator('[data-bank=normal][data-shortcut="0"]').selectOption("brush");
+  await page.locator('[data-bank=normal][data-shortcut="2"]').selectOption("select");
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await page.keyboard.press("0");
   expect(await page.evaluate(() => paintplus.tool)).toBe("brush");

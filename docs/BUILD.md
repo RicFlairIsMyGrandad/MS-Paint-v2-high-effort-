@@ -96,3 +96,22 @@ explicitly after validation.
 Version 1.0.3 uses `desktop/build-icon.cjs` for that resource update without Wine.
 Bundled font files and licenses are already in assets;
 Python/font conversion tools are not needed to build the download.
+
+
+## Original handwriting font and release verification
+
+Grade Wobble is checked in as `assets/fonts/grade-wobble.ttf`; normal builds do
+not require Python. To regenerate its original centreline artwork, install Python
+fontTools in your development environment and run `python tools/build-handwriting-font.py`.
+Its TTF supports Unicode Latin letters/digits/common punctuation; the specimen
+and character template are under `docs/handwriting`.
+
+After committing the exact sources and completing both Windows build targets,
+`node tools/release-candidate.cjs` publishes those EXEs to the version's isolated
+candidate branch for the existing CI workflow. `python tools/verify-packages.py`
+checks their archives and matching ASARs using 7-Zip (override its path with
+PAINTPLUS_7Z). These are release operations, not app startup behavior. The Windows
+workflow installs and launches those same candidate bytes. Its isolated evidence
+branches can be verified and collected with `tools/collect-windows-evidence.py`.
+`python tools/package-deliverables.py downloads` exports the source ZIP/TXT,
+installer, portable, examples, font, PDFs, screenshots and SHA-256 manifest.

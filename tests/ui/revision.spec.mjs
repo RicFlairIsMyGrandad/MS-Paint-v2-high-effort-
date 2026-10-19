@@ -30,7 +30,7 @@ test('brush main button selects default or last brush and only its arrow opens t
 test('selection buttons are equal, transparency has a number shortcut and Crop is absent from mappings',async({page})=>{
   await reset(page);const boxes=await page.locator('.selection-buttons button').evaluateAll(buttons=>buttons.map(b=>[b.clientWidth,b.clientHeight]));expect(boxes[0]).toEqual(boxes[1]);
   await page.keyboard.press('8');await expect(page.locator('#selection-transparent')).toBeChecked();await page.keyboard.press('8');await expect(page.locator('#selection-transparent')).not.toBeChecked();
-  await page.locator('.shortcuts-panel [data-action=shortcuts]').first().click();expect(await page.locator('[data-shortcut="8"]').inputValue()).toBe('transparent');await expect(page.locator('[data-shortcut] option[value=crop]')).toHaveCount(0);
+  await page.locator('.shortcuts-panel [data-action=shortcuts]').first().click();expect(await page.locator('[data-bank=normal][data-shortcut="8"]').inputValue()).toBe('transparent');await expect(page.locator('[data-shortcut] option[value=crop]')).toHaveCount(0);
 });
 test('editable shapes transform, change stroke width/fill and retain exact undo state',async({page})=>{
   await reset(page);await expect(page.locator('#outline')).toBeDisabled();await page.locator('[data-shape=rectangle]').click();await drag(page,[50,50],[150,110]);

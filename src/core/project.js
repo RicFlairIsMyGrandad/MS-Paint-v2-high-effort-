@@ -33,6 +33,7 @@ export function serialize(doc) {
     width: doc.width,
     height: doc.height,
     color2:doc.color2,
+    color2Transparent:!!doc.color2Transparent,
     layerTransparency:doc.layerTransparency,
     activeLayerId: doc.activeLayerId,
     selected: doc.selected,
@@ -53,6 +54,7 @@ export function serialize(doc) {
 }
 export async function deserialize(text, onChange = () => {}) {
   const p = JSON.parse(text);
+  if(p.color2Transparent!==undefined&&typeof p.color2Transparent!=='boolean')throw new Error('Invalid secondary transparency.');
   if(p.layerTransparency!==undefined&&!['color2','alpha'].includes(p.layerTransparency))throw new Error('Invalid layer transparency mode.');
   if(p.color2!==undefined&&!/^#[0-9a-f]{6}$/i.test(p.color2))throw new Error('Invalid layer key colour.');
   if (p.format !== "PaintPlus" || p.version !== 1)
@@ -115,7 +117,7 @@ export async function deserialize(text, onChange = () => {}) {
     }
   }
   const doc = new PaintDocument(p.width, p.height, onChange);
-  doc.color2=p.color2||'#ffffff';doc.layerTransparency=p.layerTransparency||'color2';
+  doc.color2=p.color2||'#ffffff';doc.color2Transparent=!!p.color2Transparent;doc.layerTransparency=p.layerTransparency||'color2';
   doc.layers = p.layers.map((l) => {
     if (
       !sources[l.raster] ||
@@ -142,7 +144,7 @@ export async function deserialize(text, onChange = () => {}) {
           const style = o.shapeStyle, geometry = o.shapeGeometry;
           const point = value => value && Number.isFinite(value.x) && Number.isFinite(value.y) && Math.abs(value.x) <= 100 && Math.abs(value.y) <= 100;
           if (style?.handWobble!==undefined&&typeof style.handWobble!=='boolean')throw new Error('Invalid pointing line style.');
-          if (!shapeNames.includes(o.shapeName) || !style || !Number.isInteger(style.width) || style.width < 1 || style.width > 256 || ![style.color, style.background].every(color => typeof color === 'string' && /^#[0-9a-f]{6}$/i.test(color)) || !['none','solid'].includes(style.outline) || !['none','solid'].includes(style.fill) || !geometry || !point(geometry.a) || !point(geometry.b) || (geometry.controls && (!Array.isArray(geometry.controls) || geometry.controls.length > 2 || !geometry.controls.every(point))) || (geometry.points && (!Array.isArray(geometry.points) || geometry.points.length > 10000 || !geometry.points.every(point))))
+          if (!shapeNames.includes(o.shapeName) || !style || !Number.isInteger(style.width) || style.width < 1 || style.width > 256 || ![style.color, style.background].every(color => typeof color === 'string' && /^(?:#[0-9a-f]{6}|transparent)$/i.test(color)) || !['none','solid'].includes(style.outline) || !['none','solid'].includes(style.fill) || !geometry || !point(geometry.a) || !point(geometry.b) || (geometry.controls && (!Array.isArray(geometry.controls) || geometry.controls.length > 2 || !geometry.controls.every(point))) || (geometry.points && (!Array.isArray(geometry.points) || geometry.points.length > 10000 || !geometry.points.every(point))))
             throw new Error('Invalid editable shape.');
         }
         if (o.type === 'text') {
@@ -150,7 +152,7 @@ export async function deserialize(text, onChange = () => {}) {
             throw new Error('Invalid editable text.');
           if (o.textRuns !== undefined && (!Array.isArray(o.textRuns) || o.textRuns.length > 10000 || o.textRuns.map(run => run.text).join('') !== o.text)) throw new Error('Invalid text runs.');
           for (const run of o.textRuns || []) {
-            if (typeof run.text !== 'string' || (run.font !== undefined && (typeof run.font !== 'string' || run.font.length > 100)) || (run.fontSize !== undefined && (!Number.isFinite(run.fontSize) || run.fontSize < 1 || run.fontSize > 512)) || (run.textColor !== undefined && !/^#[0-9a-f]{6}$/i.test(run.textColor))) throw new Error('Invalid rich text style.');
+            if (typeof run.text !== 'string' || (run.font !== undefined && (typeof run.font !== 'string' || run.font.length > 100)) || (run.fontSize !== undefined && (!Number.isFinite(run.fontSize) || run.fontSize < 1 || run.fontSize > 512)) || (run.textColor !== undefined && ! /^(?:#[0-9a-f]{6}|transparent)$/i.test(run.textColor))) throw new Error('Invalid rich text style.');
           }
           if(o.tailTipX!==undefined&&(!Number.isFinite(o.tailTipX)||Math.abs(o.tailTipX)>17408))throw new Error('Invalid speech bubble tip.');
           if(o.backgroundMode!==undefined&&!['transparent','color2','offwhite','custom'].includes(o.backgroundMode))throw new Error('Invalid text background mode.');

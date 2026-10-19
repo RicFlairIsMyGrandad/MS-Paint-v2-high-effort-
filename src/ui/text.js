@@ -56,7 +56,7 @@ export class TextEditor {
     document.addEventListener('pointerdown',event=>{
       if(!event.target.closest('.font-size-combo,#text-size-options'))this.hideSizeMenu();
       if(!this.active||event.target.closest('#text-content,#text-ribbon,#text-size-options,.colors-group,#menu,#modal-root,.tabs'))return;
-      if(event.target.closest('#canvas-stage'))return;
+      if(event.target.closest('#canvas-stage,#viewport,.zoom-controls'))return;
       this.finish(this.app.prefs.selectionMode==='paint');
     },true);
     this.systemFonts=standard;this.populateFonts();
@@ -93,7 +93,7 @@ export class TextEditor {
     const properties={...object,...run};if(properties.fontUnit!=='pt'){properties.fontSize=Math.round(properties.fontSize*72/96*100)/100;properties.fontUnit='pt';}return properties;
   }
   populateFonts(){
-    const field=document.getElementById('text-font'),value=field.value||this.properties.font,favorites=this.app.prefs.favoriteFonts||[],fonts=[...new Set([...this.systemFonts,...bundled.map(name=>'PaintPlus '+name),value,...favorites])].filter(Boolean).sort((a,b)=>a.localeCompare(b));
+    const field=document.getElementById('text-font'),value=field.value||this.properties.font,favorites=this.app.prefs.favoriteFonts||[],fonts=[...new Set(['Grade Wobble',...this.systemFonts,...bundled.map(name=>'PaintPlus '+name),value,...favorites])].filter(Boolean).sort((a,b)=>a.localeCompare(b));
     field.replaceChildren();
     for(const[label,list]of[['Favorites',favorites],['Available fonts',fonts.filter(font=>!favorites.includes(font))]]){
       if(!list.length)continue;const group=document.createElement('optgroup');group.label=label;
@@ -136,7 +136,7 @@ export class TextEditor {
     const doc=this.app.doc,layer=object?doc.layers.find(layer=>layer.objects.includes(object)):doc.activeLayer;
     if(!layer||layer.locked||!layer.visible){this.app.toast('Show and unlock this layer before editing text.');return;}
     doc.activeLayerId=layer.id;this.creationBefore=object?null:doc.metadata();this.creationDirty=doc.dirty;
-    if(!object){const props={...this.defaults,type:'text',text:'',textRuns:[],x:Math.round(rect.x),y:Math.round(rect.y),width:Math.round(rect.width),textBoxWidth:Math.round(rect.width),minHeight:this.defaults.bubble?1:Math.round(rect.height),textColor:this.app.color1,background:this.defaults.backgroundMode==='color2'?this.app.color2:this.defaults.backgroundMode==='offwhite'?'#feffff':this.defaults.background,bubbleColor:this.app.color1,resampling:'nearest'};
+    if(!object){const props={...this.defaults,type:'text',text:'',textRuns:[],x:Math.round(rect.x),y:Math.round(rect.y),width:Math.round(rect.width),textBoxWidth:Math.round(rect.width),minHeight:this.defaults.bubble?1:Math.round(rect.height),textColor:this.app.paintColor(1),background:this.defaults.backgroundMode==='color2'?this.app.color2:this.defaults.backgroundMode==='offwhite'?'#feffff':this.defaults.background,bubbleColor:this.app.color1,resampling:'nearest'};
       doc.assertAllocation(rect.width*rect.height*24);const source=textSource(props);props.height=source.height;doc.inTransaction=true;try{object=doc.insert(source,'Text',false,props);}finally{doc.inTransaction=false;}}
     doc.selected=[object.id];this.before=doc.metadata();this.objectId=object.id;this.modified=false;this.app.tool='text';this.node.classList.remove('hidden');this.selection={start:object.text?.length||0,end:object.text?.length||0};
     this.rebuild();this.app.switchTab('text');this.syncControls();this.app.changedUI();this.node.focus();this.restoreSelection(this.selection);

@@ -1906,3 +1906,24 @@ body.fullscreen .titlebar {
 .text-background-group>label {height:22px;flex-shrink:0;font-size:12px;}
 #text-background-edit {display:inline-flex;align-items:center;gap:3px;height:21px;padding:1px 4px;font-size:12px;}
 #text-background-edit i {width:14px;height:14px;border:1px solid #888;display:inline-block;}
+/* Session palette and alpha paint match the supplied Paint-style reference. */
+.color-chip.empty-color {position:relative;background:#f4f5f7;}
+.color-chip.empty-color::before,.color-chip.empty-color::after {content:'';position:absolute;left:2px;right:2px;top:50%;height:1px;background:#b0b5bc;transform:rotate(45deg);}
+.color-chip.empty-color::after {transform:rotate(-45deg);}
+.checkerboard {background-color:#fff!important;background-image:conic-gradient(#c7cbd0 25%,#fff 0 50%,#c7cbd0 0 75%,#fff 0)!important;background-size:8px 8px!important;}
+.selection-buttons {display:flex;}
+.wand-options {width:180px;flex:0 0 180px;gap:1px;}
+.wand-options label {font-size:11px;display:flex;align-items:center;gap:4px;}
+.wand-options input[type=number] {width:46px;height:20px;}
+.wand-options select,.wand-options button {font-size:11px;height:20px;padding:0 3px;}
+.shortcut-banks {display:flex;gap:14px;}
+.shortcut-banks fieldset {min-width:0;flex:1;padding:8px;border:1px solid #ccd5df;}
+.shortcut-banks .shortcut-edit {display:grid;grid-template-columns:auto minmax(130px,1fr);gap:5px;}
+.shortcut-banks select {width:100%;font-size:12px;}
+@font-face {font-family:'Grade Wobble';src:url('/fonts/grade-wobble.ttf') format('truetype');font-weight:400;font-display:block;}
+.image-group {width:222px;flex-shrink:0;}
+.selection-controls {width:126px;}
+.selection-buttons {gap:1px;}
+.selection-buttons button {width:40px;flex:0 0 40px;}
+.selection-buttons [data-action='tool:wand'] svg {stroke-dasharray:none;}
+.shortcut-cell span {min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}

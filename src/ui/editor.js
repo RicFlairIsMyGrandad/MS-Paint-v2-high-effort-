@@ -7,6 +7,7 @@ import {
   snapQuarterTurn,
 } from "../core/document.js";
 import { paintSegment, replaceColorSegment, floodFill, colorAt, canvas, stampBounds, pixelSegment, softBrushCap, paintRoundPath, polygonMask, maskBoundary } from "../core/raster.js";
+import {colorSelection,combineMasks,maskBounds} from '../core/selection.js';
 import { drawShape } from "../core/shapes.js";
 import { toolIconBody } from "./icons.js";
 import { zoomLevels, nearestZoom, stepZoom, fitZoom } from "../core/zoom.js";
@@ -19,7 +20,7 @@ export const cursors = {
   eraser: 'none',
   fill: cursorSVG(`<g transform="translate(4 -1) scale(.9)">${toolIconBody('fill')}</g><path d="M3 21v6M0 24h6" stroke="white" stroke-width="3"/><path d="M3 21v6M0 24h6" stroke="#222"/>`,3,24),
   dropper: cursorSVG(`<g transform="scale(1.16)">${toolIconBody('dropper')}</g>`,2,25),
-  text: 'text', select: cross, free: cross, shape: cross, move: 'move',
+  text: 'text', select: cross, free: cross, wand:cursorSVG("<path d='m5 24 14-17' stroke='#fff' stroke-width='4'/><path d='m5 24 14-17M18 0v4M22 5h4M10 4l3 3M20 12l3 3' stroke='#087fff' stroke-width='2'/>",5,24), shape: cross, move: 'move',
   zoom: cursorSVG("<path d='m18 18 7 7' stroke='#555' stroke-width='4'/><circle cx='12' cy='12' r='8' fill='#fafafa' stroke='#555' stroke-width='2'/><path d='M7 12a5 5 0 0 1 5-5' fill='none' stroke='#bbb' stroke-width='2'/>",12,12),
 };
 export function selectionBounds(objects) {
@@ -133,6 +134,24 @@ export class Editor {
   get doc() {
     return this.app.doc;
   }
+  applyWand(mask) {
+    const d=this.doc,b=maskBounds(mask,d.width,d.height);this.app.finishSelection();
+    if(!b){this.wandSelection=null;this.app.changedUI();return;}
+    const cropped=new Uint8Array(b.width*b.height);for(let y=0;y<b.height;y++)cropped.set(mask.subarray((b.y+y)*d.width+b.x,(b.y+y)*d.width+b.x+b.width),y*b.width);
+    d.selectRegion(b,null,null,this.app.paintColor(2),cropped);
+    this.wandSelection={doc:d,mask,cropped,rect:b,edges:maskBoundary(cropped,b.width,b.height),ids:[...d.selected]};
+    this.app.changedUI();
+  }
+  selectWand(point,event={}) {
+    const d=this.doc,previous=this.wandSelection?.doc===d&&d.selectionUnchanged()?this.wandSelection.mask:null;
+    this.app.finishSelection();d.assertAllocation(d.width*d.height*24);
+    const source=this.app.prefs.wandMerged?d.composite():canvas(d.width,d.height);
+    if(!this.app.prefs.wandMerged)drawLayer(source.getContext('2d'),d.activeLayer,d.layerKey(d.activeLayer));
+    const next=colorSelection(source,point.x,point.y,this.app.prefs.wandTolerance,this.app.prefs.wandContiguous);
+    const mode=event.shiftKey&&event.altKey?'intersect':event.shiftKey?'add':event.altKey?'subtract':this.app.prefs.wandMode;
+    this.applyWand(combineMasks(previous,next,mode));
+  }
+  invertWand(){const state=this.wandSelection;if(state?.doc!==this.doc||!this.doc.selectionUnchanged())return this.app.toast('Make a magic wand selection before inverting it.');this.applyWand(Uint8Array.from(state.mask,value=>value?0:1));}
   localTextPoint(object, point) { return localPoint(object, point.x, point.y); }
   point(e) {
     const r = this.display.getBoundingClientRect();
@@ -216,6 +235,7 @@ export class Editor {
     const bounds = selectionBounds(selected);
     if (bounds && this.drag?.type!=='move') {
       this.drawSelection(over, bounds);
+      const wand=this.wandSelection;if(wand?.doc===d&&wand.ids.every(id=>d.selected.includes(id))){const object=selected[0];over.save();over.strokeStyle='#222';over.lineWidth=1/z;over.setLineDash([3/z,3/z]);over.beginPath();for(const[x1,y1,x2,y2]of wand.edges){const a=worldPoint(object,x1*object.width/wand.rect.width,y1*object.height/wand.rect.height),b=worldPoint(object,x2*object.width/wand.rect.width,y2*object.height/wand.rect.height);over.moveTo(a.x,a.y);over.lineTo(b.x,b.y);}over.stroke();over.restore();}
       if(selected.length===1&&selected[0].type==='text'&&selected[0].bubble){
         const tip=this.tailPoint(selected[0]),s=4/z;over.save();over.translate(tip.x,tip.y);over.rotate(Math.PI/4);over.fillStyle='#fff';over.strokeStyle='#0078ff';over.lineWidth=1/z;over.fillRect(-s,-s,2*s,2*s);over.strokeRect(-s,-s,2*s,2*s);over.restore();
       }
@@ -373,9 +393,9 @@ export class Editor {
     }
     if (this.drag?.type === "rotate") cursor = "grabbing";
     this.overlay.style.cursor = cursor;
-    const ghost=document.querySelector('#brush-cursor');
+    const ghost=document.querySelector('#brush-cursor');ghost.classList.toggle('checkerboard',this.app.tool==='eraser'&&this.app.color2Transparent);
     if(p && this.pointerInside && ['brush','pencil','eraser'].includes(this.app.tool) && !this.drag?.type?.includes('resize')) {
-      const bounds=stampBounds(p,this.app.width),zoom=this.app.zoom;ghost.className=this.app.tool==='eraser'?'eraser-ghost':'round-ghost';
+      const bounds=stampBounds(p,this.app.width),zoom=this.app.zoom;ghost.className=(this.app.tool==='eraser'?'eraser-ghost':'round-ghost')+(this.app.tool==='eraser'&&this.app.color2Transparent?' checkerboard':'');
       Object.assign(ghost.style,{display:'block',left:bounds.x*zoom+'px',top:bounds.y*zoom+'px',width:bounds.width*zoom+'px',height:bounds.height*zoom+'px'});
       ghost.style.setProperty('--ink',this.app.tool==='eraser'?this.app.color2:this.app.color1);
     } else ghost.style.display='none';
@@ -399,7 +419,7 @@ export class Editor {
     this.hover = p;
     const a = this.app,
       d = this.doc,
-      color = e.button === 2 ? a.color2 : a.color1,
+      color = a.paintColor(e.button===2?2:1),
       background = e.button === 2 ? a.color1 : a.color2;
     try {
       if (a.tool === "shape" && this.pendingShape) {
@@ -418,11 +438,12 @@ export class Editor {
       a.layerFocused = false;
       const groupRegion=!!this.groupRegionArmed&&['select','free'].includes(a.tool);
       if(groupRegion){a.finishSelection();d.selected=[];this.groupRegionArmed=false;}
-      const existingHandle = groupRegion?null:this.handleAt(p);
+      let existingHandle = groupRegion?null:this.handleAt(p);
+      if(a.tool==='wand'){const state=this.wandSelection,object=d.selectedObjects[0],local=object?localPoint(object,p.x,p.y):null,x=local&&Math.floor((object.flipH?object.width-local.x:local.x)*state?.rect.width/object.width),y=local&&Math.floor((object.flipV?object.height-local.y:local.y)*state?.rect.height/object.height),inside=state?.doc===d&&x>=0&&y>=0&&x<state.rect.width&&y<state.rect.height&&state.cropped[y*state.rect.width+x];if(existingHandle?.type==='move'&&!inside)existingHandle=null;if(e.shiftKey||e.altKey||a.prefs.wandMode!=='new'||!existingHandle){this.selectWand(p,e);this.requestRender();return;}}
       const replacingSelection=!!d.selectedObjects.length&&!existingHandle&&!e.ctrlKey&&a.prefs.selectionMode==='paint';
       if(replacingSelection)a.finishSelection();
       if(a.textEditor?.active&&!existingHandle)a.textEditor.finish();
-      if (["select", "free", "move", "crop"].includes(a.tool) || existingHandle) {
+      if (["select", "free", "wand", "move", "crop"].includes(a.tool) || existingHandle) {
         let handle = groupRegion?null:this.handleAt(p);
         const hit = groupRegion?null:d.hit(p.x, p.y);
         if (hit && !handle) {
@@ -503,11 +524,10 @@ export class Editor {
         for(const raster of edit.edits){raster.capture(0,0,d.width,d.height);changed=floodFill(raster.layer.canvas,p.x,p.y,color,a.prefs.fillTolerance)||changed;}
         if(changed)edit.commit('Fill');else edit.cancel();
       } else if (a.tool === "dropper") {
-        const c = d.composite(a.color2);
-        const picked = colorAt(c, p.x, p.y);
-        if (e.button === 2) a.color2 = picked;
-        else a.color1 = picked;
-        a.updateColors();
+        const c = d.composite();
+        const picked = c.getContext('2d').getImageData(Math.max(0,Math.min(c.width-1,Math.floor(p.x))),Math.max(0,Math.min(c.height-1,Math.floor(p.y))),1,1).data[3]===0?'transparent':colorAt(c,p.x,p.y);
+        a.choosePaintColor(picked,e.button===2?2:1);
+        a.setTool(a.dropperReturnTool||'brush');
       } else if (a.tool === "text") {
         if (d.activeLayer.locked || !d.activeLayer.visible) throw new Error('Show and unlock the active layer before adding text.');
         this.drag = { type: 'text-box', start: p, end: p,replacingSelection };
@@ -534,10 +554,14 @@ export class Editor {
     for(const edit of drag.edit.edits){
       edit.capture(Math.min(a.x,b.x)-r,Math.min(a.y,b.y)-r,Math.abs(a.x-b.x)+2*r,Math.abs(a.y-b.y)+2*r);
       const ctx=edit.layer.canvas.getContext('2d');
-      if(app.tool==='brush'&&app.brush==='round'){edit.restoreBefore();paintRoundPath(ctx,drag.points,app.width,drag.color);}
-      else if(app.tool==='eraser'&&drag.right)replaceColorSegment(ctx,a,b,app.color1,app.color2,app.width);
-      else if(app.tool==='eraser'){ctx.save();if(this.doc.layerTransparency==='alpha'&&this.doc.layers.indexOf(edit.layer)>0)ctx.globalCompositeOperation='destination-out';ctx.fillStyle=app.color2;pixelSegment(ctx,a,b,app.width);ctx.restore();}
-      else paintSegment(ctx,a,b,{type:app.tool,brush:app.brush,color:drag.color,background:drag.background,width:app.width});
+      ctx.save();
+      const clear=drag.color==='transparent';if(clear)ctx.globalCompositeOperation='destination-out';
+      const color=clear?'#000000':drag.color;
+      if(app.tool==='brush'&&app.brush==='round'){edit.restoreBefore();paintRoundPath(ctx,drag.points,app.width,color);}
+      else if(app.tool==='eraser'&&drag.right)replaceColorSegment(ctx,a,b,app.color1,app.paintColor(2),app.width);
+      else if(app.tool==='eraser'){if(app.color2Transparent||this.doc.layerTransparency==='alpha'&&this.doc.layers.indexOf(edit.layer)>0)ctx.globalCompositeOperation='destination-out';ctx.fillStyle=app.color2Transparent?'#000000':app.color2;pixelSegment(ctx,a,b,app.width);}
+      else paintSegment(ctx,a,b,{type:app.tool,brush:app.brush,color,background:drag.background,width:app.width});
+      ctx.restore();
     }
   }
 
@@ -771,8 +795,8 @@ export class Editor {
             d.selectRegion(
               rect,
               drag.free ? drag.path : null,
-              this.app.prefs.transparentSelection ? this.app.color2 : null,
-              this.app.color2,
+              this.app.prefs.transparentSelection && !this.app.color2Transparent ? this.app.color2 : null,
+              this.app.paintColor(2),
             );
             this.app.selectionOrigin = drag.free ? 'free' : 'select';
             this.app.tool = this.app.prefs.selectionMode === 'persistent' ? 'move' : this.app.selectionOrigin;

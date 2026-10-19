@@ -296,7 +296,7 @@ export class Library {
         },
       );
       asset.used = Date.now();
-      this.app.setTool("move");
+      this.app.setTool("move",{preserveSelection:true});
       await this.save();
       this.app.changedUI();
       return obj;
