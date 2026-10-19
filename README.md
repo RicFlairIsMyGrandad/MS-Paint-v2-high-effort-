@@ -3,17 +3,17 @@
 A local Windows Paint-style editor with layers, assets, editable shapes and text,
 and offline background removal.
 
-**[Download PaintPlus 1.0.8 Setup for Windows](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Setup-1.0.8-x64.exe)**
+**[Download PaintPlus 1.0.9 Setup for Windows](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Setup-1.0.9-x64.exe)**
 
-[Portable EXE](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Portable-1.0.8-x64.exe) · [Complete source ZIP](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Source-1.0.8.zip) · [Full source as TXT](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Full-Source.txt)
+[Portable EXE](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Portable-1.0.9-x64.exe) · [Complete source ZIP](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Source-1.0.9.zip) · [Full source as TXT](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Full-Source.txt)
 
 ![Running PaintPlus editor](docs/screenshots/packaged-linux.png)
 
 ## Install
 
-1. Download **PaintPlus-Setup-1.0.8-x64.exe** and run it on a 64-bit Windows 10 or
+1. Download **PaintPlus-Setup-1.0.9-x64.exe** and run it on a 64-bit Windows 10 or
    Windows 11 computer. The installer can update an existing PaintPlus installation.
-2. Choose the installation folder and complete the wizard. Open PaintPlus from
+2. Close PaintPlus before upgrading. Choose the installation folder and complete the wizard. Open PaintPlus from
    the desktop or Start menu shortcut. Node.js, Python and other developer tools
    are not required.
 3. The executable is unsigned. If Windows displays SmartScreen, review the file
@@ -24,7 +24,7 @@ The portable EXE runs without installation. Both downloads include the AI model
 and runtime. There are no model downloads, online AI calls or telemetry. Uninstall
 preserves projects, source assets and user preferences.
 
-Version 1.0.8 includes the earlier blank-window startup fixes: software rendering
+Version 1.0.9 includes the earlier blank-window startup fixes: software rendering
 on Windows, ASAR-aware resource loading, correct script/WASM types, a visible
 startup error screen and diagnostics at `%APPDATA%\PaintPlus\startup.log`.
 Hosted Windows checks test the exact release downloads. Results are in
@@ -45,7 +45,7 @@ Home-edition laptop remains a separate hardware check.
   an optional rounded speech bubble. Background has three exclusive checkboxes: Transparent, White
   (RGB 254/255/255), and Custom; text-colour changes preserve its fill. Select
   words to change their font, point size, colour and style independently; Ctrl+A
-  in the box formats all text. Font favorites stay pinned. Six font families are
+  in the box formats all text. Font favorites stay pinned. Seven font families, including the original Grade Wobble approximation, are
   bundled alongside the fonts installed on your computer. Finished
   text can be resized and edited while selected. The Text ribbon opens after creating a box; outside confirmation keeps Text selected for the next drag. Bubble outlines retain their creation colour. New bubbles have smaller tails: use
   the Text ribbon sliders for width and attachment position, then drag the blue
@@ -53,7 +53,9 @@ Home-edition laptop remains a separate hardware check.
   dropdown and supports typing custom values. Ctrl+Enter ends typing; Enter or
   clicking outside confirms the selection as raster pixels. Save a project
   before confirmation to keep text editable.
-- Rectangular/free-form selection buttons sit side by side. **8** toggles exact
+- Rectangle, free-form and magic wand selection buttons sit side by side.
+  Choosing a tool confirms/deselects the current area; scrollbars and scrolling
+  retain it. The colour picker returns to the previous tool after sampling. **8** toggles exact
   Color-2 transparency. Ctrl+A still selects all. Default Paint behavior commits
   a pixel selection when you click outside; Settings also offers persistent mode.
   Every selection has resize/rotate handles; no separate Move tool is needed.
@@ -85,10 +87,30 @@ Home-edition laptop remains a separate hardware check.
 - Edit Colors uses the classic two-pane layout with 48 basic swatches, 16
   saved custom slots, hue/saturation and luminance controls, and synchronized
   RGB/HSL fields. The luminance ramp and arrow both drag. The bottom ribbon
-  row starts with nine blank custom slots and permanent RGB 24/71/241 blue.
+  row has eight session-only slots (empty RGB 244/245/247 with an X),
+  checkerboard transparent paint in slot nine, and fixed RGB 24/71/241 in slot ten.
   Click a blank slot to define it. OK applies and saves the colour to the ribbon;
-  Add to Custom Colors saves both dialog and ribbon slots. Custom colours
-  persist across restart. Cancel preserves the current paint colour.
+  Add to Custom Colors saves both dialog and ribbon slots. The ribbon slots
+  reset on restart; the dialog's separate sixteen custom slots remain saved. Cancel preserves the current paint colour.
+- Click/right-click the checkerboard swatch for transparent Color 1/2. Brush,
+  pencil, eraser and fill remove real alpha, including on the bottom canvas.
+  Selecting transparent Color 2 disables its old RGB layer key. Settings chooses
+  alpha-preserving PNG/WebP exports or a white matte; projects retain original RGBA.
+- Magic wand offers tolerance 0–255, contiguous/all matches, active/all-layer
+  sampling and New/Add/Subtract/Intersect. Shift adds, Alt subtracts, Shift+Alt
+  intersects; Invert is in its options. Move/resize/rotate or Delete masked pixels
+  while preserving holes and destination pixels. Ctrl+A selects the whole canvas
+  with the wand; Ctrl+D deselects and Ctrl+Shift+D duplicates.
+- Edit Shortcuts configures independent normal and Shift+number banks. Hold Shift
+  to preview the second bank. Default Shift+0/1 flips, Shift+2/3 rotates 90° and
+  Shift+4 toggles asset layers. Both banks accept these actions and tools. Number
+  actions stay inactive while typing.
+- Choose **Grade Wobble** in the Text font list for the original first handwriting
+  approximation. Upper/lower case, digits, punctuation, size and colour work.
+  [Installable TTF](downloads/Grade-Wobble.ttf), [specimen](downloads/Grade-Wobble-Specimen.pdf)
+  and [character template](downloads/Handwriting-Template.pdf) are included. A full
+  A–Z/a–z/0–9/punctuation sheet with three examples each and a clean 300dpi+ scan
+  would improve the match; the current font is not an exact learned reconstruction.
 - Exact 90/180/270-degree rotations preserve hard pixels and alpha, without
   accumulating position drift. Arbitrary-angle rotation can use smoothing.
 - Above the asset-layer toggle, check **Use Color 2 as transparency** for exact
@@ -111,12 +133,12 @@ Home-edition laptop remains a separate hardware check.
   panel allows canvas zoom, recoverable threshold adjustment, hard edges and
   adjustable softness. Complex subjects may still need manual cleanup.
 - Quick Save uses the filename, format and remembered folder; filename collisions
-  produce numbered files. PNG preserves alpha; JPEG/BMP use a white matte.
+  produce numbered files. PNG/WebP follow the transparency export setting; JPEG/BMP use a white matte.
   Copy preserves original selected colors and uses Color 2 to matte genuine alpha
   for applications such as MS Paint. Save **.paintplus** for editable layers,
   source images, text, shape geometry and groups.
 
-[Release notes and issue-by-issue results](docs/RELEASE-1.0.8.md) ·
+[Release notes and issue-by-issue results](docs/RELEASE-1.0.9.md) ·
 [Known limitations](docs/LIMITATIONS.md) · [Test evidence](docs/TESTING.md)
 
 The toolbar icons are original refined SVGs and the painters palette logo is generated

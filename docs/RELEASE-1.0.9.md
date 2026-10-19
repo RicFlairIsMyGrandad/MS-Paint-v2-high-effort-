@@ -41,4 +41,9 @@ editable sources. Transparent paint acts as an eraser in raster drawing tools;
 vector/text transparent ink is invisible rather than an editable eraser mask.
 See LIMITATIONS.md for other remaining differences and hardware boundaries.
 
-Validation is pending final local and exact-executable Windows package checks.
+Validation: 152 core tests and the complete 164-browser-workflow suite pass on both
+hosted Windows runners. [Run 39316173894](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/actions/runs/39316173894) installs and launches the exact
+Setup download, checks the new features and native clipboard/fonts/offline AI,
+launches Portable and verifies uninstall while retaining a user project. Both
+archives pass integrity checks and contain matching ASARs. TESTING.md records the
+exact hashes and hardware/feature boundaries.
