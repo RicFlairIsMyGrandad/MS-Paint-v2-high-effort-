@@ -8,6 +8,7 @@ import {precisionChecks} from './precision-packaged-qa.mjs';
 import {linkedChecks} from './linked-packaged-qa.mjs';
 import {alphaChecks} from './alpha-packaged-qa.mjs';
 import {wandChecks} from './wand-packaged-qa.mjs';
+import {letteringChecks} from './lettering-packaged-qa.mjs';
 const windows = process.platform === "win32";
 const version=JSON.parse(await readFile('package.json','utf8')).version;
 const original = path.resolve(process.env.PAINTPLUS_TEST_EXECUTABLE || (windows ? "release/win-unpacked/PaintPlus.exe" : "release/linux-unpacked/paintplus"));
@@ -37,7 +38,7 @@ try {
   const box=await page.locator("#overlay").boundingBox();
   await page.mouse.move(box.x+30,box.y+30);await page.mouse.down();await page.mouse.move(box.x+80,box.y+30);await page.mouse.up();
   assert.deepEqual(await page.evaluate(()=>[...paintplus.doc.activeLayer.canvas.getContext("2d").getImageData(50,30,1,1).data]),[24,71,241,255]);
-  const palette=await paletteChecks(page),precision=await precisionChecks(page),linked=await linkedChecks(page),alpha=await alphaChecks(page),wand=await wandChecks(page);
+  const palette=await paletteChecks(page),precision=await precisionChecks(page),linked=await linkedChecks(page),alpha=await alphaChecks(page),wand=await wandChecks(page),lettering=await letteringChecks(page);
   // Exercise the revised editor in the installed ASAR, including the native
   // external clipboard path rather than the browser's in-app copy fallback.
   await page.evaluate(()=>{paintplus.width=3;paintplus.editor.createShape('rectangle',{x:140,y:60},{x:240,y:120},{width:3,color:'#000000',background:'#ffffff',outline:'solid',fill:'none'});});
@@ -145,7 +146,7 @@ try {
   assert(catalog?.count>6);assert.equal(catalog.count,availableFonts.length);
   const result={...runtime,version,installationPathHasSpacesAndUnicode:true,firstLaunchReady:true,defaultCanvasDimensions:true,pointerDrawing:true,editableShapes:true,inlineSpeechText:true,richTextFormatting:true,typingPixelsUnchanged:true,fontSizeInputTwoDigits:true,bubbleShadow:true,outsideClickCommits:true,selectionContextMenu:true,color2CutLayer:true,layerVisibilityOneClick:true,bundledFonts:true,systemFontCatalog:true,brandedExecutableIcons:windows,externalCopyPreservesColor2:true,clipboardAlpha:true,savedPNGBytes:true,savedEditableProject:true,...smoke,rendererErrors:errors,externalRequests:external};
   result.fontCatalogSource=catalog.source;result.fontCatalogCount=catalog.count;
-  Object.assign(result,palette,precision,linked,alpha,wand);
+  Object.assign(result,palette,precision,linked,alpha,wand,lettering);
   await writeFile(`docs/packaged-${windows?"windows":"linux"}-test-results.json`,JSON.stringify(result,null,2));
   console.log(JSON.stringify(result));
 } catch(error) {

@@ -16,7 +16,7 @@ for r in results:
  if r['file']in candidate['files']:assert r['sha256']==candidate['files'][r['file']]
 with zipfile.ZipFile(folder/f'PaintPlus-Source-{version}.zip')as z:
  assert z.testzip()is None
- for name in ['src/app.js','src/core/selection.js','src/core/shortcuts.js','src/core/document.js','assets/fonts/grade-wobble.ttf','tools/build-handwriting-font.py','tests/ui/wand-feedback.spec.mjs','docs/TESTING.md']:assert z.read('PaintPlus/'+name)==(root/name).read_bytes()
+ for name in ['src/app.js','src/core/selection.js','src/core/lettering.js','src/ui/lettering.js','assets/lettering/grade-mouse-samples.json','src/core/shortcuts.js','src/core/document.js','assets/fonts/grade-wobble.ttf','tools/build-handwriting-font.py','tests/ui/wand-feedback.spec.mjs','docs/TESTING.md']:assert z.read('PaintPlus/'+name)==(root/name).read_bytes()
 assert (folder/'PaintPlus-Full-Source.txt').read_text().startswith('PAINTPLUS '+version)
 assert (folder/'Grade-Wobble.ttf').read_bytes()[:4]==b'\x00\x01\x00\x00'
 for name in ['Grade-Wobble-Specimen.pdf','Handwriting-Template.pdf']:assert (folder/name).read_bytes().startswith(b'%PDF-')

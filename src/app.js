@@ -8,6 +8,7 @@ import { resample } from "./core/resample.js";
 import { Editor, selectionBounds, axisBounds } from "./ui/editor.js";
 import { Library } from "./ui/library.js";
 import { TextEditor } from "./ui/text.js";
+import { LetteringEditor } from "./ui/lettering.js";
 import { nearestZoom, stepZoom, zoomLevels } from "./core/zoom.js";
 import { refreshEditable } from "./core/editable.js";
 import { editColors } from "./ui/colors.js";
@@ -45,6 +46,7 @@ const defaultPrefs = {
   assetsWidth: 280,
   categoriesHeight: 246,
   textStyle: {},
+  letteringStyle: {},letteringSamples:null,
   toolWidths: {},
   favoriteFonts: [],
   customColors: [],
@@ -125,6 +127,7 @@ export class PaintPlus {
     await Promise.all(['Caveat','Inter','Lora','Merriweather','Pacifico','Roboto Mono'].map(name => document.fonts.load('16px "PaintPlus ' + name + '"')));
     await document.fonts.load('16px "Grade Wobble"');
     this.textEditor = new TextEditor(this);
+    this.letteringEditor = new LetteringEditor(this);
     this.bind();
     this.applyPrefs();
     this.changedUI();
@@ -251,7 +254,7 @@ export class PaintPlus {
     document.title = this.fileName + " — PaintPlus";
   }
   updateTools() {
-    document.querySelector('.wand-options').classList.toggle('hidden',this.tool!=='wand');
+    document.querySelector('.wand-options').classList.toggle('hidden',this.tool!=='wand'||!this.doc.selectedObjects.length||this.editor.wandSelection?.doc!==this.doc||!this.editor.wandSelection.ids.every(id=>this.doc.selected.includes(id)));
     document
       .querySelectorAll(".tool-button")
       .forEach((b) =>
@@ -289,13 +292,11 @@ export class PaintPlus {
     document.querySelector('#shape-fill').disabled = !shapeActive;
     document.querySelector('.shape-options').classList.toggle('enabled',shapeActive);
     document.querySelector('#selection-transparent').checked = this.prefs.transparentSelection;
-    for (const key of ['width', 'height']) {
-      const field = document.querySelector('#canvas-' + key);
-      if (document.activeElement !== field) field.value = this.doc[key];
-    }
     document.querySelector('[data-tab=text]').classList.toggle('hidden', !this.textEditor.active && !this.doc.selectedObjects.some(o => o.type === 'text'));
     document.querySelector('.line-sample').classList.toggle('round-sample', ['pencil','brush'].includes(this.tool));
     this.textEditor?.syncControls();
+    this.letteringEditor?.syncControls();
+    document.querySelector("[data-tab=lettering]").classList.toggle("hidden",!this.letteringEditor?.active&&!this.doc.selectedObjects.some(o=>o.type==='lettering'));
     this.updateColors();
   }
   updateColors() {
@@ -315,9 +316,10 @@ export class PaintPlus {
   switchTab(tab) {
     const colors = document.querySelector('.colors-group');
     if (tab === 'text') document.querySelector('#text-color-slot').append(colors);
+    else if(tab==='lettering')document.querySelector('#lettering-color-slot').append(colors);
     else document.querySelector('#home-ribbon').insertBefore(colors, document.querySelector('.extra-group'));
     for (const button of document.querySelectorAll('[data-tab]')) button.classList.toggle('active', button.dataset.tab === tab);
-    for (const name of ['home', 'view', 'text']) document.querySelector('#' + name + '-ribbon').classList.toggle('hidden', name !== tab);
+    for (const name of ['home', 'view', 'text','lettering']) document.querySelector('#' + name + '-ribbon').classList.toggle('hidden', name !== tab);
     this.editor.requestRender();
   }
   toggleTransparency(value = !this.prefs.transparentSelection) {
@@ -330,7 +332,7 @@ export class PaintPlus {
   }
   finishSelection() {
     const tool=this.tool;
-    this.textEditor?.finish();
+    this.textEditor?.finish();this.letteringEditor?.finish();
     if(this.doc.selectionUnchanged()){this.doc.cancelTransientSelection();this.doc.selected=[];this.doc.selectedLayers=[];this.closeObjectSession();this.changedUI();return;}
     const previous = this.doc.history.undoStack.at(-1);
     const objects = [...this.doc.selectedObjects];
@@ -374,6 +376,7 @@ export class PaintPlus {
   colorChanged(slot = this.activeColor) {
     this.updateColors();this.updateShapeStyle(slot === 1 ? { color: this.paintColor(1) } : { background: this.paintColor(2) });
     if(slot===2){this.doc.color2=this.color2;this.doc.changed();}
+    if(slot===1&&this.doc.selectedObjects.some(o=>o.type==='lettering'))this.letteringEditor.changeStyle({ink:this.paintColor(1)});
     if (this.doc.selectedObjects.some(o => o.type === 'text')) this.textEditor.changeStyle(slot === 1 ? { textColor: this.paintColor(1) } : { background: this.color2 }, slot === 2 ? object => !object.backgroundMode || object.backgroundMode === 'color2' : null);
   }
   deleteLayer(layer = this.doc.activeLayer) {
@@ -397,8 +400,7 @@ export class PaintPlus {
     if(tool==='dropper'&&previous!=='dropper')this.dropperReturnTool=previous;
     if(['select','free','wand'].includes(tool)){this.selectionOrigin=tool;this.editor.groupRegionArmed=!!this.doc.editGroupId;}
     this.tool=tool;
-    this.switchTab(tool==='text'&&this.textEditor.active?'text':'home');
-    document.querySelector('.wand-options').classList.toggle('hidden',tool!=='wand');
+    this.switchTab(tool==='text'&&this.textEditor.active?'text':tool==='lettering'&&this.letteringEditor.active?'lettering':'home');
     this.updateTools();this.editor.requestRender();
   }
   runShortcut(action){
@@ -530,7 +532,7 @@ export class PaintPlus {
     document.addEventListener("keydown", (e) => this.keyDown(e));
     document.addEventListener('keyup',event=>{if(event.key==='Shift'){this.shiftShortcutsActive=false;this.updateShortcutTable();}});
     window.addEventListener('blur',()=>{this.shiftShortcutsActive=false;this.updateShortcutTable();});
-    for(const [id,key] of [['wand-tolerance','wandTolerance'],['wand-contiguous','wandContiguous'],['wand-merged','wandMerged'],['wand-mode','wandMode']]){const field=document.getElementById(id);if(field.type==='checkbox')field.checked=this.prefs[key];else field.value=this.prefs[key];field.addEventListener('change',()=>{this.prefs[key]=field.type==='checkbox'?field.checked:field.type==='number'?Math.max(0,Math.min(255,Number(field.value)||0)):field.value;this.savePrefs();});}
+    for(const [id,key] of [['wand-tolerance','wandTolerance'],['wand-contiguous','wandContiguous'],['wand-merged','wandMerged'],['wand-mode','wandMode']]){const field=document.getElementById(id);if(field.type==='checkbox')field.checked=this.prefs[key];else field.value=this.prefs[key];field.addEventListener('change',()=>{this.prefs[key]=field.type==='checkbox'?field.checked:field.type==='number'?Math.max(0,Math.min(255,Math.round(Number(field.value)||0))):field.value;if(field.type==='number')field.value=this.prefs[key];this.savePrefs();});}
     this.editor.viewport.addEventListener("dragover", (e) => {
       e.preventDefault();
       e.dataTransfer.dropEffect = "copy";
@@ -563,7 +565,7 @@ export class PaintPlus {
     });
     document.querySelector('#hand-wobble').addEventListener('change',event=>{this.prefs.handWobble=event.target.checked;this.updateShapeStyle({handWobble:event.target.checked});this.savePrefs();});
     const list = document.querySelector("#layer-list");
-    document.querySelector('#layer-color2-transparency').addEventListener('change',event=>{const mode=event.target.checked?'color2':'alpha';this.textEditor.finish();this.doc.action('Layer transparency mode',()=>{this.doc.layerTransparency=mode;});this.prefs.layerTransparencyMode=mode;this.savePrefs();});
+    document.querySelector('#layer-color2-transparency').addEventListener('change',event=>{const mode=event.target.checked?'color2':'alpha';this.textEditor.finish();this.letteringEditor?.finish();this.doc.action('Layer transparency mode',()=>{this.doc.layerTransparency=mode;});this.prefs.layerTransparencyMode=mode;this.savePrefs();});
     document.querySelector('#layer-own-assets').addEventListener('change',event=>{this.prefs.assetOwnLayer=event.target.checked;this.savePrefs();});
     list.addEventListener("click", (e) => {
       if(e.target.closest('.layer-name-input'))return;
@@ -727,11 +729,11 @@ export class PaintPlus {
   selectionMenu(x,y) {
     const editable=this.selectedEditable();
     this.menuAt(x,y,[
-      {label:'Cut',icon:'cut',disabled:!editable,run:async()=>{this.textEditor.finish();await this.action('cut');}},
-      {label:'Copy',icon:'duplicate',run:async()=>{this.textEditor.finish();await this.action('copy');}},
-      {label:'Delete',icon:'trash',disabled:!editable,run:()=>{this.textEditor.finish();return this.action('delete');}},
+      {label:'Cut',icon:'cut',disabled:!editable,run:async()=>{this.textEditor.finish();this.letteringEditor?.finish();await this.action('cut');}},
+      {label:'Copy',icon:'duplicate',run:async()=>{this.textEditor.finish();this.letteringEditor?.finish();await this.action('copy');}},
+      {label:'Delete',icon:'trash',disabled:!editable,run:()=>{this.textEditor.finish();this.letteringEditor?.finish();return this.action('delete');}},
       null,
-      {label:'Cut into new layer',icon:'duplicate',disabled:!editable,run:()=>{this.textEditor.finish();this.closeObjectSession();this.doc.cutIntoLayer(this.color2);this.tool=this.selectionOrigin||'select';this.switchTab('home');this.changedUI();}}
+      {label:'Cut into new layer',icon:'duplicate',disabled:!editable,run:()=>{this.textEditor.finish();this.letteringEditor?.finish();this.closeObjectSession();this.doc.cutIntoLayer(this.color2);this.tool=this.selectionOrigin||'select';this.switchTab('home');this.changedUI();}}
     ]);
   }
   menu(anchor, items) {
@@ -1002,7 +1004,7 @@ export class PaintPlus {
         await this.chooseOutput();
         break;
       case "undo":
-        this.textEditor.finish();
+        this.textEditor.finish();this.letteringEditor?.finish();
         if (document.querySelector("#modal-root.floating-dialog")) this.modalCancel?.();
         this.editor.selectionRect = null;
         this.closeObjectSession();
@@ -1011,7 +1013,7 @@ export class PaintPlus {
         this.changedUI();
         break;
       case "redo":
-        this.textEditor.finish();
+        this.textEditor.finish();this.letteringEditor?.finish();
         if (document.querySelector("#modal-root.floating-dialog")) this.modalCancel?.();
         this.closeObjectSession();
         doc.history.redo();
@@ -1052,8 +1054,9 @@ export class PaintPlus {
       case "resize":
         this.resizeDialog();
         break;
+      case "finish-lettering":this.letteringEditor.finish();break;
       case "finish-text":
-        this.textEditor.finish();break;
+        this.textEditor.finish();this.letteringEditor?.finish();break;
       case "apply-canvas-size":
         doc.resizeCanvas(Number(document.querySelector('#canvas-width').value), Number(document.querySelector('#canvas-height').value), this.color2);break;
       case "canvas-size":
@@ -1173,7 +1176,7 @@ export class PaintPlus {
         doc.ungroupSelected();
         break;
       case "rasterize": {
-        this.textEditor.finish();const previous=doc.history.undoStack.at(-1);
+        this.textEditor.finish();this.letteringEditor?.finish();const previous=doc.history.undoStack.at(-1);
         if(doc.selectedObjects.length && doc.selectedObjects.every(object=>object.type==='selection'||object.draft))this.finishSelection();
         else { await this.runBusy('Rendering from original pixels…',()=>doc.rasterize(resample));this.coalesceCommit(previous);this.closeObjectSession(); }
         this.tool=this.selectionOrigin||'select';break;
@@ -1295,7 +1298,7 @@ export class PaintPlus {
       this.closeMenu();
       this.doc.selected = [];
       this.editor.selectionRect = null;
-      this.editor.requestRender();
+      this.changedUI();
       return;
     }
     if (document.querySelector("#modal-root:not(.floating-dialog) .dialog")) return;
@@ -1586,7 +1589,7 @@ export class PaintPlus {
     this.editor.fit();
   }
   async exportBytes(format) {
-    this.textEditor.finish();
+    this.textEditor.finish();this.letteringEditor?.finish();
     if (format === "paintplus")
       return new TextEncoder().encode(serialize(this.doc));
     const out = canvas(this.doc.width, this.doc.height),
@@ -1972,9 +1975,10 @@ export class PaintPlus {
           ? (keyControl.checked ? keyColor : null)
           : original.transparentColor;
         o.smoothPreview = document.querySelector("#resize-smooth").checked;
-        if (["shape", "text"].includes(o.type)) {
+        if (["shape", "text","lettering"].includes(o.type)) {
           this.doc.assertAllocation(Math.ceil(nw) * Math.ceil(nh) * 12);
           if (o.type === "text") {const offset=o.bubble&&o.bubbleShadow?Math.round(o.shadowOffset||0):0;o.textBoxWidth=Math.max(30,Math.round(o.width)-offset);o.minHeight=Math.max(1,Math.round(o.height)-offset);}
+          if(o.type==='lettering'){o.textBoxWidth=Math.max(30,Math.round(o.width));o.minHeight=Math.max(1,Math.round(o.height));}
           refreshEditable(o);
         }
       }
@@ -2030,15 +2034,15 @@ export class PaintPlus {
   canvasDialog() {
     this.dialog(
       "Canvas properties",
-      `<div class="form-row"><label>Width:</label><input id="canvas-width" type="number" min="1" max="16384" value="${this.doc.width}"> px</div><div class="form-row"><label>Height:</label><input id="canvas-height" type="number" min="1" max="16384" value="${this.doc.height}"> px</div><p>Changes the canvas boundary. Image content retains its size. New background pixels use Color 2.</p>`,
+      `<div class="form-row"><label>Width:</label><input id="dialog-canvas-width" type="number" min="1" max="16384" value="${this.doc.width}"> px</div><div class="form-row"><label>Height:</label><input id="dialog-canvas-height" type="number" min="1" max="16384" value="${this.doc.height}"> px</div><p>Changes the canvas boundary. Image content retains its size. New background pixels use Color 2.</p>`,
       [
         { label: "Cancel", run: () => this.closeDialog() },
         {
           label: "Resize canvas",
           primary: true,
           run: () => {
-            const w = Number(document.querySelector("#canvas-width").value),
-              h = Number(document.querySelector("#canvas-height").value);
+            const w = Number(document.querySelector("#dialog-canvas-width").value),
+              h = Number(document.querySelector("#dialog-canvas-height").value);
             if (!Number.isInteger(w) || !Number.isInteger(h) || w < 1 || h < 1)
               throw new Error("Enter positive whole pixel dimensions.");
             this.doc.resizeCanvas(w, h, this.color2);
@@ -2214,10 +2218,11 @@ export class PaintPlus {
     this.changedUI();
   }
   editText(object = null, point = { x: 20, y: 20 }) {
-    this.textEditor.begin(object, { ...point, width: 260, height: 60 });
+    if(object?.type==='lettering'){this.letteringEditor.begin(object);return;}
+    this.letteringEditor.finish();this.textEditor.begin(object, { ...point, width: 260, height: 60 });
   }
   async removeBackground() {
-    this.textEditor.finish();
+    this.textEditor.finish();this.letteringEditor?.finish();
     let object = this.doc.selectedObjects[0];
     if (this.doc.selectedObjects.length > 1) {
       this.toast("Select one image or selection to remove its background.");

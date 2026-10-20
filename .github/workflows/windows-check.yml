@@ -14,6 +14,7 @@ on:
       - 'tools/linked-packaged-qa.mjs'
       - 'tools/alpha-packaged-qa.mjs'
       - 'tools/wand-packaged-qa.mjs'
+      - 'tools/lettering-packaged-qa.mjs'
       - 'tools/portable-windows-qa.cjs'
       - 'tools/publish-windows-evidence.cjs'
       - 'tools/use-release-candidate.cjs'

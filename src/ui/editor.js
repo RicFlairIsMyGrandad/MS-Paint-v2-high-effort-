@@ -109,7 +109,7 @@ export class Editor {
       }
       const p = this.point(e),
         hit = this.app.doc.hit(p.x, p.y);
-      if (hit?.object.type === "text") this.app.editText(hit.object);
+      if (["text","lettering"].includes(hit?.object.type)) this.app.editText(hit.object);
     });
     this.viewport.addEventListener("scroll", () => this.requestRender());
     this.viewport.addEventListener(
@@ -215,7 +215,7 @@ export class Editor {
     if (this.app.tool==='zoom' && this.hover) {
       const area=this.zoomArea(this.hover);over.save();over.lineWidth=1/z;over.strokeStyle='#fff';over.strokeRect(area.x,area.y,area.width,area.height);over.strokeStyle='#29394c';over.setLineDash([5/z,3/z]);over.strokeRect(area.x,area.y,area.width,area.height);over.restore();
     }
-    if (this.drag?.type === "selection" || this.drag?.type === 'text-box') {
+    if (this.drag?.type === "selection" || ['text-box','lettering-box'].includes(this.drag?.type)) {
       over.save();
       over.strokeStyle = "#006ce3";
       over.fillStyle = "#0078ff12";
@@ -258,7 +258,8 @@ export class Editor {
     document.querySelector("#zoom-percent").textContent =
       z * 100 + "%";
     document.querySelector("#zoom-slider").value = zoomLevels.indexOf(nearestZoom(z));
-    this.app.textEditor?.position();
+    this.app.textEditor?.position();this.app.letteringEditor?.position();
+    this.app.letteringEditor?.paintSelection(over);
   }
   drawShapePreview(context,name,start,end,options) {
     const key=JSON.stringify([name,start,end,options]);
@@ -452,6 +453,7 @@ export class Editor {
       const replacingSelection=!!d.selectedObjects.length&&!existingHandle&&!e.ctrlKey&&a.prefs.selectionMode==='paint';
       if(replacingSelection)a.finishSelection();
       if(a.textEditor?.active&&!existingHandle)a.textEditor.finish();
+      if(a.letteringEditor?.active&&!existingHandle)a.letteringEditor.finish();
       if (["select", "free", "wand", "move", "crop"].includes(a.tool) || existingHandle) {
         let handle = groupRegion?null:this.handleAt(p);
         const hit = groupRegion?null:d.hit(p.x, p.y);
@@ -477,6 +479,7 @@ export class Editor {
           a.changedUI();
           a.updateLayers();
           if (hit.object.type === "text") a.switchTab("text");
+          if(hit.object.type==='lettering')a.switchTab('lettering');
         }
         if (handle && d.selectedObjects.length) {
           if (
@@ -537,9 +540,9 @@ export class Editor {
         const picked = c.getContext('2d').getImageData(Math.max(0,Math.min(c.width-1,Math.floor(p.x))),Math.max(0,Math.min(c.height-1,Math.floor(p.y))),1,1).data[3]===0?'transparent':colorAt(c,p.x,p.y);
         a.choosePaintColor(picked,e.button===2?2:1);
         a.setTool(a.dropperReturnTool||'brush');
-      } else if (a.tool === "text") {
+      } else if (["text","lettering"].includes(a.tool)) {
         if (d.activeLayer.locked || !d.activeLayer.visible) throw new Error('Show and unlock the active layer before adding text.');
-        this.drag = { type: 'text-box', start: p, end: p,replacingSelection };
+        this.drag = { type: a.tool==='lettering'?'lettering-box':'text-box', start: p, end: p,replacingSelection };
       } else if (a.tool === "zoom") {
         const area=this.zoomArea(p);
         this.setZoom(nearestZoom(a.zoom * (e.button === 2 ? .5 : 2)), {
@@ -616,7 +619,7 @@ export class Editor {
         }
       }
       drag.end = end;
-    } else if (drag.type === 'text-box') {
+    } else if (['text-box','lettering-box'].includes(drag.type)) {
       drag.end = p;
     } else if (drag.type === "selection") {
       drag.end = drag.free?p:{x:Math.round(p.x),y:Math.round(p.y)};
@@ -700,6 +703,7 @@ export class Editor {
       const o = this.doc.objects.find((o) => o.id === d.originals[0].id);
       const candidate = { ...o, x: Math.round(nx), y: Math.round(ny), width: Math.round(nw), height: Math.round(nh),pixelSnapX:0,pixelSnapY:0 };
       if (o.type === 'text') {resizeTextBox(candidate,nw,nh);}
+      if(o.type==='lettering'){candidate.textBoxWidth=Math.max(30,Math.round(nw));candidate.minHeight=Math.max(1,Math.round(nh));refreshEditable(candidate);}
       if (o.type === 'shape') {
         this.doc.assertAllocation(Math.ceil(nw) * Math.ceil(nh) * 12);
         refreshEditable(candidate);
@@ -716,9 +720,9 @@ export class Editor {
   }
   pointerUp(e) {
     if (!this.drag) return;
-    const drag=this.drag, clickText=drag.type==='move' && Math.hypot(drag.start.x-this.point(e).x,drag.start.y-this.point(e).y)<1 ? this.doc.selectedObjects.find(object=>object.type==='text') : null;
+    const drag=this.drag, clickText=drag.type==='move' && Math.hypot(drag.start.x-this.point(e).x,drag.start.y-this.point(e).y)<1 ? this.doc.selectedObjects.find(object=>['text','lettering'].includes(object.type)) : null;
     this.finishDrag();
-    if(clickText&&!this.app.textEditor.active)this.app.editText(clickText);
+    if(clickText&&!this.app.textEditor.active&&!this.app.letteringEditor.active)this.app.editText(clickText);
     if (this.overlay.hasPointerCapture(e.pointerId))
       this.overlay.releasePointerCapture(e.pointerId);
   }
@@ -727,7 +731,7 @@ export class Editor {
     if (!drag) return;
     this.drag = null;
     const d = this.doc;
-    if(drag.replacingSelection&&['text-box','shape'].includes(drag.type)&&Math.hypot(drag.end.x-drag.start.x,drag.end.y-drag.start.y)<2/this.app.zoom){this.app.changedUI();return;}
+    if(drag.replacingSelection&&['text-box','lettering-box','shape'].includes(drag.type)&&Math.hypot(drag.end.x-drag.start.x,drag.end.y-drag.start.y)<2/this.app.zoom){this.app.changedUI();return;}
     try {
       if (drag.type === "paint") {
 
@@ -780,9 +784,9 @@ export class Editor {
             "Click polygon corners. Double-click or Enter to finish.",
           );
         }
-      } else if (drag.type === 'text-box') {
+      } else if (['text-box','lettering-box'].includes(drag.type)) {
         const rect = this.rect(drag.start, drag.end);
-        this.app.textEditor.begin(null, { x: rect.x, y: rect.y, width: Math.max(120, rect.width), height: Math.max(50, rect.height) });
+        (drag.type==='lettering-box'?this.app.letteringEditor:this.app.textEditor).begin(null, { x: rect.x, y: rect.y, width: Math.max(120, rect.width), height: Math.max(50, rect.height) });
       } else if (drag.type === "shape") {
         this.createShape(this.app.shape, drag.start, drag.end, { width: this.app.width, color: drag.color, background: drag.background, outline: this.app.outline, fill: this.app.shapeFill,handWobble:this.app.prefs.handWobble });
       } else if (drag.type === "selection") {

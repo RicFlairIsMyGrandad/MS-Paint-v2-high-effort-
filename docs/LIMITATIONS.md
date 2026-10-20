@@ -110,3 +110,10 @@ original artwork; it is not a screenshot mockup.
   character would improve fidelity. There are no contextual glyph alternates,
   automatic font training or a font-creation UI in this version. The font can be
   used in PaintPlus and installed separately from its TTF download.
+
+- **Mouse writing (1.0.10):** The dedicated tool uses the user's actual 95-character,
+  285-variant pixel sample set, independent of the earlier Grade Wobble outline
+  approximation. Each box uses one colour/size. It does not infer connected word
+  shapes or generate missing glyphs; missing characters are listed and displayed
+  as placeholders. Fractional scaling/reduction cannot retain every original
+  pixel. Editable project metadata stores variants and vertical choices.

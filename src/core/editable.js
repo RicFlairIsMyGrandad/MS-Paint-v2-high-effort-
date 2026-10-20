@@ -1,3 +1,4 @@
+import { letteringSource } from "./lettering.js";
 import { canvas } from "./raster.js";
 import { richLayout, paintRichText } from "./rich-text.js";
 import { drawShape, speechBubblePath } from "./shapes.js";
@@ -92,6 +93,7 @@ export function resizeTextBox(object, width, height) {
   refreshEditable(object);
 }
 export function refreshEditable(object) {
+  if(object.type==='lettering'){object.source=letteringSource(object);object.width=object.source.width;object.height=object.source.height;}
   if (object.type === 'shape') object.source = shapeSource(object);
   if (object.type === 'text') { object.source = textSource(object); object.width = object.source.width; object.height = object.source.height; }
 }

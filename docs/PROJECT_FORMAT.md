@@ -85,3 +85,12 @@ the existing floating source PNGs. The eight ribbon custom slots are deliberatel
 not saved between sessions. Shift shortcuts and export-matte preferences are
 workspace settings, separate from project pixels. Old readers may ignore these
 new fields, so their keyed appearance can differ.
+
+Version 1.0.10 retains container version 1. Objects of type `lettering` embed
+`letteringAtlas` (validated cropped alpha masks and native baselines), text,
+`letteringChoices` (variant index and an unsigned rise sample for each character),
+`letterSize`, `letterSpacing`, `wordSpacing`, `lineGap`, `riseMax`, `ink`,
+`textBoxWidth` and `minHeight`. The rendered PNG remains the normal source image;
+legacy readers can display it. The new reader retains exact choices for editing
+and recolouring without generating new randomness. Atlas and layout dimensions,
+text length, colour and choice ranges are validated on load.

@@ -1,6 +1,6 @@
 {
   "name": "paintplus",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "private": true,
   "type": "module",
   "description": "A local Paint-style desktop editor with layers, editable assets and offline background removal",

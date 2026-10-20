@@ -58,6 +58,7 @@ deliveries = {
     "PaintPlus-Editor.png": root / "docs/screenshots/packaged-linux.png",
     "PaintPlus-Colors.png": root / "docs/screenshots/packaged-linux-colors.png",
     "Grade-Wobble.ttf": root / "assets/fonts/grade-wobble.ttf",
+    "PaintPlus-Lettering.png": root / "docs/screenshots/packaged-linux-lettering.png",
     "Grade-Wobble-Specimen.pdf": root / "docs/handwriting/Grade-Wobble-Specimen.pdf",
     "Handwriting-Template.pdf": root / "docs/handwriting/Handwriting-Template.pdf",
     "PaintPlus-Text.png": root / "docs/screenshots/packaged-linux-text.png",

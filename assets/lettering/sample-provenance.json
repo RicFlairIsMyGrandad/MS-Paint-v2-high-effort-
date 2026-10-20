@@ -1,0 +1,25 @@
+{
+  "description": "Actual user mouse handwriting; native per-pixel alpha recovered against original template guides. No curve fitting, tracing or smoothing.",
+  "sources": [
+    {
+      "file": "01-Uppercase-BLANK.png",
+      "sha256": "0338c88e7888f28c6205ac5182e9e93e74b841e73a88c350e5a79d0c3975e1d1",
+      "width": 1000,
+      "height": 854
+    },
+    {
+      "file": "02-Lowercase-BLANK.png",
+      "sha256": "d1944d2b8427dfe71a55c296430672b99f0971a20e38d634b95d801c10271af7",
+      "width": 1000,
+      "height": 854
+    },
+    {
+      "file": "03-Digits-Symbols-BLANK.png",
+      "sha256": "ee83e095b2716c04e27cfc4008edca19217102574c4908c10d3a4b5f06b6e2aa",
+      "width": 1000,
+      "height": 1206
+    }
+  ],
+  "characters": 95,
+  "variants": 285
+}

@@ -1,3 +1,4 @@
+import { validateLettering } from "./lettering.js";
 import { canvas } from "./raster.js";
 import { PaintDocument } from "./document.js";
 import { shapeNames } from '../ui/icons.js';
@@ -147,6 +148,7 @@ export async function deserialize(text, onChange = () => {}) {
           if (!shapeNames.includes(o.shapeName) || !style || !Number.isInteger(style.width) || style.width < 1 || style.width > 256 || ![style.color, style.background].every(color => typeof color === 'string' && /^(?:#[0-9a-f]{6}|transparent)$/i.test(color)) || !['none','solid'].includes(style.outline) || !['none','solid'].includes(style.fill) || !geometry || !point(geometry.a) || !point(geometry.b) || (geometry.controls && (!Array.isArray(geometry.controls) || geometry.controls.length > 2 || !geometry.controls.every(point))) || (geometry.points && (!Array.isArray(geometry.points) || geometry.points.length > 10000 || !geometry.points.every(point))))
             throw new Error('Invalid editable shape.');
         }
+        if(o.type==='lettering')validateLettering(o);
         if (o.type === 'text') {
           if (typeof o.text !== 'string' || o.text.length > 1000000 || typeof o.font !== 'string' || o.font.length > 100 || !Number.isFinite(o.fontSize) || o.fontSize < 1 || o.fontSize > (o.fontUnit === "pt" ? 384 : 512))
             throw new Error('Invalid editable text.');

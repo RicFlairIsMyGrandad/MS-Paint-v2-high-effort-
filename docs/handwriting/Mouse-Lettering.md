@@ -19,7 +19,7 @@ outline-font rendering, curve fitting or resizing. `sheet-layout.json` records
 sampling boxes and baselines. The ZIP and cell contents are checked by the
 generator. No existing app, EXE, font or 1.0.9 download is modified.
 
-## Proposed tool, awaiting completed samples
+## Implemented mouse-lettering tool in 1.0.10
 
 A separate mouse-lettering tool can use bitmap glyphs from the completed sheets
 and offer a box for typing, size, colour, negative or positive letter spacing,
@@ -33,5 +33,9 @@ preserves the source pixel pattern exactly; fractional scaling or reduction
 cannot preserve every source pixel. Phrase samples help with spacing and joined
 strokes; isolated glyphs alone cannot reproduce all connected handwriting.
 
-This document describes a proposal. The separate lettering tool has not been
-implemented, and no new installer is being built before receiving the samples.
+The completed PNGs are now supplied under `assets/lettering/user-sheets`.
+`tools/extract-lettering-samples.mjs` produces the actual 95-character/285-variant
+sample atlas and a source checksum record without outline fitting or smoothing.
+The Mouse writing tool and Lettering ribbon are implemented in 1.0.10, including
+local sheet import, Shuffle, negative spacing and saved vertical variation.
+Full release validation is recorded in `docs/TESTING.md`.
