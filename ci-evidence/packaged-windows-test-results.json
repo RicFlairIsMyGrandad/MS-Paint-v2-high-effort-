@@ -1,0 +1,5 @@
+{
+  "error": "Expected values to be strictly equal:\n\n3 !== 4\n",
+  "stack": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n3 !== 4\n\n    at file:///D:/a/MS-Paint-v2-high-effort-/MS-Paint-v2-high-effort-/tools/packaged-qa.mjs:46:10",
+  "log": "{\"time\":\"2026-10-20T01:01:25.381Z\",\"event\":\"process-start\",\"version\":\"1.0.10\",\"platform\":\"win32\",\"electron\":\"38.2.0\"}\n{\"time\":\"2026-10-20T01:01:25.421Z\",\"event\":\"resources\",\"dist\":\"C:\\\\Users\\\\RUNNER~1\\\\AppData\\\\Local\\\\Temp\\\\PaintPlus packaged Ω f7iCc0\\\\installed app with spaces\\\\resources\\\\app.asar\\\\dist\",\"packaged\":true}\n{\"time\":\"2026-10-20T01:01:25.835Z\",\"event\":\"renderer-ready\"}\n{\"time\":\"2026-10-20T01:01:33.259Z\",\"event\":\"font-catalog\",\"source\":\"GDI\",\"count\":144}\n"
+}
