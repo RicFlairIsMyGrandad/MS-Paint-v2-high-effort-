@@ -1,0 +1,35 @@
+(node:6772) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+{"time":"2026-10-20T00:37:00.854Z","event":"process-start","version":"1.0.10","platform":"win32","electron":"38.2.0"}
+{"time":"2026-10-20T00:37:00.883Z","event":"resources","dist":"C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω nJLpVw\\installed app with spaces\\resources\\app.asar\\dist","packaged":true}
+{"time":"2026-10-20T00:37:01.407Z","event":"renderer-ready"}
+{"time":"2026-10-20T00:37:05.588Z","event":"font-catalog","source":"GDI","count":144}
+
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator('[data-action="tool:lettering"]')
+    - locator resolved to <button title="Mouse lettering" data-action="tool:lettering" aria-label="Mouse lettering" class="ribbon-large tool-button">…</button>
+  - attempting click action
+    2 × waiting for element to be visible, enabled and stable
+      - element is not visible
+    - retrying click action
+    - waiting 20ms
+    2 × waiting for element to be visible, enabled and stable
+      - element is not visible
+    - retrying click action
+      - waiting 100ms
+    58 × waiting for element to be visible, enabled and stable
+       - element is not visible
+     - retrying click action
+       - waiting 500ms
+
+    at letteringChecks (D:\a\MS-Paint-v2-high-effort-\MS-Paint-v2-high-effort-\tools\lettering-packaged-qa.mjs:10:56)
+    at async file:///D:/a/MS-Paint-v2-high-effort-/MS-Paint-v2-high-effort-/tools/packaged-qa.mjs:41:181 {
+  name: 'TimeoutError'
+}
+
+Node.js v24.21.0
