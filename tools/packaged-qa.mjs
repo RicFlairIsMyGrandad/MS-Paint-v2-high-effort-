@@ -42,6 +42,9 @@ try {
   // Exercise the revised editor in the installed ASAR, including the native
   // external clipboard path rather than the browser's in-app copy fallback.
   await page.evaluate(()=>{paintplus.width=3;paintplus.editor.createShape('rectangle',{x:140,y:60},{x:240,y:120},{width:3,color:'#000000',background:'#ffffff',outline:'solid',fill:'none'});});
+  // Programmatic shape setup does not perform the canvas click that normally
+  // gives drawing shortcuts focus. Do not leave a ribbon input as the target.
+  await page.locator('#overlay').focus();
   await page.keyboard.press('Control+NumpadAdd');
   assert.equal(await page.evaluate(()=>paintplus.doc.selectedObjects[0].shapeStyle.width),4);
   await page.evaluate(()=>paintplus.finishSelection());
