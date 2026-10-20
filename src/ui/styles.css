@@ -1492,9 +1492,6 @@ body.fullscreen .titlebar {
     min-width: 70px;
     width: 70px;
   }
-  .settings-button {
-    display: none;
-  }
   .quick-save {
     width: 257px;
     min-width: 235px;
@@ -1541,9 +1538,6 @@ body.fullscreen .titlebar {
   }
   .ribbon {
     overflow-x: auto;
-  }
-  .extra-group {
-    display: none;
   }
   .quick-save {
     width: 240px;
