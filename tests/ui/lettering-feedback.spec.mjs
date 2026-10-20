@@ -13,3 +13,16 @@ test('local sheet import rejects blanks and accepts original filled PNGs',async(
 test('Shuffle has its own undo and redo preserving exact lettering pixels',async({page})=>{await fresh(page);await begin(page,'AbcXYZ');await page.locator('#lettering-rise').fill('7');const before=await page.evaluate(()=>paintplus.doc.selectedObjects[0].source.toDataURL());await page.locator('#lettering-shuffle').click();const after=await page.evaluate(()=>paintplus.doc.selectedObjects[0].source.toDataURL());expect(after).not.toBe(before);await page.keyboard.press('Control+z');expect(await page.evaluate(()=>paintplus.doc.selectedObjects[0].source.toDataURL())).toBe(before);await page.keyboard.press('Control+y');expect(await page.evaluate(()=>paintplus.doc.selectedObjects[0].source.toDataURL())).toBe(after);});
 test('canvas properties edits its own dimensions without replacing the Home fields',async({page})=>{await fresh(page);await page.locator('#canvas-width').fill('777');await page.locator('#canvas-height').fill('444');await page.evaluate(()=>paintplus.canvasDialog());await page.locator('#dialog-canvas-width').fill('420');await page.locator('#dialog-canvas-height').fill('310');await page.locator('#modal-root').getByRole('button',{name:'Resize canvas',exact:true}).click();expect(await page.evaluate(()=>[paintplus.doc.width,paintplus.doc.height])).toEqual([420,310]);await expect(page.locator('#canvas-width')).toHaveValue('777');await expect(page.locator('#canvas-height')).toHaveValue('444');});
 test('lettering supports actual keyboard entry, Enter line breaks and deletion in the middle',async({page})=>{await fresh(page);await begin(page,'The Rock');await page.locator('#lettering-content').press('End');await page.locator('#lettering-content').press('Enter');await page.locator('#lettering-content').pressSequentially('Kevin Hart');expect(await page.evaluate(()=>paintplus.letteringEditor.object.text)).toBe('The Rock\nKevin Hart');await page.locator('#lettering-content').press('ArrowLeft');await page.locator('#lettering-content').press('Backspace');expect(await page.evaluate(()=>paintplus.letteringEditor.object.text)).toBe('The Rock\nKevin Hat');});
+test('small laptop widths retain Mouse writing, AI and Settings in the scrollable Home ribbon',async({page})=>{
+  for(const width of [1024,1280]){
+    await page.setViewportSize({width,height:800});await fresh(page);
+    for(const action of ['settings','background-remove','tool:lettering']){
+      const button=page.locator(`#home-ribbon [data-action="${action}"]`);
+      await expect(button).toBeVisible();await button.scrollIntoViewIfNeeded();await expect(button).toBeInViewport();
+    }
+    await page.locator('[data-action="tool:lettering"]').click();
+    await drag(page,[20,20],[260,150]);await page.locator('#lettering-content').fill('Mouse writing');
+    expect(await page.evaluate(()=>paintplus.letteringEditor.object.text)).toBe('Mouse writing');
+    await expect(page.locator('#lettering-ribbon')).toBeVisible();
+  }
+});
