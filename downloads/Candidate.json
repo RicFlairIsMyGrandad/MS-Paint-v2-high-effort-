@@ -1,0 +1,10 @@
+{
+  "version": "1.0.10",
+  "sourceRevision": "f22b7143299be197999feb5a301bed970b70267f",
+  "appSourceSha256": "2408042e24228d28c32dea96d4696436c042a81ec236fe4596c4b1728f239b1d",
+  "appAsarSha256": "0ceccafdaa2c7358c6b92934b368864ea12cca68fa09a3a64ea957882c76b741",
+  "files": {
+    "PaintPlus-Setup-1.0.10-x64.exe": "891b98abf32d3a7970ee2f0a9a6cbd113530bda7f25c1f79aff70f5a280d2a1e",
+    "PaintPlus-Portable-1.0.10-x64.exe": "e6734d4f77256c3dbde8980a52a05978382240231ba9724b9f32e8d7ffae0007"
+  }
+}
