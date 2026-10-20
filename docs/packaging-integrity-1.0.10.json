@@ -1,0 +1,27 @@
+{
+  "version": "1.0.10",
+  "sourceRevision": "726ff90d98006ed64ce09a1f60e90136559b9cbf",
+  "files": {
+    "PaintPlus-Setup-1.0.10-x64.exe": {
+      "bytes": 104570371,
+      "sha256": "6575553481a93adadf56595488c0d72fd3b5d76871ed49b8e9d04b53b06ee69e"
+    },
+    "PaintPlus-Portable-1.0.10-x64.exe": {
+      "bytes": 102518553,
+      "sha256": "127f9b3f5f5f00e7ef5123e50d026b3f4435e551fab23d053ef7c5edb6ee9666"
+    }
+  },
+  "mouseLetteringCharacters": 95,
+  "mouseLetteringVariants": 285,
+  "userGlyphsInPackagedCode": true,
+  "mouseLetteringAtlasSha256": "7fe1521b8a7e806edc23ed2d29e84404c39268e34be3793ac03808f5ed29053e",
+  "setupArchiveIntegrity": true,
+  "portableArchiveIntegrity": true,
+  "portableInnerPayloadIntegrity": true,
+  "setupAndPortableAsarMatch": true,
+  "appAsarSha256": "02b14556f97f442ea9ce03aca4710ee56f4bbbfb61f7b49b2c756bdcc118aa5e",
+  "asarVersion": "1.0.10",
+  "bundledFontCount": 7,
+  "bundledModelSha256": "309c8469258dda742793dce0ebea8e6dd393174f89934733ecc8b14c76f4ddd8",
+  "handwritingFontSha256": "bab689d479d648744b5fc097a8e49a99e546b97e1d47da838d039b16b6c04a58"
+}

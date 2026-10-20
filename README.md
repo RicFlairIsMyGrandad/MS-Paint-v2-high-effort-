@@ -3,15 +3,15 @@
 A local Windows Paint-style editor with layers, assets, editable shapes and text,
 and offline background removal.
 
-**[Download PaintPlus 1.0.9 Setup for Windows](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Setup-1.0.9-x64.exe)**
+**[Download PaintPlus 1.0.10 Setup for Windows](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Setup-1.0.10-x64.exe)**
 
-[Portable EXE](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Portable-1.0.9-x64.exe) · [Complete source ZIP](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Source-1.0.9.zip) · [Full source as TXT](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Full-Source.txt)
+[Portable EXE](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Portable-1.0.10-x64.exe) · [Complete source ZIP](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Source-1.0.10.zip) · [Full source as TXT](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/raw/refs/heads/main/downloads/PaintPlus-Full-Source.txt)
 
 ![Running PaintPlus editor](docs/screenshots/packaged-linux.png)
 
 ## Install
 
-1. Download **PaintPlus-Setup-1.0.9-x64.exe** and run it on a 64-bit Windows 10 or
+1. Download **PaintPlus-Setup-1.0.10-x64.exe** and run it on a 64-bit Windows 10 or
    Windows 11 computer. The installer can update an existing PaintPlus installation.
 2. Close PaintPlus before upgrading. Choose the installation folder and complete the wizard. Open PaintPlus from
    the desktop or Start menu shortcut. Node.js, Python and other developer tools
@@ -24,7 +24,7 @@ The portable EXE runs without installation. Both downloads include the AI model
 and runtime. There are no model downloads, online AI calls or telemetry. Uninstall
 preserves projects, source assets and user preferences.
 
-Version 1.0.9 includes the earlier blank-window startup fixes: software rendering
+Version 1.0.10 includes the earlier blank-window startup fixes: software rendering
 on Windows, ASAR-aware resource loading, correct script/WASM types, a visible
 startup error screen and diagnostics at `%APPDATA%\PaintPlus\startup.log`.
 Hosted Windows checks test the exact release downloads. Results are in
@@ -97,7 +97,9 @@ Home-edition laptop remains a separate hardware check.
   Selecting transparent Color 2 disables its old RGB layer key. Settings chooses
   alpha-preserving PNG/WebP exports or a white matte; projects retain original RGBA.
 - Magic wand offers tolerance 0–255, contiguous/all matches, active/all-layer
-  sampling and New/Add/Subtract/Intersect. Shift adds, Alt subtracts, Shift+Alt
+  sampling and New/Add/Subtract/Intersect. Its options appear only after selecting
+  an area, at the far right of Home; earlier groups retain their positions and
+  tolerance displays all three digits. Shift adds, Alt subtracts, Shift+Alt
   intersects; Invert is in its options. Move/resize/rotate or Delete masked pixels
   while preserving holes and destination pixels. Ctrl+A selects the whole canvas
   with the wand; Ctrl+D deselects and Ctrl+Shift+D duplicates.
@@ -105,6 +107,18 @@ Home-edition laptop remains a separate hardware check.
   to preview the second bank. Default Shift+0/1 flips, Shift+2/3 rotates 90° and
   Shift+4 toggles asset layers. Both banks accept these actions and tools. Number
   actions stay inactive while typing.
+- Choose **Mouse writing** on Home (scroll the ribbon right on small windows),
+  then draw a typing box. Your submitted
+  mouse-drawn PNGs are already bundled: 95 characters with three variants each.
+  Its Lettering ribbon offers size/colour, negative or positive letter spacing,
+  word spacing, line gap and a maximum upward offset X. **Shuffle** changes both
+  the letter variants and their 0–X offsets; choices stay fixed while editing
+  and saving. Shuffle has its own Undo/Redo. Native pixels are retained without
+  outline fitting or smoothing; enlargement uses nearest-neighbour sampling.
+  Save an editable project while the box is still editable to retain its text,
+  samples and choices. Load sheets can replace/add local character sets.
+  [Lettering screenshot](downloads/PaintPlus-Lettering.png) and
+  [format/usage details](docs/handwriting/Mouse-Lettering.md) are included.
 - Choose **Grade Wobble** in the Text font list for the original first handwriting
   approximation. Upper/lower case, digits, punctuation, size and colour work.
   [Installable TTF](downloads/Grade-Wobble.ttf), [specimen](downloads/Grade-Wobble-Specimen.pdf)
@@ -112,9 +126,9 @@ Home-edition laptop remains a separate hardware check.
   For rough mouse-drawn lettering, use the newer [native-pixel PNG template pack](downloads/handwriting-png/Mouse-Lettering-PNG-Pack.zip)
   and [filled example](downloads/handwriting-png/02-Lowercase-EXAMPLE.png).
   Draw in MS Paint at 100%, keep the original dimensions and rough edges, and
-  return the PNGs; no high-resolution scan or polishing is needed. The current
-  font remains an approximation. A separate bitmap-lettering tool is
-  [proposed, awaiting completed samples](docs/handwriting/Mouse-Lettering.md).
+  save as PNG; no high-resolution scan or polishing is needed. The older
+  outline font remains an approximation; Mouse writing separately uses your
+  actual completed pixel samples.
 - Exact 90/180/270-degree rotations preserve hard pixels and alpha, without
   accumulating position drift. Arbitrary-angle rotation can use smoothing.
 - Above the asset-layer toggle, check **Use Color 2 as transparency** for exact
@@ -124,6 +138,8 @@ Home-edition laptop remains a separate hardware check.
   Double-click a layer name or right-click → Rename layer to edit it in place.
   Eye double-click does not rename. Visibility stays outside undo/redo.
 - Ribbon Width/Height + Apply changes canvas boundaries without stretching.
+  These fields keep your typed values when dragging canvas edge/corner handles,
+  undoing or refreshing the UI. The bottom status readout shows actual dimensions.
   Larger pastes grow the canvas by default; Settings can retain its dimensions.
 - A layer's bin or Delete after clicking its row removes it immediately. Ctrl+Z
   restores it. Locked layers must be unlocked first. Ctrl+Z/Y affects document
@@ -142,7 +158,7 @@ Home-edition laptop remains a separate hardware check.
   for applications such as MS Paint. Save **.paintplus** for editable layers,
   source images, text, shape geometry and groups.
 
-[Release notes and issue-by-issue results](docs/RELEASE-1.0.9.md) ·
+[Release notes and issue-by-issue results](docs/RELEASE-1.0.10.md) ·
 [Known limitations](docs/LIMITATIONS.md) · [Test evidence](docs/TESTING.md)
 
 The toolbar icons are original refined SVGs and the painters palette logo is generated

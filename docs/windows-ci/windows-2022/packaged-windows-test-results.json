@@ -1,6 +1,6 @@
 {
   "isPackaged": true,
-  "appPath": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω ih52UG\\installed app with spaces\\resources\\app.asar",
+  "appPath": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω t5IJCT\\installed app with spaces\\resources\\app.asar",
   "platform": "win32",
   "gpuStatus": {
     "2d_canvas": "unavailable_software",
@@ -20,7 +20,7 @@
     "webgpu": "unavailable_software",
     "webnn": "unavailable_software"
   },
-  "version": "1.0.9",
+  "version": "1.0.10",
   "installationPathHasSpacesAndUnicode": true,
   "firstLaunchReady": true,
   "defaultCanvasDimensions": true,
@@ -45,16 +45,16 @@
   "clipboardOK": true,
   "aiInferenceOK": true,
   "first": {
-    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω ih52UG\\images\\PaintPlus-smoke.png",
+    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω t5IJCT\\images\\PaintPlus-smoke.png",
     "name": "PaintPlus-smoke.png"
   },
   "second": {
-    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω ih52UG\\images\\PaintPlus-smoke (2).png",
+    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω t5IJCT\\images\\PaintPlus-smoke (2).png",
     "name": "PaintPlus-smoke (2).png"
   },
   "collisionOK": true,
   "project": {
-    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω ih52UG\\images\\PaintPlus-project-smoke.paintplus",
+    "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\PaintPlus packaged Ω t5IJCT\\images\\PaintPlus-project-smoke.paintplus",
     "name": "PaintPlus-project-smoke.paintplus"
   },
   "projectBytes": 128454,
@@ -127,5 +127,14 @@
   "shiftShortcutBank": true,
   "shortcutTransforms": true,
   "whiteOrAlphaExport": true,
-  "gradeWobbleFont": true
+  "gradeWobbleFont": true,
+  "contextualWandOptions": true,
+  "stableWandRibbon": true,
+  "threeDigitWandTolerance": true,
+  "typedCanvasDimensionsPreserved": true,
+  "originalMouseLetteringSamples": true,
+  "bitmapLetteringSpacing": true,
+  "shuffleVariantsAndLift": true,
+  "shuffleUndoRedo": true,
+  "savedEditableLettering": true
 }

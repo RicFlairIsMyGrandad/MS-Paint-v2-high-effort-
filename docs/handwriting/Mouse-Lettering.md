@@ -17,16 +17,17 @@ guides in place. The examples show placement, not the user's final style.
 Example strokes are drawn directly on the output grid without supersampling,
 outline-font rendering, curve fitting or resizing. `sheet-layout.json` records
 sampling boxes and baselines. The ZIP and cell contents are checked by the
-generator. No existing app, EXE, font or 1.0.9 download is modified.
+generator. The original template pack remains available alongside the application downloads.
 
 ## Implemented mouse-lettering tool in 1.0.10
 
-A separate mouse-lettering tool can use bitmap glyphs from the completed sheets
-and offer a box for typing, size, colour, negative or positive letter spacing,
-word/line spacing and an upward offset range of 0 to X pixels per character.
-Sample choices and offsets should be stored with the text, stable during edits,
-saves and exports, with an explicit Shuffle command. A fixed style needs no font
-dropdown. Setting X to zero disables added vertical variation.
+Choose **Mouse writing** on Home and draw a box to type with the original bitmap
+glyphs from the completed sheets. The Lettering ribbon controls size, colour,
+negative or positive letter spacing, word spacing, line gap and an upward offset
+range of 0 to X pixels per character. Choices and offsets stay stable during
+edits, saves and exports. **Shuffle** changes both character variants and their
+upward offsets, with its own Undo/Redo step. There is one lettering style, so
+there is no font dropdown. Setting X to zero disables added vertical variation.
 
 Nearest-neighbour scaling keeps the rough pixel edges. Whole-number enlargement
 preserves the source pixel pattern exactly; fractional scaling or reduction

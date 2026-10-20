@@ -1,40 +1,40 @@
 {
-  "run": "39316173894",
-  "source": "ff6bb6c91171d8cad8293b6a656a711d9c55304e",
-  "url": "https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/actions/runs/39316173894",
-  "version": "1.0.9",
+  "run": "39351224677",
+  "source": "726ff90d98006ed64ce09a1f60e90136559b9cbf",
+  "url": "https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/actions/runs/39351224677",
+  "version": "1.0.10",
   "exactExecutableChecksums": {
-    "PaintPlus-Setup-1.0.9-x64.exe": "69ba8940d14414c1581a1ec15b42a52749f077c3c18ee37a7e8bda7a356ab455",
-    "PaintPlus-Portable-1.0.9-x64.exe": "54300ca1caef437261c5fca526e49ac30a6127dcbfb90a35a4800f9a3bb95ed6"
+    "PaintPlus-Setup-1.0.10-x64.exe": "6575553481a93adadf56595488c0d72fd3b5d76871ed49b8e9d04b53b06ee69e",
+    "PaintPlus-Portable-1.0.10-x64.exe": "127f9b3f5f5f00e7ef5123e50d026b3f4435e551fab23d053ef7c5edb6ee9666"
   },
   "runners": [
     {
       "target": "windows-2022",
       "os": "Windows Server 2022 Datacenter",
       "release": "10.0.20348",
-      "corePassed": 152,
-      "uiPassed": 164,
+      "corePassed": 162,
+      "uiPassed": 175,
       "installedPackagedChecksPassed": true,
       "portablePassed": true,
       "fontCatalogSource": "GDI",
       "fontCatalogCount": 126,
       "shortcutsAndAssociationPassed": true,
       "uninstallPreservedProject": true,
-      "evidenceBranch": "windows-evidence-39316173894-windows-2022"
+      "evidenceBranch": "windows-evidence-39351224677-windows-2022"
     },
     {
       "target": "windows-latest",
       "os": "Windows Server 2025 Datacenter",
       "release": "10.0.26100",
-      "corePassed": 152,
-      "uiPassed": 164,
+      "corePassed": 162,
+      "uiPassed": 175,
       "installedPackagedChecksPassed": true,
       "portablePassed": true,
       "fontCatalogSource": "GDI",
       "fontCatalogCount": 144,
       "shortcutsAndAssociationPassed": true,
       "uninstallPreservedProject": true,
-      "evidenceBranch": "windows-evidence-39316173894-windows-latest"
+      "evidenceBranch": "windows-evidence-39351224677-windows-latest"
     }
   ]
 }

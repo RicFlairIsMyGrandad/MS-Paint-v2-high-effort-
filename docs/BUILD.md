@@ -106,6 +106,13 @@ fontTools in your development environment and run `python tools/build-handwritin
 Its TTF supports Unicode Latin letters/digits/common punctuation; the specimen
 and character template are under `docs/handwriting`.
 
+The separate Mouse writing tool uses the checked-in original pixel atlas at
+`assets/lettering/grade-mouse-samples.json`, not the Grade Wobble TTF. Its original
+filled PNG sheets and blank guide images are included. To reproduce the atlas
+and checksums with the installed Node development dependencies, run
+`node tools/extract-lettering-samples.mjs`. Normal builds use the existing atlas
+and need no extraction, Python, font conversion or network font service.
+
 After committing the exact sources and completing both Windows build targets,
 `node tools/release-candidate.cjs` publishes those EXEs to the version's isolated
 candidate branch for the existing CI workflow. `python tools/verify-packages.py`

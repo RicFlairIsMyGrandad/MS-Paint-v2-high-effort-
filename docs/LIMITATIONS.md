@@ -1,4 +1,4 @@
-# Remaining limitations — 1.0.9
+# Remaining limitations — 1.0.10
 
 These are differences or unverified areas, rather than completed acceptance claims.
 
@@ -72,7 +72,7 @@ These are differences or unverified areas, rather than completed acceptance clai
   up to 80 commands and 128MB. Oversized operations are rejected or, if too large
   for history alone, a notice explains that they cannot be undone. Browser caches
   and runtime allocations can add memory; this is not a total OS RAM bound.
-- **Other missing classic commands:** invert selection, printing/print preview,
+- **Other missing classic commands:** printing/print preview,
   scanner/camera acquisition, skew and textured shape outlines/fills. PNG/JPEG/
   BMP/WebP export works; animated GIF, TIFF, color profiles/CMYK and EXIF workflows
   are not independently verified. Save .paintplus to preserve editable state.
@@ -116,4 +116,6 @@ original artwork; it is not a screenshot mockup.
   approximation. Each box uses one colour/size. It does not infer connected word
   shapes or generate missing glyphs; missing characters are listed and displayed
   as placeholders. Fractional scaling/reduction cannot retain every original
-  pixel. Editable project metadata stores variants and vertical choices.
+  pixel. Editable project metadata stores variants and vertical choices. Save a
+  project while the lettering is still editable; confirming it to raster pixels
+  ends its text editability. This tool does not create an installable font.

@@ -21,6 +21,9 @@
   is selected. Their group is last on the far right of Home. Earlier tools,
   palette, canvas controls and Quick Save retain their positions. Tolerance
   has a wide field showing values up to 255 in full.
+- Mouse writing, AI Remove Background and Settings remain available in the
+  horizontally scrollable Home ribbon on small laptop windows, including
+  1024px and 1280px widths.
 - Canvas dimension fields retain their manually typed values across edge/corner
   resizing, Undo/Redo and UI refreshes. The bottom status readout still shows
   the actual canvas dimensions. Apply uses the typed fields. Canvas properties
@@ -32,4 +35,7 @@ characters show a placeholder and are listed in the ribbon. Smaller/fractional
 sizes necessarily change the pixel pattern. Confirming a box to the raster ends
 text editability; save a project while the box is editable to retain it.
 
-Validation is pending final full browser and exact-executable Windows checks.
+Validation: all 162 core tests and 175 browser workflows pass locally and on both
+hosted Windows runners. [Run 39351224677](https://github.com/RicFlairIsMyGrandad/MS-Paint-v2-high-effort-/actions/runs/39351224677) installs and exercises the exact
+Setup download, launches Portable and checks uninstall retention. Archives and
+ASARs pass integrity checks; TESTING.md records hashes and hardware boundaries.
