@@ -1,6 +1,6 @@
 {
   "isPackaged": true,
-  "appPath": "/tmp/PaintPlus packaged Ω N3TBGT/installed app with spaces/resources/app.asar",
+  "appPath": "/tmp/PaintPlus packaged Ω tsEVTp/installed app with spaces/resources/app.asar",
   "platform": "linux",
   "gpuStatus": {
     "2d_canvas": "unavailable_software",
@@ -20,7 +20,7 @@
     "webgpu": "disabled_off",
     "webnn": "unavailable_software"
   },
-  "version": "1.0.9",
+  "version": "1.0.10",
   "installationPathHasSpacesAndUnicode": true,
   "firstLaunchReady": true,
   "defaultCanvasDimensions": true,
@@ -45,16 +45,16 @@
   "clipboardOK": true,
   "aiInferenceOK": true,
   "first": {
-    "path": "/tmp/PaintPlus packaged Ω N3TBGT/images/PaintPlus-smoke.png",
+    "path": "/tmp/PaintPlus packaged Ω tsEVTp/images/PaintPlus-smoke.png",
     "name": "PaintPlus-smoke.png"
   },
   "second": {
-    "path": "/tmp/PaintPlus packaged Ω N3TBGT/images/PaintPlus-smoke (2).png",
+    "path": "/tmp/PaintPlus packaged Ω tsEVTp/images/PaintPlus-smoke (2).png",
     "name": "PaintPlus-smoke (2).png"
   },
   "collisionOK": true,
   "project": {
-    "path": "/tmp/PaintPlus packaged Ω N3TBGT/images/PaintPlus-project-smoke.paintplus",
+    "path": "/tmp/PaintPlus packaged Ω tsEVTp/images/PaintPlus-project-smoke.paintplus",
     "name": "PaintPlus-project-smoke.paintplus"
   },
   "projectBytes": 131350,
@@ -127,5 +127,14 @@
   "shiftShortcutBank": true,
   "shortcutTransforms": true,
   "whiteOrAlphaExport": true,
-  "gradeWobbleFont": true
+  "gradeWobbleFont": true,
+  "contextualWandOptions": true,
+  "stableWandRibbon": true,
+  "threeDigitWandTolerance": true,
+  "typedCanvasDimensionsPreserved": true,
+  "originalMouseLetteringSamples": true,
+  "bitmapLetteringSpacing": true,
+  "shuffleVariantsAndLift": true,
+  "shuffleUndoRedo": true,
+  "savedEditableLettering": true
 }

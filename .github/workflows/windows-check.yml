@@ -132,6 +132,7 @@ jobs:
             docs/screenshots/packaged-windows.png
             docs/screenshots/packaged-windows-dialog.png
             docs/screenshots/packaged-windows-text.png
+            docs/screenshots/packaged-windows-lettering.png
             test-results/
             windows-*-tests.log
           retention-days: 14

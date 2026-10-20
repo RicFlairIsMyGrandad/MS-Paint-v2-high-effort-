@@ -7,7 +7,7 @@ root=Path(__file__).resolve().parents[1];run,source,core_count,ui_count=sys.argv
 version=json.loads((root/'package.json').read_text())['version'];expected=json.loads(Path(f'/tmp/paintplus-candidate-{version}.json').read_text());assert expected['sourceRevision']==source
 local=json.loads((root/'docs/packaged-linux-test-results.json').read_text());assert local['version']==version and local['rendererErrors']==local['externalRequests']==[]
 flags=[key for key,value in local.items() if value is True]+['brandedExecutableIcons']
-files=['runner.json','windows-core-tests.log','windows-ui-tests.log','windows-build-tests.log','windows-packaged-tests.log','ui-test-results.json','packaged-windows-test-results.json','portable-windows-test-results.json','windows-install-test-results.json','windows-uninstall-test-results.json','windows-release-candidate.json','packaged-windows.png','packaged-windows-dialog.png','packaged-windows-text.png']
+files=['runner.json','windows-core-tests.log','windows-ui-tests.log','windows-build-tests.log','windows-packaged-tests.log','ui-test-results.json','packaged-windows-test-results.json','portable-windows-test-results.json','windows-install-test-results.json','windows-uninstall-test-results.json','windows-release-candidate.json','packaged-windows.png','packaged-windows-dialog.png','packaged-windows-text.png','packaged-windows-lettering.png']
 temporary=Path(f'/tmp/paintplus-windows-evidence-{version}');targets=['windows-2022','windows-latest'];repo='RicFlairIsMyGrandad/MS-Paint-v2-high-effort-'
 def fetch(task):
  target,name=task;out=temporary/target/name;out.parent.mkdir(parents=True,exist_ok=True)
